@@ -23,16 +23,12 @@ Acest script va:
 ### 3. Pe Server (ai24stiri.ro)
 
 ```bash
-# Clonează repository-ul
+# Clonează repository-ul direct în folderul scan
 cd /path/to/webroot
 git clone https://github.com/gabrrrielll/scan2oblio.git scan
 
-# Copiază fișierele de producție
-cd scan
-cp -r deploy/* /path/to/webroot/scan/
-
-# Sau configurează symlink
-ln -s /path/to/scan/deploy/* /path/to/webroot/scan/
+# ✅ GATA! Aplicația funcționează imediat la ai24stiri.ro/scan
+# Fișierele de producție (index.html, assets/, api.php) sunt deja în root!
 ```
 
 ### 4. Update Automat (Opțional)
@@ -40,24 +36,27 @@ ln -s /path/to/scan/deploy/* /path/to/webroot/scan/
 Adaugă în crontab:
 ```bash
 # Update la fiecare oră
-0 * * * * cd /path/to/scan && git pull origin main && cp -r deploy/* /path/to/webroot/scan/
+0 * * * * cd /path/to/scan && git pull origin main
 ```
+
+**Notă:** Nu este nevoie de copiere manuală - fișierele sunt deja în root!
 
 ## Structura Repository
 
 ```
 scan2oblio/
-├── deploy/              # ← Fișierele de producție (generat de script)
-│   ├── index.html
-│   ├── assets/
-│   ├── api.php
-│   └── .htaccess
-├── src/                 # Cod sursă React
-├── api.php              # Backend PHP (copiat în deploy/)
+├── index.html           # ← Aplicația React (generat de script)
+├── assets/              # ← JS și CSS compilate (generat de script)
+├── api.php              # ← Backend PHP (ready to use!)
+├── .htaccess            # ← Configurare Apache
+├── components/          # Cod sursă React
+├── services/            # Cod sursă services
+├── package.json         # Dependencies
 ├── deploy.js            # Script deploy (Node.js)
-├── deploy.sh            # Script deploy (Bash)
-└── deploy.ps1           # Script deploy (PowerShell)
+└── ...
 ```
+
+**✅ Când se clonează repository-ul, aplicația funcționează imediat!**
 
 ## Comenzi Utile
 

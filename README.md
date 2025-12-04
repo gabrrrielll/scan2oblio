@@ -68,23 +68,21 @@ Aceasta va genera un folder `dist/` cu toate fișierele statice.
    0 * * * * cd /path/to/scan && git pull origin main
    ```
 
-3. **Structura pe server:**
+3. **Structura pe server (după clone):**
    ```
    /path/to/scan/
-   ├── deploy/
-   │   ├── index.html
-   │   ├── assets/
-   │   │   ├── index-[hash].js
-   │   │   └── index-[hash].css
-   │   ├── api.php
-   │   └── .htaccess
-   └── (alte fișiere sursă)
+   ├── index.html          ← Aplicația React (ready to use!)
+   ├── assets/             ← JS și CSS compilate
+   │   ├── index-[hash].js
+   │   └── index-[hash].css
+   ├── api.php             ← Backend PHP (ready to use!)
+   ├── .htaccess           ← Configurare Apache
+   ├── package.json         ← Fișiere sursă (nu sunt necesare pe server)
+   ├── components/          ← Cod sursă
+   └── ...
    ```
 
-   **Notă:** Pe server, copiază conținutul din `deploy/` în folderul web:
-   ```bash
-   cp -r deploy/* /path/to/webroot/scan/
-   ```
+   **✅ Aplicația funcționează imediat!** Fișierele de producție sunt direct în root-ul repository-ului.
 
 **Opțiunea 2: Deploy manual**
 

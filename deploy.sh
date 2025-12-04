@@ -24,33 +24,15 @@ fi
 
 echo -e "${GREEN}✅ Build completed successfully${NC}"
 
-# Step 2: Create deploy directory
-echo -e "${BLUE}📁 Preparing deployment files...${NC}"
-rm -rf deploy
-mkdir -p deploy
+# Step 2: Prepare production files in root (for direct server deployment)
+echo -e "${BLUE}📁 Preparing production files in repository root...${NC}"
 
-# Copy necessary files for production
-cp -r dist/* deploy/
-cp api.php deploy/
-cp .htaccess deploy/ 2>/dev/null || echo "⚠️  .htaccess not found (optional)"
+# Copy necessary files for production directly to root
+cp -r dist/* .
+cp api.php api.php
+cp .htaccess .htaccess 2>/dev/null || echo "⚠️  .htaccess not found (optional)"
 
-# Create a simple README for the server
-cat > deploy/README.md << EOF
-# Scan2Oblio - Production Files
-
-Aceste fișiere sunt generate automat de scriptul de deploy.
-
-## Structura:
-- \`index.html\` - Entry point aplicație React
-- \`assets/\` - Fișiere JavaScript și CSS compilate
-- \`api.php\` - Backend PHP pentru proxy Oblio API
-- \`.htaccess\` - Configurare Apache (opțional)
-
-## Deployment:
-Aceste fișiere trebuie copiate în folderul \`/scan\` de pe serverul ai24stiri.ro
-EOF
-
-echo -e "${GREEN}✅ Deployment files prepared${NC}"
+echo -e "${GREEN}✅ Production files prepared in repository root${NC}"
 
 # Step 3: Check git status
 if ! git rev-parse --git-dir > /dev/null 2>&1; then
@@ -59,11 +41,11 @@ if ! git rev-parse --git-dir > /dev/null 2>&1; then
     git remote add origin https://github.com/gabrrrielll/scan2oblio.git 2>/dev/null || echo "Remote already exists"
 fi
 
-# Step 4: Add and commit deploy files
-echo -e "${BLUE}📝 Committing deployment files...${NC}"
+# Step 4: Add and commit production files
+echo -e "${BLUE}📝 Committing production files...${NC}"
 
-# Force add deploy folder (even if in .gitignore)
-git add -f deploy/
+# Add production files (index.html, assets/, api.php, .htaccess)
+git add index.html assets/ api.php .htaccess 2>/dev/null || git add index.html assets/ api.php
 
 # Check if there are changes
 if git diff --cached --quiet; then
@@ -82,7 +64,8 @@ git push origin main || git push origin master || {
 
 echo -e "${GREEN}✅ Deployment completed successfully!${NC}"
 echo -e "${BLUE}📋 Next steps:${NC}"
-echo "   1. Connect repository to server at ai24stiri.ro/scan"
-echo "   2. Set up auto-deploy or manual pull on server"
-echo "   3. Ensure PHP and required extensions are enabled"
+echo "   1. On server: git clone https://github.com/gabrrrielll/scan2oblio.git scan"
+echo "   2. Access: https://ai24stiri.ro/scan (should work immediately!)"
+echo "   3. For updates: cd scan && git pull origin main"
+echo "   4. Ensure PHP and required extensions are enabled on server"
 

@@ -52,19 +52,43 @@ if (!exists('dist')) {
 
 log('✅ Build completed successfully', colors.green);
 
-// Step 2: Create deploy directory
-log('📁 Preparing deployment files...', colors.cyan);
+// Step 2: Prepare production files in root (for direct server deployment)
+log('📁 Preparing production files in repository root...', colors.cyan);
 
-if (exists('deploy')) {
-  fs.rmSync('deploy', { recursive: true, force: true });
-}
-fs.mkdirSync('deploy', { recursive: true });
+// List of source files to keep (not overwritten by production files)
+const sourceFilesToKeep = [
+  '.git',
+  '.gitignore',
+  'package.json',
+  'package-lock.json',
+  'tsconfig.json',
+  'vite.config.ts',
+  'README.md',
+  'DEPLOY.md',
+  'QUICK_START.md',
+  'App.tsx',
+  'index.tsx',
+  'index.html', // Will be overwritten by dist/index.html
+  'components',
+  'services',
+  'types.ts',
+  'constants.ts',
+  'metadata.json',
+  'deploy.js',
+  'deploy.sh',
+  'deploy.ps1',
+  'node_modules',
+  'dist', // Source build folder
+  'api.php' // Will be overwritten
+];
 
-// Copy necessary files for production
+// Copy necessary files for production directly to root
 function copyRecursive(src, dest) {
   const stat = fs.statSync(src);
   if (stat.isDirectory()) {
-    fs.mkdirSync(dest, { recursive: true });
+    if (!exists(dest)) {
+      fs.mkdirSync(dest, { recursive: true });
+    }
     fs.readdirSync(src).forEach(file => {
       copyRecursive(path.join(src, file), path.join(dest, file));
     });
@@ -73,32 +97,20 @@ function copyRecursive(src, dest) {
   }
 }
 
-copyRecursive('dist', 'deploy');
-fs.copyFileSync('api.php', 'deploy/api.php');
+// Copy dist files to root (overwrites existing index.html)
+copyRecursive('dist', '.');
+
+// Copy api.php to root
+fs.copyFileSync('api.php', 'api.php');
+
+// Copy .htaccess to root if exists
 if (exists('.htaccess')) {
-  fs.copyFileSync('.htaccess', 'deploy/.htaccess');
+  fs.copyFileSync('.htaccess', '.htaccess');
 } else {
   log('⚠️  .htaccess not found (optional)', colors.yellow);
 }
 
-// Create README for server
-const readmeContent = `# Scan2Oblio - Production Files
-
-Aceste fișiere sunt generate automat de scriptul de deploy.
-
-## Structura:
-- \`index.html\` - Entry point aplicație React
-- \`assets/\` - Fișiere JavaScript și CSS compilate
-- \`api.php\` - Backend PHP pentru proxy Oblio API
-- \`.htaccess\` - Configurare Apache (opțional)
-
-## Deployment:
-Aceste fișiere trebuie copiate în folderul \`/scan\` de pe serverul ai24stiri.ro
-`;
-
-fs.writeFileSync('deploy/README.md', readmeContent, 'utf8');
-
-log('✅ Deployment files prepared', colors.green);
+log('✅ Production files prepared in repository root', colors.green);
 
 // Step 3: Check git status
 if (!exists('.git')) {
@@ -111,13 +123,15 @@ if (!exists('.git')) {
   }
 }
 
-// Step 4: Add and commit deploy files
-log('📝 Committing deployment files...', colors.cyan);
+// Step 4: Add and commit production files
+log('📝 Committing production files...', colors.cyan);
 
 try {
-  // Force add deploy folder (even if in .gitignore)
-  exec('git add -f deploy/');
-  const status = execSync('git status --porcelain deploy/', { encoding: 'utf8' });
+  // Add production files (index.html, assets/, api.php, .htaccess)
+  // Exclude source files from this commit
+  exec('git add index.html assets/ api.php .htaccess 2>/dev/null || git add index.html assets/ api.php');
+  
+  const status = execSync('git status --porcelain', { encoding: 'utf8' });
   if (status.trim()) {
     const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
     exec(`git commit -m "Deploy: Update production files ${timestamp}"`);
@@ -146,7 +160,8 @@ try {
 
 log('✅ Deployment completed successfully!', colors.green);
 log('📋 Next steps:', colors.blue);
-log('   1. Connect repository to server at ai24stiri.ro/scan');
-log('   2. Set up auto-deploy or manual pull on server');
-log('   3. Ensure PHP and required extensions are enabled');
+log('   1. On server: git clone https://github.com/gabrrrielll/scan2oblio.git scan');
+log('   2. Access: https://ai24stiri.ro/scan (should work immediately!)');
+log('   3. For updates: cd scan && git pull origin main');
+log('   4. Ensure PHP and required extensions are enabled on server');
 

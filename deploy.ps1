@@ -16,39 +16,19 @@ if (-Not (Test-Path "dist")) {
 
 Write-Host "✅ Build completed successfully" -ForegroundColor Green
 
-# Step 2: Create deploy directory
-Write-Host "📁 Preparing deployment files..." -ForegroundColor Cyan
-if (Test-Path "deploy") {
-    Remove-Item -Recurse -Force "deploy"
-}
-New-Item -ItemType Directory -Path "deploy" | Out-Null
+# Step 2: Prepare production files in root (for direct server deployment)
+Write-Host "📁 Preparing production files in repository root..." -ForegroundColor Cyan
 
-# Copy necessary files for production
-Copy-Item -Recurse -Path "dist\*" -Destination "deploy\"
-Copy-Item -Path "api.php" -Destination "deploy\"
+# Copy necessary files for production directly to root
+Copy-Item -Recurse -Path "dist\*" -Destination "." -Force
+Copy-Item -Path "api.php" -Destination "api.php" -Force
 if (Test-Path ".htaccess") {
-    Copy-Item -Path ".htaccess" -Destination "deploy\"
+    Copy-Item -Path ".htaccess" -Destination ".htaccess" -Force
 } else {
     Write-Host "⚠️  .htaccess not found (optional)" -ForegroundColor Yellow
 }
 
-# Create a simple README for the server
-@"
-# Scan2Oblio - Production Files
-
-Aceste fișiere sunt generate automat de scriptul de deploy.
-
-## Structura:
-- \`index.html\` - Entry point aplicație React
-- \`assets/\` - Fișiere JavaScript și CSS compilate
-- \`api.php\` - Backend PHP pentru proxy Oblio API
-- \`.htaccess\` - Configurare Apache (opțional)
-
-## Deployment:
-Aceste fișiere trebuie copiate în folderul \`/scan\` de pe serverul ai24stiri.ro
-"@ | Out-File -FilePath "deploy\README.md" -Encoding UTF8
-
-Write-Host "✅ Deployment files prepared" -ForegroundColor Green
+Write-Host "✅ Production files prepared in repository root" -ForegroundColor Green
 
 # Step 3: Check git status
 if (-Not (Test-Path ".git")) {
@@ -62,14 +42,17 @@ if (-Not (Test-Path ".git")) {
     }
 }
 
-# Step 4: Add and commit deploy files
-Write-Host "📝 Committing deployment files..." -ForegroundColor Cyan
+# Step 4: Add and commit production files
+Write-Host "📝 Committing production files..." -ForegroundColor Cyan
 
-# Force add deploy folder (even if in .gitignore)
-git add -f deploy/
+# Add production files (index.html, assets/, api.php, .htaccess)
+git add index.html assets/ api.php .htaccess 2>$null
+if ($LASTEXITCODE -ne 0) {
+    git add index.html assets/ api.php
+}
 
 # Check if there are changes
-$status = git status --porcelain deploy/ 2>$null
+$status = git status --porcelain 2>$null
 if ($status) {
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     git commit -m "Deploy: Update production files $timestamp"
@@ -93,7 +76,8 @@ try {
 
 Write-Host "✅ Deployment completed successfully!" -ForegroundColor Green
 Write-Host "📋 Next steps:" -ForegroundColor Blue
-Write-Host "   1. Connect repository to server at ai24stiri.ro/scan"
-Write-Host "   2. Set up auto-deploy or manual pull on server"
-Write-Host "   3. Ensure PHP and required extensions are enabled"
+Write-Host "   1. On server: git clone https://github.com/gabrrrielll/scan2oblio.git scan"
+Write-Host "   2. Access: https://ai24stiri.ro/scan (should work immediately!)"
+Write-Host "   3. For updates: cd scan && git pull origin main"
+Write-Host "   4. Ensure PHP and required extensions are enabled on server"
 

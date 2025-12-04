@@ -51,4 +51,5 @@ Thumbs.db
 *.temp
 .cache/
 
-# Note: deploy/ folder IS tracked in git (contains production files)
+# Note: Production files (index.html, assets/, api.php, .htaccess) ARE tracked in git
+# They are placed directly in repository root for immediate server deployment
