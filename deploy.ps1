@@ -24,7 +24,8 @@ Copy-Item -Recurse -Path "dist\*" -Destination "." -Force
 Copy-Item -Path "api.php" -Destination "api.php" -Force
 if (Test-Path ".htaccess") {
     Copy-Item -Path ".htaccess" -Destination ".htaccess" -Force
-} else {
+}
+else {
     Write-Host "⚠️  .htaccess not found (optional)" -ForegroundColor Yellow
 }
 
@@ -37,7 +38,8 @@ if (-Not (Test-Path ".git")) {
     $remoteExists = git remote get-url origin 2>$null
     if (-Not $remoteExists) {
         git remote add origin https://github.com/gabrrrielll/scan2oblio.git
-    } else {
+    }
+    else {
         Write-Host "Remote already exists" -ForegroundColor Yellow
     }
 }
@@ -57,27 +59,37 @@ if ($status) {
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     git commit -m "Deploy: Update production files $timestamp"
     Write-Host "✅ Changes committed" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "⚠️  No changes to commit" -ForegroundColor Yellow
 }
 
 # Step 5: Push to repository
 Write-Host "⬆️  Pushing to repository..." -ForegroundColor Cyan
+
+# Get current branch name
 try {
-    git push origin main
-} catch {
-    try {
-        git push origin master
-    } catch {
-        Write-Host "⚠️  Push failed. You may need to set upstream:" -ForegroundColor Yellow
-        Write-Host "   git push -u origin main" -ForegroundColor Yellow
+    $currentBranch = git branch --show-current 2>$null
+    if (-Not $currentBranch) {
+        $currentBranch = "master"
     }
+    
+    Write-Host "📌 Pushing to branch: $currentBranch" -ForegroundColor Cyan
+    
+    git push origin $currentBranch
+    Write-Host "✅ Push successful" -ForegroundColor Green
+}
+catch {
+    Write-Host "⚠️  Push failed. You may need to set upstream:" -ForegroundColor Yellow
+    $branch = git branch --show-current 2>$null
+    if (-Not $branch) { $branch = "master" }
+    Write-Host "   git push -u origin $branch" -ForegroundColor Yellow
 }
 
 Write-Host "✅ Deployment completed successfully!" -ForegroundColor Green
 Write-Host "📋 Next steps:" -ForegroundColor Blue
 Write-Host "   1. On server: git clone https://github.com/gabrrrielll/scan2oblio.git scan"
 Write-Host "   2. Access: https://ai24stiri.ro/scan (should work immediately!)"
-Write-Host "   3. For updates: cd scan && git pull origin main"
+Write-Host "   3. For updates: cd scan && git pull origin master"
 Write-Host "   4. Ensure PHP and required extensions are enabled on server"
 

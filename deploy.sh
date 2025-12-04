@@ -57,15 +57,27 @@ fi
 
 # Step 5: Push to repository
 echo -e "${BLUE}⬆️  Pushing to repository...${NC}"
-git push origin main || git push origin master || {
+
+# Get current branch name
+CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "master")
+
+if [ -z "$CURRENT_BRANCH" ]; then
+    CURRENT_BRANCH="master"
+fi
+
+echo -e "${CYAN}📌 Pushing to branch: $CURRENT_BRANCH${NC}"
+
+if git push origin "$CURRENT_BRANCH" 2>/dev/null; then
+    echo -e "${GREEN}✅ Push successful${NC}"
+else
     echo -e "${YELLOW}⚠️  Push failed. You may need to set upstream:${NC}"
-    echo "   git push -u origin main"
-}
+    echo "   git push -u origin $CURRENT_BRANCH"
+fi
 
 echo -e "${GREEN}✅ Deployment completed successfully!${NC}"
 echo -e "${BLUE}📋 Next steps:${NC}"
 echo "   1. On server: git clone https://github.com/gabrrrielll/scan2oblio.git scan"
 echo "   2. Access: https://ai24stiri.ro/scan (should work immediately!)"
-echo "   3. For updates: cd scan && git pull origin main"
+echo "   3. For updates: cd scan && git pull origin master"
 echo "   4. Ensure PHP and required extensions are enabled on server"
 

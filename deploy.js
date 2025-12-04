@@ -152,13 +152,30 @@ try {
 log('⬆️  Pushing to repository...', colors.cyan);
 
 try {
-  exec('git push origin main');
-} catch {
+  // Get current branch name
+  const currentBranch = execSync('git branch --show-current', { encoding: 'utf8' }).trim();
+  
+  if (!currentBranch) {
+    // Fallback: try to get branch from git status
+    const statusOutput = execSync('git status -b --porcelain', { encoding: 'utf8' });
+    const branchMatch = statusOutput.match(/## (.+?)(?:\.\.\.|$)/);
+    const branch = branchMatch ? branchMatch[1] : 'master';
+    
+    log(`📌 Detected branch: ${branch}`, colors.cyan);
+    exec(`git push origin ${branch}`);
+  } else {
+    log(`📌 Pushing to branch: ${currentBranch}`, colors.cyan);
+    exec(`git push origin ${currentBranch}`);
+  }
+} catch (error) {
+  // Try master as fallback
   try {
+    log('📌 Trying master branch...', colors.cyan);
     exec('git push origin master');
   } catch {
     log('⚠️  Push failed. You may need to set upstream:', colors.yellow);
-    log('   git push -u origin main', colors.yellow);
+    const currentBranch = execSync('git branch --show-current', { encoding: 'utf8' }).trim() || 'master';
+    log(`   git push -u origin ${currentBranch}`, colors.yellow);
   }
 }
 
@@ -166,6 +183,6 @@ log('✅ Deployment completed successfully!', colors.green);
 log('📋 Next steps:', colors.blue);
 log('   1. On server: git clone https://github.com/gabrrrielll/scan2oblio.git scan');
 log('   2. Access: https://ai24stiri.ro/scan (should work immediately!)');
-log('   3. For updates: cd scan && git pull origin main');
+log('   3. For updates: cd scan && git pull origin master');
 log('   4. Ensure PHP and required extensions are enabled on server');
 
