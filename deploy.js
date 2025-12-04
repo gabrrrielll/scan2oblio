@@ -5,9 +5,13 @@
  * Generează build-ul React și trimite doar fișierele necesare în repository
  */
 
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+import { execSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const colors = {
   reset: '\x1b[0m',
@@ -24,10 +28,10 @@ function log(message, color = colors.reset) {
 
 function exec(command, options = {}) {
   try {
-    return execSync(command, { 
-      stdio: 'inherit', 
+    return execSync(command, {
+      stdio: 'inherit',
       encoding: 'utf8',
-      ...options 
+      ...options
     });
   } catch (error) {
     log(`❌ Error executing: ${command}`, colors.red);
@@ -130,7 +134,7 @@ try {
   // Add production files (index.html, assets/, api.php, .htaccess)
   // Exclude source files from this commit
   exec('git add index.html assets/ api.php .htaccess 2>/dev/null || git add index.html assets/ api.php');
-  
+
   const status = execSync('git status --porcelain', { encoding: 'utf8' });
   if (status.trim()) {
     const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
