@@ -10,9 +10,9 @@ RewriteRule ^ - [L]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
-# Redirect all other requests to index.html except for api.php
-RewriteCond %{REQUEST_URI} !^/scan/api\.php
-RewriteCond %{REQUEST_URI} !^/scan/assets/
+# Redirect all other requests to index.html except for api.php and assets
+RewriteCond %{REQUEST_URI} !api\.php$
+RewriteCond %{REQUEST_URI} !assets/
 RewriteRule ^ index.html [L]
 
 # Set proper MIME types (CRITICAL for static assets)
