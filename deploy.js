@@ -115,11 +115,13 @@ if (!exists('.git')) {
 log('📝 Committing deployment files...', colors.cyan);
 
 try {
+  // Force add deploy folder (even if in .gitignore)
+  exec('git add -f deploy/');
   const status = execSync('git status --porcelain deploy/', { encoding: 'utf8' });
   if (status.trim()) {
-    exec('git add deploy/');
     const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
     exec(`git commit -m "Deploy: Update production files ${timestamp}"`);
+    log('✅ Changes committed', colors.green);
   } else {
     log('⚠️  No changes to commit', colors.yellow);
   }

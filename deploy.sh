@@ -62,12 +62,15 @@ fi
 # Step 4: Add and commit deploy files
 echo -e "${BLUE}📝 Committing deployment files...${NC}"
 
+# Force add deploy folder (even if in .gitignore)
+git add -f deploy/
+
 # Check if there are changes
-if git diff --quiet && git diff --cached --quiet && [ -z "$(git ls-files deploy/ 2>/dev/null)" ]; then
+if git diff --cached --quiet; then
     echo -e "${YELLOW}⚠️  No changes to commit${NC}"
 else
-    git add deploy/
-    git commit -m "Deploy: Update production files $(date +'%Y-%m-%d %H:%M:%S')" || echo "No changes to commit"
+    git commit -m "Deploy: Update production files $(date +'%Y-%m-%d %H:%M:%S')"
+    echo -e "${GREEN}✅ Changes committed${NC}"
 fi
 
 # Step 5: Push to repository

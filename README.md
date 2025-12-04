@@ -17,6 +17,31 @@ Aplicație React pentru scanarea codurilor de produse și integrare cu Oblio API
 
 ## Instalare și Deployment
 
+### Deployment Rapid cu Script
+
+Cel mai simplu mod de a face deploy este folosind scriptul automatizat:
+
+```bash
+npm run deploy
+```
+
+Sau pe Windows PowerShell:
+```powershell
+npm run deploy:ps1
+```
+
+Sau direct bash:
+```bash
+npm run deploy:bash
+```
+
+Scriptul va:
+1. ✅ Genera build-ul React (`npm run build`)
+2. ✅ Copia fișierele necesare în folderul `deploy/`
+3. ✅ Face commit și push în repository
+
+### Deployment Manual
+
 ### 1. Build Frontend React
 
 ```bash
@@ -28,20 +53,44 @@ Aceasta va genera un folder `dist/` cu toate fișierele statice.
 
 ### 2. Deployment pe Server PHP
 
-1. **Încărcați fișierele pe server:**
-   - Copiați conținutul folderului `dist/` în directorul web al serverului (ex: `public_html/` sau `www/`)
-   - Copiați fișierul `api.php` în același director
+**Opțiunea 1: Deploy automat prin Git (Recomandat)**
 
-2. **Structura pe server:**
+1. **Pe server (ai24stiri.ro), clonează repository-ul:**
+   ```bash
+   cd /path/to/webroot
+   git clone https://github.com/gabrrrielll/scan2oblio.git scan
+   cd scan
    ```
-   public_html/
-   ├── index.html
-   ├── assets/
-   │   ├── index-[hash].js
-   │   └── index-[hash].css
-   ├── api.php
-   └── .htaccess (opțional, pentru Apache)
+
+2. **Configurează auto-update (opțional):**
+   ```bash
+   # Adaugă în crontab pentru update automat
+   0 * * * * cd /path/to/scan && git pull origin main
    ```
+
+3. **Structura pe server:**
+   ```
+   /path/to/scan/
+   ├── deploy/
+   │   ├── index.html
+   │   ├── assets/
+   │   │   ├── index-[hash].js
+   │   │   └── index-[hash].css
+   │   ├── api.php
+   │   └── .htaccess
+   └── (alte fișiere sursă)
+   ```
+
+   **Notă:** Pe server, copiază conținutul din `deploy/` în folderul web:
+   ```bash
+   cp -r deploy/* /path/to/webroot/scan/
+   ```
+
+**Opțiunea 2: Deploy manual**
+
+1. **Încărcați fișierele pe server:**
+   - Copiați conținutul folderului `deploy/` (generat de script) în directorul web
+   - Sau copiați manual: `dist/*`, `api.php`, `.htaccess`
 
 3. **Configurare Server:**
    - Asigurați-vă că PHP este activat (versiunea 7.4 sau mai nouă)

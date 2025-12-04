@@ -65,12 +65,15 @@ if (-Not (Test-Path ".git")) {
 # Step 4: Add and commit deploy files
 Write-Host "📝 Committing deployment files..." -ForegroundColor Cyan
 
+# Force add deploy folder (even if in .gitignore)
+git add -f deploy/
+
 # Check if there are changes
 $status = git status --porcelain deploy/ 2>$null
 if ($status) {
-    git add deploy/
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     git commit -m "Deploy: Update production files $timestamp"
+    Write-Host "✅ Changes committed" -ForegroundColor Green
 } else {
     Write-Host "⚠️  No changes to commit" -ForegroundColor Yellow
 }
