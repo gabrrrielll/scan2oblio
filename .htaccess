@@ -1,21 +1,7 @@
 # Enable rewrite engine
 RewriteEngine On
 
-# IMPORTANT: Allow static files to be served with correct MIME types
-# Don't redirect if file exists
-RewriteCond %{REQUEST_FILENAME} -f
-RewriteRule ^ - [L]
-
-# Don't redirect directories
-RewriteCond %{REQUEST_FILENAME} -d
-RewriteRule ^ - [L]
-
-# Redirect all other requests to index.html except for api.php and assets
-RewriteCond %{REQUEST_URI} !api\.php$
-RewriteCond %{REQUEST_URI} !assets/
-RewriteRule ^ index.html [L]
-
-# Set proper MIME types (CRITICAL for static assets)
+# Set proper MIME types FIRST (CRITICAL for static assets)
 <IfModule mod_mime.c>
     AddType application/javascript .js
     AddType application/javascript .mjs
@@ -30,12 +16,27 @@ RewriteRule ^ index.html [L]
     AddType font/woff2 .woff2
 </IfModule>
 
-# Force correct MIME types for static assets
-<FilesMatch "\.(js|mjs|css|json|svg|png|jpg|jpeg|gif|webp|woff|woff2)$">
-    Header set Content-Type "%{REQUEST_FILENAME}e"
-</FilesMatch>
+# CRITICAL: Serve static files with correct MIME types
+# Check if file exists and serve it directly (don't redirect)
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
 
-# Enable CORS for API (dacă este necesar)
+# Don't redirect directories
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Don't redirect api.php
+RewriteCond %{REQUEST_URI} api\.php$ [NC]
+RewriteRule ^ - [L]
+
+# Don't redirect assets folder or any files in it
+RewriteCond %{REQUEST_URI} ^.*assets/.*$ [NC]
+RewriteRule ^ - [L]
+
+# Redirect all other requests to index.html (for React Router)
+RewriteRule ^ index.html [L]
+
+# Enable CORS for API
 <IfModule mod_headers.c>
     Header set Access-Control-Allow-Origin "*"
     Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
@@ -59,4 +60,3 @@ RewriteRule ^ index.html [L]
     ExpiresByType text/css "access plus 1 year"
     ExpiresByType application/javascript "access plus 1 year"
 </IfModule>
-
