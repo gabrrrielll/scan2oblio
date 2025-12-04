@@ -1,0 +1,8 @@
+{
+  "name": "Scan2Oblio",
+  "description": "O aplicație mobilă pentru scanarea produselor și generarea rapidă a facturilor în Oblio.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
