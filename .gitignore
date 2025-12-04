@@ -51,5 +51,4 @@ Thumbs.db
 *.temp
 .cache/
 
-# Deploy folder (temporary)
-deploy/
+# Note: deploy/ folder IS tracked in git (contains production files)
