@@ -187,7 +187,7 @@ const App: React.FC = () => {
         showStatus(AppStatus.SUCCESS, "Produs adăugat din stoc");
       }
     }
-  }, [items, inventory]);
+  }, [items, inventory, showStatus]);
 
   const handleTestScan = (code: string) => {
       console.log("handleTestScan called with code:", code);
