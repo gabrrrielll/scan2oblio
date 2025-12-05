@@ -139,30 +139,68 @@ function getProducts($email, $apiSecret, $cif) {
         error_log("Oblio API RAW First Product Keys: " . json_encode(array_keys($firstProductRaw)));
         error_log("Oblio API RAW First Product Full: " . json_encode($firstProductRaw));
         
-        // Încearcă să obțină detalii complete pentru primul produs folosind ID-ul
-        if (isset($firstProductRaw['id'])) {
-            $productId = $firstProductRaw['id'];
-            $detailUrl = OBLIO_BASE_URL . '/nomenclature/products/' . urlencode($productId) . '?cif=' . urlencode($cif);
-            
-            $chDetail = curl_init($detailUrl);
-            curl_setopt_array($chDetail, [
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_HTTPHEADER => [
-                    'Authorization: Bearer ' . $token,
-                    'X-Oblio-Email: ' . $email,
-                    'Content-Type: application/json'
-                ]
-            ]);
-            
-            $detailResponse = curl_exec($chDetail);
-            $detailHttpCode = curl_getinfo($chDetail, CURLINFO_HTTP_CODE);
-            curl_close($chDetail);
-            
-            if ($detailHttpCode === 200) {
-                $detailData = json_decode($detailResponse, true);
-                error_log("Oblio API Product Detail Keys: " . json_encode(array_keys($detailData)));
-                error_log("Oblio API Product Detail Full: " . json_encode($detailData));
+        // Caută produsul specific cu ID 93841541 și codul 10000000000001
+        $targetProductId = '93841541';
+        $targetProductCode = '10000000000001';
+        
+        // Caută în lista de produse
+        foreach ($data['data'] as $product) {
+            if (isset($product['id']) && $product['id'] == $targetProductId) {
+                error_log("=== FOUND TARGET PRODUCT (ID: $targetProductId) ===");
+                error_log("Target Product Keys: " . json_encode(array_keys($product)));
+                error_log("Target Product Full: " . json_encode($product));
+                break;
             }
+        }
+        
+        // Încearcă să obțină detalii complete pentru produsul specific folosind ID-ul
+        $detailUrl = OBLIO_BASE_URL . '/nomenclature/products/' . urlencode($targetProductId) . '?cif=' . urlencode($cif);
+        
+        error_log("=== FETCHING PRODUCT DETAILS ===");
+        error_log("Detail URL: " . $detailUrl);
+        
+        $chDetail = curl_init($detailUrl);
+        curl_setopt_array($chDetail, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => [
+                'Authorization: Bearer ' . $token,
+                'X-Oblio-Email: ' . $email,
+                'Content-Type: application/json'
+            ]
+        ]);
+        
+        $detailResponse = curl_exec($chDetail);
+        $detailHttpCode = curl_getinfo($chDetail, CURLINFO_HTTP_CODE);
+        $detailError = curl_error($chDetail);
+        curl_close($chDetail);
+        
+        error_log("Detail HTTP Code: " . $detailHttpCode);
+        if ($detailError) {
+            error_log("Detail CURL Error: " . $detailError);
+        }
+        error_log("Detail Response: " . $detailResponse);
+        
+        if ($detailHttpCode === 200) {
+            $detailData = json_decode($detailResponse, true);
+            error_log("=== PRODUCT DETAIL RESPONSE ===");
+            error_log("Product Detail Keys: " . json_encode(array_keys($detailData)));
+            error_log("Product Detail Full: " . json_encode($detailData));
+            
+            // Caută codul de produs în răspuns
+            if (isset($detailData['productCode'])) {
+                error_log("Found productCode in detail: " . $detailData['productCode']);
+            }
+            if (isset($detailData['code'])) {
+                error_log("Found code in detail: " . $detailData['code']);
+            }
+            if (isset($detailData['ean'])) {
+                error_log("Found ean in detail: " . $detailData['ean']);
+            }
+            if (isset($detailData['barcode'])) {
+                error_log("Found barcode in detail: " . $detailData['barcode']);
+            }
+        } else {
+            error_log("Failed to fetch product details. HTTP Code: " . $detailHttpCode);
         }
     }
     
