@@ -183,21 +183,55 @@ function getProducts($email, $apiSecret, $cif) {
         if ($detailHttpCode === 200) {
             $detailData = json_decode($detailResponse, true);
             error_log("=== PRODUCT DETAIL RESPONSE ===");
-            error_log("Product Detail Keys: " . json_encode(array_keys($detailData)));
-            error_log("Product Detail Full: " . json_encode($detailData));
+            error_log("Product Detail Response Structure Keys: " . json_encode(array_keys($detailData)));
             
-            // Caută codul de produs în răspuns
-            if (isset($detailData['productCode'])) {
-                error_log("Found productCode in detail: " . $detailData['productCode']);
-            }
-            if (isset($detailData['code'])) {
-                error_log("Found code in detail: " . $detailData['code']);
-            }
-            if (isset($detailData['ean'])) {
-                error_log("Found ean in detail: " . $detailData['ean']);
-            }
-            if (isset($detailData['barcode'])) {
-                error_log("Found barcode in detail: " . $detailData['barcode']);
+            // Caută produsul specific cu ID 93841541 în array-ul de produse
+            if (isset($detailData['data']) && is_array($detailData['data'])) {
+                $foundProduct = null;
+                foreach ($detailData['data'] as $product) {
+                    if (isset($product['id']) && $product['id'] == $targetProductId) {
+                        $foundProduct = $product;
+                        break;
+                    }
+                }
+                
+                if ($foundProduct) {
+                    error_log("=== FOUND TARGET PRODUCT IN DETAIL RESPONSE (ID: $targetProductId) ===");
+                    error_log("Target Product Keys: " . json_encode(array_keys($foundProduct)));
+                    error_log("Target Product Full: " . json_encode($foundProduct));
+                    
+                    // Caută codul de produs în toate câmpurile posibile
+                    $allFields = array_keys($foundProduct);
+                    foreach ($allFields as $field) {
+                        $value = $foundProduct[$field];
+                        if (!empty($value) && is_string($value) && strlen($value) >= 8) {
+                            error_log("Field '$field' has value: " . $value);
+                        }
+                    }
+                    
+                    // Verifică câmpurile specifice
+                    if (isset($foundProduct['productCode'])) {
+                        error_log("Found productCode in detail: " . $foundProduct['productCode']);
+                    }
+                    if (isset($foundProduct['code'])) {
+                        error_log("Found code in detail: " . $foundProduct['code']);
+                    }
+                    if (isset($foundProduct['ean'])) {
+                        error_log("Found ean in detail: " . $foundProduct['ean']);
+                    }
+                    if (isset($foundProduct['barcode'])) {
+                        error_log("Found barcode in detail: " . $foundProduct['barcode']);
+                    }
+                    if (isset($foundProduct['catalogNumber'])) {
+                        error_log("Found catalogNumber in detail: " . $foundProduct['catalogNumber']);
+                    }
+                } else {
+                    error_log("Target product ID $targetProductId NOT FOUND in detail response");
+                    error_log("Available product IDs in response: " . json_encode(array_column($detailData['data'], 'id')));
+                }
+            } else {
+                error_log("Detail response does not contain 'data' array");
+                error_log("Detail response structure: " . json_encode($detailData));
             }
         } else {
             error_log("Failed to fetch product details. HTTP Code: " . $detailHttpCode);
