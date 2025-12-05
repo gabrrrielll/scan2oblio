@@ -35,30 +35,6 @@ const Scanner: React.FC<ScannerProps> = ({ onScan, onClose }) => {
         video: {
             facingMode: "environment"
         }
-    },
-    // Adaugă hints pentru a accepta mai multe formate de coduri de bare
-    hints: {
-      formats: [
-        'EAN_13',
-        'EAN_8',
-        'UPC_A',
-        'UPC_E',
-        'CODE_128',
-        'CODE_39',
-        'CODE_93',
-        'CODABAR',
-        'ITF',
-        'RSS_14',
-        'RSS_EXPANDED',
-        'QR_CODE',
-        'DATA_MATRIX',
-        'PDF_417',
-        'AZTEC'
-      ],
-      // Mărește rezoluția pentru a detecta mai bine codurile generate digital
-      tryHarder: true,
-      // Permite codurile de bare rotite
-      tryRotate: true
     }
   });
 
