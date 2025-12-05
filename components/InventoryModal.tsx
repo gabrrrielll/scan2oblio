@@ -59,16 +59,18 @@ const InventoryModal: React.FC<InventoryModalProps> = ({ inventory, onClose }) =
                         <div className="flex-1 pr-4">
                             <div className="font-medium text-slate-200 text-sm leading-tight mb-1">{item.name}</div>
                             <div className="flex items-center gap-2 flex-wrap">
-                                {item.code && (
+                                {item.code && item.code.trim() !== '' && (
                                     <>
                                         <span className="text-[10px] bg-slate-900 text-slate-400 px-1.5 py-0.5 rounded font-mono border border-slate-800">CPV: {item.code}</span>
-                                        {item.productCode && <span className="text-xs text-slate-500">|</span>}
+                                        {item.productCode && item.productCode.trim() !== '' && <span className="text-xs text-slate-500">|</span>}
                                     </>
                                 )}
-                                {item.productCode && (
+                                {item.productCode && item.productCode.trim() !== '' && (
                                     <span className="text-[10px] bg-emerald-900/30 text-emerald-300 px-1.5 py-0.5 rounded font-mono border border-emerald-700/50">EAN: {item.productCode}</span>
                                 )}
-                                <span className="text-xs text-slate-500">|</span>
+                                {(item.code && item.code.trim() !== '') || (item.productCode && item.productCode.trim() !== '') ? (
+                                    <span className="text-xs text-slate-500">|</span>
+                                ) : null}
                                 <span className="text-xs text-slate-400">{item.measuringUnit}</span>
                             </div>
                         </div>
