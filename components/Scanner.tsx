@@ -10,13 +10,18 @@ interface ScannerProps {
 const Scanner: React.FC<ScannerProps> = ({ onScan, onClose }) => {
   const [torchOn, setTorchOn] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastScannedCode, setLastScannedCode] = useState<string>('');
 
   // Zxing hook for barcode scanning
   const { ref } = useZxing({
     onDecodeResult(result) {
       const scannedCode = result.getText();
       console.log("Scanner detected code:", scannedCode);
-      if (scannedCode && scannedCode.trim()) {
+      
+      // Previne scanări duplicate consecutive
+      if (scannedCode && scannedCode.trim() && scannedCode.trim() !== lastScannedCode) {
+        setLastScannedCode(scannedCode.trim());
+        console.log("Calling onScan with:", scannedCode.trim());
         onScan(scannedCode.trim());
       }
     },
