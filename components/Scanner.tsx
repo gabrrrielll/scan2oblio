@@ -18,13 +18,23 @@ const Scanner: React.FC<ScannerProps> = ({ onScan, onClose }) => {
     onDecodeResult(result) {
       const scannedCode = result.getText();
       const format = result.getBarcodeFormat();
-      console.log("Scanner detected code:", scannedCode, "format:", format);
+      console.log("Scanner detected code:", scannedCode, "format:", format, "length:", scannedCode?.length);
       
-      // Previne scanări duplicate consecutive
-      if (scannedCode && scannedCode.trim() && scannedCode.trim() !== lastScannedCode) {
-        setLastScannedCode(scannedCode.trim());
-        console.log("Calling onScan with:", scannedCode.trim());
-        onScan(scannedCode.trim());
+      // Debug: verifică dacă codul este detectat dar nu este procesat
+      if (scannedCode && scannedCode.trim()) {
+        const trimmed = scannedCode.trim();
+        console.log("Trimmed code:", trimmed, "matches last:", trimmed === lastScannedCode);
+        
+        // Previne scanări duplicate consecutive
+        if (trimmed !== lastScannedCode) {
+          setLastScannedCode(trimmed);
+          console.log("Calling onScan with:", trimmed);
+          onScan(trimmed);
+        } else {
+          console.log("Skipping duplicate scan");
+        }
+      } else {
+        console.log("Empty or invalid code detected");
       }
     },
     onError(err) {
@@ -33,7 +43,9 @@ const Scanner: React.FC<ScannerProps> = ({ onScan, onClose }) => {
     },
     constraints: {
         video: {
-            facingMode: "environment"
+            facingMode: "environment",
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
         }
     }
   });
