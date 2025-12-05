@@ -271,27 +271,18 @@ function getProducts($email, $apiSecret, $cif) {
             }
         }
         
-        // Încearcă să găsească codul de produs (EAN) din diferite câmpuri posibile
-        $productCode = '';
-        $code = '';
+        // Conform documentației API Oblio, câmpul 'code' este codul produsului (EAN)
+        // CPV-ul ar putea fi în alt câmp sau nu există pentru toate produsele
+        $productCode = ''; // Cod produs (EAN) - din câmpul 'code'
+        $code = ''; // Cod CPV - dacă există
         
-        // Verifică câmpurile comune pentru codul EAN/barcode
-        $possibleEanFields = ['productCode', 'ean', 'eanCode', 'barcode', 'product_code', 'ean_code', 
-                             'catalogNumber', 'sku', 'barcodeCode', 'gtin', 'upc', 'productBarcode', 'id'];
-        
-        foreach ($possibleEanFields as $field) {
-            if (isset($p[$field]) && !empty($p[$field]) && trim($p[$field]) !== '') {
-                $value = trim($p[$field]);
-                // Verifică dacă este un cod EAN valid (13 cifre) sau alt cod de produs
-                if (strlen($value) >= 8) { // EAN-uri sunt de obicei 8, 13 sau 14 cifre
-                    $productCode = $value;
-                    break;
-                }
-            }
+        // Câmpul 'code' din API Oblio conține codul produsului (EAN)
+        if (isset($p['code']) && !empty($p['code']) && trim($p['code']) !== '') {
+            $productCode = trim($p['code']);
         }
         
-        // Verifică câmpurile pentru codul CPV
-        $possibleCpvFields = ['code', 'cpv', 'cpvCode'];
+        // Verifică câmpurile pentru codul CPV (dacă există)
+        $possibleCpvFields = ['cpv', 'cpvCode', 'cpvCode'];
         foreach ($possibleCpvFields as $field) {
             if (isset($p[$field]) && !empty($p[$field]) && trim($p[$field]) !== '') {
                 $code = trim($p[$field]);
@@ -299,15 +290,15 @@ function getProducts($email, $apiSecret, $cif) {
             }
         }
         
-        // Dacă nu am găsit codul CPV, dar avem productCode, folosește productCode pentru code
+        // Dacă nu am găsit CPV, dar avem productCode, folosește productCode pentru code (compatibilitate)
         if (empty($code) && !empty($productCode)) {
             $code = $productCode;
         }
         
         $products[] = [
             'name' => $p['name'] ?? 'Produs fără nume',
-            'code' => $code, // Cod CPV sau cod de produs dacă CPV nu există
-            'productCode' => $productCode, // Cod produs (EAN) - doar dacă este diferit de code
+            'code' => $code, // Cod CPV (dacă există) sau cod produs pentru compatibilitate
+            'productCode' => $productCode, // Cod produs (EAN) - din câmpul 'code' al API-ului
             'price' => $price,
             'measuringUnit' => $p['measuringUnit'] ?? 'buc',
             'vatPercentage' => $vatPercentage,
