@@ -13,10 +13,12 @@ const Scanner: React.FC<ScannerProps> = ({ onScan, onClose }) => {
   const [lastScannedCode, setLastScannedCode] = useState<string>('');
 
   // Zxing hook for barcode scanning
+  // Configurează pentru a accepta mai multe formate de coduri de bare, inclusiv EAN-13
   const { ref } = useZxing({
     onDecodeResult(result) {
       const scannedCode = result.getText();
-      console.log("Scanner detected code:", scannedCode);
+      const format = result.getBarcodeFormat();
+      console.log("Scanner detected code:", scannedCode, "format:", format);
       
       // Previne scanări duplicate consecutive
       if (scannedCode && scannedCode.trim() && scannedCode.trim() !== lastScannedCode) {
@@ -33,6 +35,30 @@ const Scanner: React.FC<ScannerProps> = ({ onScan, onClose }) => {
         video: {
             facingMode: "environment"
         }
+    },
+    // Adaugă hints pentru a accepta mai multe formate de coduri de bare
+    hints: {
+      formats: [
+        'EAN_13',
+        'EAN_8',
+        'UPC_A',
+        'UPC_E',
+        'CODE_128',
+        'CODE_39',
+        'CODE_93',
+        'CODABAR',
+        'ITF',
+        'RSS_14',
+        'RSS_EXPANDED',
+        'QR_CODE',
+        'DATA_MATRIX',
+        'PDF_417',
+        'AZTEC'
+      ],
+      // Mărește rezoluția pentru a detecta mai bine codurile generate digital
+      tryHarder: true,
+      // Permite codurile de bare rotite
+      tryRotate: true
     }
   });
 
