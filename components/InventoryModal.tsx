@@ -12,7 +12,8 @@ const InventoryModal: React.FC<InventoryModalProps> = ({ inventory, onClose }) =
 
   const filtered = inventory.filter(p => 
     p.name.toLowerCase().includes(search.toLowerCase()) || 
-    p.code.includes(search)
+    p.code?.includes(search) ||
+    p.productCode?.includes(search)
   );
 
   return (
@@ -57,8 +58,16 @@ const InventoryModal: React.FC<InventoryModalProps> = ({ inventory, onClose }) =
                     <div key={idx} className="bg-slate-800/40 p-3 rounded-lg border border-slate-800 hover:border-slate-700 transition-colors flex justify-between items-center group">
                         <div className="flex-1 pr-4">
                             <div className="font-medium text-slate-200 text-sm leading-tight mb-1">{item.name}</div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-[10px] bg-slate-900 text-slate-400 px-1.5 py-0.5 rounded font-mono border border-slate-800">{item.code}</span>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                {item.code && (
+                                    <>
+                                        <span className="text-[10px] bg-slate-900 text-slate-400 px-1.5 py-0.5 rounded font-mono border border-slate-800">CPV: {item.code}</span>
+                                        {item.productCode && <span className="text-xs text-slate-500">|</span>}
+                                    </>
+                                )}
+                                {item.productCode && (
+                                    <span className="text-[10px] bg-emerald-900/30 text-emerald-300 px-1.5 py-0.5 rounded font-mono border border-emerald-700/50">EAN: {item.productCode}</span>
+                                )}
                                 <span className="text-xs text-slate-500">|</span>
                                 <span className="text-xs text-slate-400">{item.measuringUnit}</span>
                             </div>

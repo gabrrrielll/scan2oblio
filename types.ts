@@ -14,7 +14,8 @@ export interface OblioTokenResponse {
 
 export interface OblioProduct {
   name: string;
-  code: string; // Barcode
+  code: string; // Cod CPV
+  productCode?: string; // Cod produs (EAN - 13 cifre)
   price: number;
   measuringUnit: string;
   vatPercentage: number;

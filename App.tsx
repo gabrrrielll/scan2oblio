@@ -117,7 +117,10 @@ const App: React.FC = () => {
   // Handlers
   const handleScan = useCallback((code: string) => {
     // 1. STRICT LOOKUP: Check if item exists in Inventory FIRST
-    const productInStock = inventory.find(p => p.code === code);
+    // Caută după codul de produs (EAN) sau codul CPV
+    const productInStock = inventory.find(p => 
+      p.productCode === code || p.code === code
+    );
 
     if (!productInStock) {
         if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
@@ -152,7 +155,7 @@ const App: React.FC = () => {
       const newItem: ProductItem = {
         id: Date.now().toString(),
         name: productInStock.name,
-        barcode: productInStock.code,
+        barcode: productInStock.productCode || productInStock.code, // Preferă codul de produs (EAN)
         quantity: 1,
         price: productInStock.price,
         vatPercentage: productInStock.vatPercentage,
@@ -194,10 +197,11 @@ const App: React.FC = () => {
     const query = prompt("Caută produs în stoc (Nume sau Cod):");
     if (!query) return;
     
-    // Check if query matches inventory (Code or Name)
+    // Check if query matches inventory (Code, ProductCode or Name)
     const lowerQuery = query.toLowerCase();
     const match = inventory.find(p => 
         p.code === query || 
+        p.productCode === query ||
         p.name.toLowerCase().includes(lowerQuery)
     );
     
@@ -221,7 +225,7 @@ const App: React.FC = () => {
              const newItem: ProductItem = {
                 id: Date.now().toString(),
                 name: match.name,
-                barcode: match.code,
+                barcode: match.productCode || match.code, // Preferă codul de produs (EAN)
                 quantity: 1,
                 price: match.price,
                 vatPercentage: match.vatPercentage,
