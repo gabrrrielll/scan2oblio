@@ -138,31 +138,51 @@ function getProducts($email, $apiSecret, $cif) {
     // Mapează produsele la formatul așteptat
     $products = [];
     foreach ($data['data'] as $p) {
+        // Extrage informații din stock array (primul element)
+        $stockData = null;
+        $totalStock = 0;
+        $price = 0;
+        $vatPercentage = 19;
+        $currency = 'RON';
+        
+        if (isset($p['stock']) && is_array($p['stock']) && !empty($p['stock'])) {
+            // Folosește primul element din stock array
+            $stockData = $p['stock'][0];
+            $totalStock = floatval($stockData['quantity'] ?? 0);
+            $price = floatval($stockData['price'] ?? 0);
+            $vatPercentage = floatval($stockData['vatPercentage'] ?? 19);
+            $currency = $stockData['currency'] ?? 'RON';
+            
+            // Sumă stocul din toate locațiile dacă există mai multe
+            foreach ($p['stock'] as $stockItem) {
+                $totalStock += floatval($stockItem['quantity'] ?? 0);
+            }
+        }
+        
         // Încearcă să găsească codul de produs (EAN) din diferite câmpuri posibile
-        // Verifică toate câmpurile posibile din răspunsul Oblio API
         $productCode = '';
         $code = '';
         
         // Verifică câmpurile comune pentru codul EAN/barcode
         $possibleEanFields = ['productCode', 'ean', 'eanCode', 'barcode', 'product_code', 'ean_code', 
-                             'catalogNumber', 'sku', 'barcodeCode', 'gtin', 'upc', 'productBarcode'];
+                             'catalogNumber', 'sku', 'barcodeCode', 'gtin', 'upc', 'productBarcode', 'id'];
         
         foreach ($possibleEanFields as $field) {
             if (isset($p[$field]) && !empty($p[$field]) && trim($p[$field]) !== '') {
-                $productCode = trim($p[$field]);
-                break;
+                $value = trim($p[$field]);
+                // Verifică dacă este un cod EAN valid (13 cifre) sau alt cod de produs
+                if (strlen($value) >= 8) { // EAN-uri sunt de obicei 8, 13 sau 14 cifre
+                    $productCode = $value;
+                    break;
+                }
             }
         }
         
         // Verifică câmpurile pentru codul CPV
-        $possibleCpvFields = ['code', 'cpv', 'cpvCode', 'productCode'];
+        $possibleCpvFields = ['code', 'cpv', 'cpvCode'];
         foreach ($possibleCpvFields as $field) {
             if (isset($p[$field]) && !empty($p[$field]) && trim($p[$field]) !== '') {
                 $code = trim($p[$field]);
-                // Dacă code este gol dar productCode nu este, folosește productCode pentru code
-                if (empty($code) && !empty($productCode)) {
-                    $code = $productCode;
-                }
                 break;
             }
         }
@@ -176,11 +196,11 @@ function getProducts($email, $apiSecret, $cif) {
             'name' => $p['name'] ?? 'Produs fără nume',
             'code' => $code, // Cod CPV sau cod de produs dacă CPV nu există
             'productCode' => $productCode, // Cod produs (EAN) - doar dacă este diferit de code
-            'price' => floatval($p['price'] ?? 0),
+            'price' => $price,
             'measuringUnit' => $p['measuringUnit'] ?? 'buc',
-            'vatPercentage' => floatval($p['vatPercentage'] ?? 19),
-            'currency' => $p['currency'] ?? 'RON',
-            'stock' => floatval($p['stock'] ?? $p['quantity'] ?? 0)
+            'vatPercentage' => $vatPercentage,
+            'currency' => $currency,
+            'stock' => $totalStock
         ];
     }
     
