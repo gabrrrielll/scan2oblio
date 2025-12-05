@@ -55,10 +55,15 @@ const Scanner: React.FC<ScannerProps> = ({ onScan, onClose }) => {
     constraints: {
         video: {
             facingMode: "environment",
-            width: { ideal: 1920 },
-            height: { ideal: 1080 }
+            width: { ideal: 1920, min: 1280 },
+            height: { ideal: 1080, min: 720 },
+            // Îmbunătățește calitatea pentru detectare mai precisă
+            focusMode: "continuous",
+            exposureMode: "continuous"
         }
-    }
+    },
+    // Adaugă delay pentru a permite scannerului să proceseze mai bine
+    timeBetweenDecodingAttempts: 300
   });
 
   return (
