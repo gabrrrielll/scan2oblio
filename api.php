@@ -143,17 +143,26 @@ function getProducts($email, $apiSecret, $cif) {
         $targetProductId = '93841541';
         $targetProductCode = '10000000000001';
         
-        // Caută în lista de produse
+        // Caută în lista de produse din răspunsul inițial
+        $foundInList = false;
         foreach ($data['data'] as $product) {
             if (isset($product['id']) && $product['id'] == $targetProductId) {
-                error_log("=== FOUND TARGET PRODUCT (ID: $targetProductId) ===");
+                error_log("=== FOUND TARGET PRODUCT IN INITIAL LIST (ID: $targetProductId) ===");
                 error_log("Target Product Keys: " . json_encode(array_keys($product)));
                 error_log("Target Product Full: " . json_encode($product));
+                error_log("Target Product 'code' field: " . (isset($product['code']) ? $product['code'] : 'NOT SET'));
+                $foundInList = true;
                 break;
             }
         }
         
+        if (!$foundInList) {
+            error_log("Target product ID $targetProductId NOT FOUND in initial list");
+            error_log("Available IDs in initial list: " . json_encode(array_column($data['data'], 'id')));
+        }
+        
         // Încearcă să obțină detalii complete pentru produsul specific folosind ID-ul
+        // Poate că există un endpoint diferit pentru un singur produs
         $detailUrl = OBLIO_BASE_URL . '/nomenclature/products/' . urlencode($targetProductId) . '?cif=' . urlencode($cif);
         
         error_log("=== FETCHING PRODUCT DETAILS ===");
