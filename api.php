@@ -104,11 +104,14 @@ function getProducts($email, $apiSecret, $cif)
 
     while ($hasMore) {
         // Construiește URL cu parametri de paginare
+        // Conform documentației Oblio API, parametrii pot fi în query string sau în filters
         $url = OBLIO_BASE_URL . '/nomenclature/products?cif=' . urlencode($cif) .
                '&limitPerPage=' . $limitPerPage .
                '&offset=' . $offset;
 
-        error_log("Fetching products: offset=$offset, limit=$limitPerPage");
+        error_log("=== PAGINATION REQUEST ===");
+        error_log("URL: " . $url);
+        error_log("Offset: $offset, Limit: $limitPerPage");
         error_log("Full URL: " . $url);
 
         // Încearcă să obțină detalii complete pentru fiecare produs folosind endpoint-ul individual
