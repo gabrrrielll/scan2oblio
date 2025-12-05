@@ -25,15 +25,31 @@ const Scanner: React.FC<ScannerProps> = ({ onScan, onClose }) => {
         const trimmed = scannedCode.trim();
         console.log("Trimmed code:", trimmed, "matches last:", trimmed === lastScannedCode);
         
-        // Validare: verifică dacă codul detectat este valid (EAN-13 are 13 cifre)
-        // Dar acceptă și alte formate (EAN-8, UPC, CODE-128, etc.)
+        // Validare: verifică dacă codul detectat este valid
+        // EAN-13 are exact 13 cifre, EAN-8 are 8 cifre, UPC-A are 12 cifre
         const isValidLength = trimmed.length >= 8 && trimmed.length <= 18;
         const isNumeric = /^\d+$/.test(trimmed);
         
-        console.log("Code validation - length valid:", isValidLength, "is numeric:", isNumeric);
+        // Verifică dacă este EAN-13 (13 cifre) sau alt format valid
+        const isEAN13 = trimmed.length === 13 && isNumeric;
+        const isEAN8 = trimmed.length === 8 && isNumeric;
+        const isUPCA = trimmed.length === 12 && isNumeric;
+        const isValidFormat = isEAN13 || isEAN8 || isUPCA || (isValidLength && isNumeric);
+        
+        console.log("Code validation:", {
+          code: trimmed,
+          length: trimmed.length,
+          isNumeric,
+          isEAN13,
+          isEAN8,
+          isUPCA,
+          isValidFormat,
+          format: format
+        });
         
         // Previne scanări duplicate consecutive
-        if (trimmed !== lastScannedCode && isValidLength) {
+        // Acceptă doar coduri valide și cu format corect
+        if (trimmed !== lastScannedCode && isValidFormat) {
           setLastScannedCode(trimmed);
           console.log("Calling onScan with:", trimmed);
           onScan(trimmed);
@@ -41,7 +57,7 @@ const Scanner: React.FC<ScannerProps> = ({ onScan, onClose }) => {
           if (trimmed === lastScannedCode) {
             console.log("Skipping duplicate scan");
           } else {
-            console.log("Skipping invalid code (length or format)");
+            console.log("Skipping invalid code - length:", trimmed.length, "isNumeric:", isNumeric, "format:", format);
           }
         }
       } else {
