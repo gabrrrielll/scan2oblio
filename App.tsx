@@ -137,7 +137,12 @@ const App: React.FC = () => {
     const isStockZero = productInStock.stock <= 0;
     
     // 3. Check if already in cart
-    const existingIndex = items.findIndex(i => i.barcode === code);
+    // Caută în coș după codul scanat (poate fi EAN sau CPV)
+    const existingIndex = items.findIndex(i => {
+      return i.barcode === code || 
+             (productInStock.productCode && i.barcode === productInStock.productCode) ||
+             (productInStock.code && i.barcode === productInStock.code);
+    });
     
     if (existingIndex >= 0) {
       setItems(prev => {
@@ -215,7 +220,9 @@ const App: React.FC = () => {
         const isStockZero = match.stock <= 0;
         
         // Check if already in cart to update qty or add new
-        const existingIndex = items.findIndex(i => i.barcode === match.code);
+        // Folosește productCode (EAN) sau code pentru căutare în coș
+        const matchBarcode = match.productCode || match.code;
+        const existingIndex = items.findIndex(i => i.barcode === matchBarcode || i.barcode === match.code || i.barcode === match.productCode);
         if (existingIndex >= 0) {
              setItems(prev => {
                 const newItems = [...prev];
