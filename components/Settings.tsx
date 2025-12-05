@@ -8,12 +8,29 @@ interface SettingsProps {
   onClose: () => void;
 }
 
+const SAVED_DATA: OblioConfig = {
+  email: 'VALLLLMIH@GMAIL.COM',
+  apiSecret: '2d0b545eb566a056355fc3bb2fbb1817a3daaeee',
+  cif: '28360867',
+  seriesName: 'CFB'
+};
+
 const Settings: React.FC<SettingsProps> = ({ config, onSave, onClose }) => {
+  const [useSavedData, setUseSavedData] = useState(false);
   const [formData, setFormData] = useState<OblioConfig>(config);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleToggleSavedData = (checked: boolean) => {
+    setUseSavedData(checked);
+    if (checked) {
+      setFormData(SAVED_DATA);
+    } else {
+      setFormData(config);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -34,6 +51,30 @@ const Settings: React.FC<SettingsProps> = ({ config, onSave, onClose }) => {
         <p>Introduceți datele din contul dvs. Oblio (Setări {'>'} API) pentru a permite trimiterea facturilor.</p>
       </div>
 
+      <div className="mb-4 p-3 bg-slate-900 border border-slate-700 rounded-lg">
+        <label className="flex items-center justify-between cursor-pointer">
+          <span className="text-sm font-medium text-slate-300">Folosește date salvate</span>
+          <div className="relative">
+            <input
+              type="checkbox"
+              checked={useSavedData}
+              onChange={(e) => handleToggleSavedData(e.target.checked)}
+              className="sr-only"
+            />
+            <div className={`w-11 h-6 rounded-full transition-colors duration-200 ${
+              useSavedData ? 'bg-emerald-600' : 'bg-slate-600'
+            }`}>
+              <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-200 ${
+                useSavedData ? 'translate-x-5' : 'translate-x-0.5'
+              } mt-0.5`}></div>
+            </div>
+          </div>
+        </label>
+        {useSavedData && (
+          <p className="text-xs text-slate-400 mt-2">Se vor folosi datele salvate pentru conectare.</p>
+        )}
+      </div>
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">Email Cont Oblio</label>
@@ -44,6 +85,7 @@ const Settings: React.FC<SettingsProps> = ({ config, onSave, onClose }) => {
             onChange={handleChange}
             className="w-full bg-slate-900 border border-slate-700 text-white rounded p-3 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
             placeholder="email@companie.ro"
+            disabled={useSavedData}
             required
           />
         </div>
@@ -57,6 +99,7 @@ const Settings: React.FC<SettingsProps> = ({ config, onSave, onClose }) => {
             onChange={handleChange}
             className="w-full bg-slate-900 border border-slate-700 text-white rounded p-3 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
             placeholder="Token-ul API din Oblio"
+            disabled={useSavedData}
             required
           />
         </div>
@@ -71,6 +114,7 @@ const Settings: React.FC<SettingsProps> = ({ config, onSave, onClose }) => {
                 onChange={handleChange}
                 className="w-full bg-slate-900 border border-slate-700 text-white rounded p-3 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 placeholder="RO123456"
+                disabled={useSavedData}
                 required
             />
             </div>
@@ -83,6 +127,7 @@ const Settings: React.FC<SettingsProps> = ({ config, onSave, onClose }) => {
                 onChange={handleChange}
                 className="w-full bg-slate-900 border border-slate-700 text-white rounded p-3 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 placeholder="Ex: XYZ"
+                disabled={useSavedData}
             />
             </div>
         </div>

@@ -273,7 +273,7 @@ try {
             }
             
             $result = createInvoice($email, $apiSecret, $cif, $seriesName, $products);
-            echo json_encode(['success' => true, ...$result]);
+            echo json_encode(array_merge(['success' => true], $result));
             break;
             
         default:
