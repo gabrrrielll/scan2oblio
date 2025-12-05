@@ -128,39 +128,54 @@ function getProducts($email, $apiSecret, $cif) {
         return [];
     }
     
-    // Debug: log primul produs pentru a vedea structura (temporar)
+    // Debug: log primul produs RAW din Oblio API pentru a vedea toate câmpurile disponibile
     if (!empty($data['data'])) {
-        error_log("Oblio API Response Sample: " . json_encode(array_keys($data['data'][0])));
-        error_log("Oblio API First Product: " . json_encode($data['data'][0]));
+        $firstProductRaw = $data['data'][0];
+        error_log("Oblio API RAW First Product Keys: " . json_encode(array_keys($firstProductRaw)));
+        error_log("Oblio API RAW First Product Full: " . json_encode($firstProductRaw));
     }
     
     // Mapează produsele la formatul așteptat
     $products = [];
     foreach ($data['data'] as $p) {
         // Încearcă să găsească codul de produs (EAN) din diferite câmpuri posibile
+        // Verifică toate câmpurile posibile din răspunsul Oblio API
         $productCode = '';
-        if (isset($p['productCode']) && !empty($p['productCode'])) {
-            $productCode = $p['productCode'];
-        } elseif (isset($p['ean']) && !empty($p['ean'])) {
-            $productCode = $p['ean'];
-        } elseif (isset($p['eanCode']) && !empty($p['eanCode'])) {
-            $productCode = $p['eanCode'];
-        } elseif (isset($p['barcode']) && !empty($p['barcode'])) {
-            $productCode = $p['barcode'];
-        } elseif (isset($p['product_code']) && !empty($p['product_code'])) {
-            $productCode = $p['product_code'];
-        } elseif (isset($p['ean_code']) && !empty($p['ean_code'])) {
-            $productCode = $p['ean_code'];
-        } elseif (isset($p['catalogNumber']) && !empty($p['catalogNumber'])) {
-            $productCode = $p['catalogNumber'];
-        } elseif (isset($p['sku']) && !empty($p['sku'])) {
-            $productCode = $p['sku'];
+        $code = '';
+        
+        // Verifică câmpurile comune pentru codul EAN/barcode
+        $possibleEanFields = ['productCode', 'ean', 'eanCode', 'barcode', 'product_code', 'ean_code', 
+                             'catalogNumber', 'sku', 'barcodeCode', 'gtin', 'upc', 'productBarcode'];
+        
+        foreach ($possibleEanFields as $field) {
+            if (isset($p[$field]) && !empty($p[$field]) && trim($p[$field]) !== '') {
+                $productCode = trim($p[$field]);
+                break;
+            }
+        }
+        
+        // Verifică câmpurile pentru codul CPV
+        $possibleCpvFields = ['code', 'cpv', 'cpvCode', 'productCode'];
+        foreach ($possibleCpvFields as $field) {
+            if (isset($p[$field]) && !empty($p[$field]) && trim($p[$field]) !== '') {
+                $code = trim($p[$field]);
+                // Dacă code este gol dar productCode nu este, folosește productCode pentru code
+                if (empty($code) && !empty($productCode)) {
+                    $code = $productCode;
+                }
+                break;
+            }
+        }
+        
+        // Dacă nu am găsit codul CPV, dar avem productCode, folosește productCode pentru code
+        if (empty($code) && !empty($productCode)) {
+            $code = $productCode;
         }
         
         $products[] = [
             'name' => $p['name'] ?? 'Produs fără nume',
-            'code' => $p['code'] ?? '', // Cod CPV
-            'productCode' => $productCode, // Cod produs (EAN)
+            'code' => $code, // Cod CPV sau cod de produs dacă CPV nu există
+            'productCode' => $productCode, // Cod produs (EAN) - doar dacă este diferit de code
             'price' => floatval($p['price'] ?? 0),
             'measuringUnit' => $p['measuringUnit'] ?? 'buc',
             'vatPercentage' => floatval($p['vatPercentage'] ?? 19),
