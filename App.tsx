@@ -116,8 +116,37 @@ const App: React.FC = () => {
 
   // Handlers
   const handleScan = useCallback((code: string) => {
-    console.log("handleScan called with code:", code);
+    const trimmedCode = code.trim();
+    console.log("handleScan called with code:", code, "trimmed:", trimmedCode);
     console.log("Inventory length:", inventory.length);
+    
+    // Debug: log primul produs pentru a vedea structura
+    if (inventory.length > 0) {
+      const firstProduct = inventory[0];
+      console.log("First product sample:", {
+        name: firstProduct.name,
+        code: firstProduct.code,
+        productCode: firstProduct.productCode,
+        codeType: typeof firstProduct.code,
+        productCodeType: typeof firstProduct.productCode
+      });
+      
+      // Caută specific codul 10000000000001
+      if (trimmedCode === '10000000000001') {
+        console.log("Searching for code 10000000000001 in inventory...");
+        inventory.forEach((p, idx) => {
+          console.log(`Product ${idx}:`, {
+            name: p.name,
+            code: p.code,
+            productCode: p.productCode,
+            codeMatch: p.code === trimmedCode,
+            productCodeMatch: p.productCode === trimmedCode,
+            codeTrimMatch: p.code?.trim() === trimmedCode,
+            productCodeTrimMatch: p.productCode?.trim() === trimmedCode
+          });
+        });
+      }
+    }
     
     // 1. STRICT LOOKUP: Check if item exists in Inventory FIRST
     // Caută după codul de produs (EAN) sau codul CPV
@@ -125,8 +154,8 @@ const App: React.FC = () => {
     // code = CPV (dacă există)
     const productInStock = inventory.find(p => {
       // Caută după EAN (productCode) sau CPV (code)
-      const matchesEAN = p.productCode && p.productCode.trim() === code.trim();
-      const matchesCPV = p.code && p.code.trim() === code.trim() && p.code !== p.productCode;
+      const matchesEAN = p.productCode && p.productCode.trim() === trimmedCode;
+      const matchesCPV = p.code && p.code.trim() === trimmedCode && p.code !== p.productCode;
       return matchesEAN || matchesCPV;
     });
 
