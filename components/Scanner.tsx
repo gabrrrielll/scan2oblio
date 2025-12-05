@@ -25,13 +25,24 @@ const Scanner: React.FC<ScannerProps> = ({ onScan, onClose }) => {
         const trimmed = scannedCode.trim();
         console.log("Trimmed code:", trimmed, "matches last:", trimmed === lastScannedCode);
         
+        // Validare: verifică dacă codul detectat este valid (EAN-13 are 13 cifre)
+        // Dar acceptă și alte formate (EAN-8, UPC, CODE-128, etc.)
+        const isValidLength = trimmed.length >= 8 && trimmed.length <= 18;
+        const isNumeric = /^\d+$/.test(trimmed);
+        
+        console.log("Code validation - length valid:", isValidLength, "is numeric:", isNumeric);
+        
         // Previne scanări duplicate consecutive
-        if (trimmed !== lastScannedCode) {
+        if (trimmed !== lastScannedCode && isValidLength) {
           setLastScannedCode(trimmed);
           console.log("Calling onScan with:", trimmed);
           onScan(trimmed);
         } else {
-          console.log("Skipping duplicate scan");
+          if (trimmed === lastScannedCode) {
+            console.log("Skipping duplicate scan");
+          } else {
+            console.log("Skipping invalid code (length or format)");
+          }
         }
       } else {
         console.log("Empty or invalid code detected");
@@ -44,8 +55,8 @@ const Scanner: React.FC<ScannerProps> = ({ onScan, onClose }) => {
     constraints: {
         video: {
             facingMode: "environment",
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
         }
     }
   });
