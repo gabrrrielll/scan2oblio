@@ -109,6 +109,7 @@ function getProducts($email, $apiSecret, $cif)
                '&offset=' . $offset;
 
         error_log("Fetching products: offset=$offset, limit=$limitPerPage");
+        error_log("Full URL: " . $url);
 
         // Încearcă să obțină detalii complete pentru fiecare produs folosind endpoint-ul individual
         // Dacă endpoint-ul de listă nu returnează codul de produs
