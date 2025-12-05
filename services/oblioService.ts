@@ -43,6 +43,7 @@ export const getProductsFromOblio = async (config: OblioConfig): Promise<OblioPr
     if (json.data.length > 0) {
       console.log("First product from API:", json.data[0]);
       console.log("Product keys:", Object.keys(json.data[0]));
+      console.log("All products sample (first 3):", json.data.slice(0, 3));
     }
 
     // Datele vin deja mapate corect din PHP
