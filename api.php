@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Backend PHP pentru Scan2Oblio
  * Rezolvă problema CORS prin proxy pentru API-ul Oblio
@@ -25,11 +26,12 @@ $tokenCache = [];
 /**
  * Obține token de acces de la Oblio
  */
-function getAccessToken($email, $apiSecret) {
+function getAccessToken($email, $apiSecret)
+{
     global $tokenCache;
-    
+
     $cacheKey = md5($email . $apiSecret);
-    
+
     // Verifică cache-ul (în producție, folosiți un sistem persistent)
     if (isset($tokenCache[$cacheKey])) {
         $cached = $tokenCache[$cacheKey];
@@ -37,7 +39,7 @@ function getAccessToken($email, $apiSecret) {
             return $cached['token'];
         }
     }
-    
+
     $ch = curl_init(OBLIO_AUTH_URL);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
@@ -51,51 +53,52 @@ function getAccessToken($email, $apiSecret) {
             'Content-Type: application/x-www-form-urlencoded'
         ]
     ]);
-    
+
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $error = curl_error($ch);
     curl_close($ch);
-    
+
     if ($error) {
         throw new Exception("Eroare conexiune: " . $error);
     }
-    
+
     if ($httpCode !== 200) {
         if ($httpCode === 401) {
             throw new Exception("Autentificare eșuată. Verificați Email-ul și API Secret.");
         }
         throw new Exception("Eroare Autentificare: HTTP $httpCode");
     }
-    
+
     $data = json_decode($response, true);
-    
+
     if (!isset($data['access_token'])) {
         throw new Exception("Răspuns invalid de la Oblio API");
     }
-    
+
     // Salvează în cache (expiră cu 60s înainte de expirarea reală)
     $tokenCache[$cacheKey] = [
         'token' => $data['access_token'],
         'expires_at' => time() + $data['expires_in'] - 60
     ];
-    
+
     return $data['access_token'];
 }
 
 /**
  * Obține produsele din Oblio
  */
-function getProducts($email, $apiSecret, $cif) {
+function getProducts($email, $apiSecret, $cif)
+{
     $token = getAccessToken($email, $apiSecret);
-    
+
     // Endpoint pentru produse - poate că trebuie să folosim un alt endpoint pentru detalii complete
     // Sau să adăugăm parametri suplimentari pentru a obține codul de produs
     $url = OBLIO_BASE_URL . '/nomenclature/products?cif=' . urlencode($cif);
-    
+
     // Încearcă să obțină detalii complete pentru fiecare produs folosind endpoint-ul individual
     // Dacă endpoint-ul de listă nu returnează codul de produs
-    
+
     $ch = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
@@ -105,44 +108,44 @@ function getProducts($email, $apiSecret, $cif) {
             'Content-Type: application/json'
         ]
     ]);
-    
+
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $error = curl_error($ch);
     curl_close($ch);
-    
+
     if ($error) {
         throw new Exception("Eroare conexiune: " . $error);
     }
-    
+
     if ($httpCode === 401) {
         throw new Exception("Token expirat sau invalid. Reîncercați.");
     }
-    
+
     if ($httpCode === 404) {
         throw new Exception("Nu s-au găsit date (CIF incorect?).");
     }
-    
+
     if ($httpCode !== 200) {
         throw new Exception("Eroare API Oblio: HTTP $httpCode");
     }
-    
+
     $data = json_decode($response, true);
-    
+
     if (!isset($data['data']) || !is_array($data['data'])) {
         return [];
     }
-    
+
     // Debug: log primul produs RAW din Oblio API pentru a vedea toate câmpurile disponibile
     if (!empty($data['data'])) {
         $firstProductRaw = $data['data'][0];
         error_log("Oblio API RAW First Product Keys: " . json_encode(array_keys($firstProductRaw)));
         error_log("Oblio API RAW First Product Full: " . json_encode($firstProductRaw));
-        
+
         // Caută produsul specific cu ID 93841541 și codul 10000000000001
         $targetProductId = '93841541';
         $targetProductCode = '10000000000001';
-        
+
         // Caută în lista de produse din răspunsul inițial
         $foundInList = false;
         foreach ($data['data'] as $product) {
@@ -155,19 +158,19 @@ function getProducts($email, $apiSecret, $cif) {
                 break;
             }
         }
-        
+
         if (!$foundInList) {
             error_log("Target product ID $targetProductId NOT FOUND in initial list");
             error_log("Available IDs in initial list: " . json_encode(array_column($data['data'], 'id')));
         }
-        
+
         // Încearcă să obțină detalii complete pentru produsul specific folosind ID-ul
         // Poate că există un endpoint diferit pentru un singur produs
         $detailUrl = OBLIO_BASE_URL . '/nomenclature/products/' . urlencode($targetProductId) . '?cif=' . urlencode($cif);
-        
+
         error_log("=== FETCHING PRODUCT DETAILS ===");
         error_log("Detail URL: " . $detailUrl);
-        
+
         $chDetail = curl_init($detailUrl);
         curl_setopt_array($chDetail, [
             CURLOPT_RETURNTRANSFER => true,
@@ -177,23 +180,23 @@ function getProducts($email, $apiSecret, $cif) {
                 'Content-Type: application/json'
             ]
         ]);
-        
+
         $detailResponse = curl_exec($chDetail);
         $detailHttpCode = curl_getinfo($chDetail, CURLINFO_HTTP_CODE);
         $detailError = curl_error($chDetail);
         curl_close($chDetail);
-        
+
         error_log("Detail HTTP Code: " . $detailHttpCode);
         if ($detailError) {
             error_log("Detail CURL Error: " . $detailError);
         }
         error_log("Detail Response: " . $detailResponse);
-        
+
         if ($detailHttpCode === 200) {
             $detailData = json_decode($detailResponse, true);
             error_log("=== PRODUCT DETAIL RESPONSE ===");
             error_log("Product Detail Response Structure Keys: " . json_encode(array_keys($detailData)));
-            
+
             // Caută produsul specific cu ID 93841541 în array-ul de produse
             if (isset($detailData['data']) && is_array($detailData['data'])) {
                 $foundProduct = null;
@@ -203,12 +206,12 @@ function getProducts($email, $apiSecret, $cif) {
                         break;
                     }
                 }
-                
+
                 if ($foundProduct) {
                     error_log("=== FOUND TARGET PRODUCT IN DETAIL RESPONSE (ID: $targetProductId) ===");
                     error_log("Target Product Keys: " . json_encode(array_keys($foundProduct)));
                     error_log("Target Product Full: " . json_encode($foundProduct));
-                    
+
                     // Caută codul de produs în toate câmpurile posibile
                     $allFields = array_keys($foundProduct);
                     foreach ($allFields as $field) {
@@ -217,7 +220,7 @@ function getProducts($email, $apiSecret, $cif) {
                             error_log("Field '$field' has value: " . $value);
                         }
                     }
-                    
+
                     // Verifică câmpurile specifice
                     if (isset($foundProduct['productCode'])) {
                         error_log("Found productCode in detail: " . $foundProduct['productCode']);
@@ -246,7 +249,7 @@ function getProducts($email, $apiSecret, $cif) {
             error_log("Failed to fetch product details. HTTP Code: " . $detailHttpCode);
         }
     }
-    
+
     // Mapează produsele la formatul așteptat
     $products = [];
     foreach ($data['data'] as $p) {
@@ -256,14 +259,14 @@ function getProducts($email, $apiSecret, $cif) {
         $price = 0;
         $vatPercentage = 19;
         $currency = 'RON';
-        
+
         if (isset($p['stock']) && is_array($p['stock']) && !empty($p['stock'])) {
             // Folosește primul element din stock array pentru preț și TVA
             $stockData = $p['stock'][0];
             $price = floatval($stockData['price'] ?? 0);
             $vatPercentage = floatval($stockData['vatPercentage'] ?? 19);
             $currency = $stockData['currency'] ?? 'RON';
-            
+
             // Sumă stocul din toate locațiile (fără a dubla primul element)
             foreach ($p['stock'] as $stockItem) {
                 $totalStock += floatval($stockItem['quantity'] ?? 0);
@@ -281,17 +284,17 @@ function getProducts($email, $apiSecret, $cif) {
             $vatPercentage = floatval($p['vatPercentage'] ?? 19);
             $currency = $p['currency'] ?? 'RON';
         }
-        
+
         // Conform documentației API Oblio, câmpul 'code' este codul produsului (EAN)
         // CPV-ul ar putea fi în alt câmp sau nu există pentru toate produsele
         $productCode = ''; // Cod produs (EAN) - din câmpul 'code'
         $code = ''; // Cod CPV - dacă există
-        
+
         // Câmpul 'code' din API Oblio conține codul produsului (EAN)
         if (isset($p['code']) && !empty($p['code']) && trim($p['code']) !== '') {
             $productCode = trim($p['code']);
         }
-        
+
         // Verifică câmpurile pentru codul CPV (dacă există)
         $possibleCpvFields = ['cpv', 'cpvCode', 'cpvCode'];
         foreach ($possibleCpvFields as $field) {
@@ -300,12 +303,12 @@ function getProducts($email, $apiSecret, $cif) {
                 break;
             }
         }
-        
+
         // Dacă nu am găsit CPV, dar avem productCode, folosește productCode pentru code (compatibilitate)
         if (empty($code) && !empty($productCode)) {
             $code = $productCode;
         }
-        
+
         $products[] = [
             'name' => $p['name'] ?? 'Produs fără nume',
             'code' => $code, // Cod CPV (dacă există) sau cod produs pentru compatibilitate
@@ -317,18 +320,19 @@ function getProducts($email, $apiSecret, $cif) {
             'stock' => $totalStock
         ];
     }
-    
+
     return $products;
 }
 
 /**
  * Creează factură în Oblio
  */
-function createInvoice($email, $apiSecret, $cif, $seriesName, $products) {
+function createInvoice($email, $apiSecret, $cif, $seriesName, $products)
+{
     $token = getAccessToken($email, $apiSecret);
-    
+
     $url = OBLIO_BASE_URL . '/docs/invoice';
-    
+
     $payload = [
         'cif' => $cif,
         'client' => [
@@ -338,7 +342,7 @@ function createInvoice($email, $apiSecret, $cif, $seriesName, $products) {
         ],
         'issueDate' => date('Y-m-d'),
         'seriesName' => $seriesName ?: '',
-        'products' => array_map(function($p) {
+        'products' => array_map(function ($p) {
             return [
                 'name' => $p['name'],
                 'code' => $p['barcode'],
@@ -351,7 +355,7 @@ function createInvoice($email, $apiSecret, $cif, $seriesName, $products) {
             ];
         }, $products)
     ];
-    
+
     $ch = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
@@ -363,23 +367,23 @@ function createInvoice($email, $apiSecret, $cif, $seriesName, $products) {
             'Content-Type: application/json'
         ]
     ]);
-    
+
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $error = curl_error($ch);
     curl_close($ch);
-    
+
     if ($error) {
         throw new Exception("Eroare conexiune: " . $error);
     }
-    
+
     $data = json_decode($response, true);
-    
+
     if ($httpCode !== 200) {
         $message = $data['message'] ?? "Eroare $httpCode la generarea facturii.";
         throw new Exception($message);
     }
-    
+
     return [
         'status' => 200,
         'message' => 'Factura a fost emisă cu succes!',
@@ -390,72 +394,72 @@ function createInvoice($email, $apiSecret, $cif, $seriesName, $products) {
 // Procesează cererea
 try {
     $action = $_GET['action'] ?? $_POST['action'] ?? '';
-    
+
     if (empty($action)) {
         throw new Exception("Parametrul 'action' este obligatoriu");
     }
-    
+
     switch ($action) {
         case 'auth':
             // Obține token (folosit intern, nu expus direct)
             $email = $_POST['email'] ?? '';
             $apiSecret = $_POST['apiSecret'] ?? '';
-            
+
             if (empty($email) || empty($apiSecret)) {
                 throw new Exception("Email și API Secret sunt obligatorii");
             }
-            
+
             $token = getAccessToken($email, $apiSecret);
             echo json_encode(['success' => true, 'token' => $token]);
             break;
-            
+
         case 'products':
             $email = $_GET['email'] ?? $_POST['email'] ?? '';
             $apiSecret = $_GET['apiSecret'] ?? $_POST['apiSecret'] ?? '';
             $cif = $_GET['cif'] ?? $_POST['cif'] ?? '';
-            
+
             if (empty($email) || empty($apiSecret) || empty($cif)) {
                 throw new Exception("Email, API Secret și CIF sunt obligatorii");
             }
-            
+
             $products = getProducts($email, $apiSecret, $cif);
             echo json_encode(['success' => true, 'data' => $products]);
             break;
-            
+
         case 'invoice':
             $rawInput = file_get_contents('php://input');
             $input = json_decode($rawInput, true);
-            
+
             if (json_last_error() !== JSON_ERROR_NONE) {
                 throw new Exception("Date JSON invalide: " . json_last_error_msg());
             }
-            
+
             if (!$input || !is_array($input)) {
                 throw new Exception("Date invalide sau format incorect");
             }
-            
+
             $email = $input['email'] ?? '';
             $apiSecret = $input['apiSecret'] ?? '';
             $cif = $input['cif'] ?? '';
             $seriesName = $input['seriesName'] ?? '';
             $products = $input['products'] ?? [];
-            
+
             if (empty($email) || empty($apiSecret) || empty($cif)) {
                 throw new Exception("Email, API Secret și CIF sunt obligatorii");
             }
-            
+
             if (empty($products)) {
                 throw new Exception("Lista de produse este goală");
             }
-            
+
             $result = createInvoice($email, $apiSecret, $cif, $seriesName, $products);
             echo json_encode(array_merge(['success' => true], $result));
             break;
-            
+
         default:
             throw new Exception("Acțiune necunoscută: $action");
     }
-    
+
 } catch (Exception $e) {
     http_response_code(400);
     echo json_encode([
@@ -463,4 +467,3 @@ try {
         'error' => $e->getMessage()
     ]);
 }
-
