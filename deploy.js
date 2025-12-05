@@ -133,15 +133,23 @@ log('📝 Committing production files...', colors.cyan);
 try {
   // Add production files (index.html, assets/, api.php, .htaccess)
   // Exclude source files from this commit
-  exec('git add index.html assets/ api.php .htaccess 2>/dev/null || git add index.html assets/ api.php');
-
-  const status = execSync('git status --porcelain', { encoding: 'utf8' });
+  try {
+    exec('git add index.html assets/ api.php .htaccess', { stdio: 'pipe' });
+  } catch {
+    try {
+      exec('git add index.html assets/ api.php', { stdio: 'pipe' });
+    } catch {
+      // Ignore if files don't exist
+    }
+  }
+  
+  const status = execSync('git status --porcelain', { encoding: 'utf8', stdio: 'pipe' });
   if (status.trim()) {
     const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
     exec(`git commit -m "Deploy: Update production files ${timestamp}"`);
     log('✅ Changes committed', colors.green);
   } else {
-    log('⚠️  No changes to commit', colors.yellow);
+    log('⚠️  No changes to commit (files are up to date)', colors.yellow);
   }
 } catch (error) {
   // No changes or not a git repo
