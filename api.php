@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 // Configurare API Oblio
 define('OBLIO_AUTH_URL', 'https://www.oblio.eu/api/authorize/token');
-define('OBLIO_BASE_URL', 'https://www.oblio.eu/api/v1');
+define('OBLIO_BASE_URL', 'https://www.oblio.eu/api');
 
 // Cache pentru token-uri (în producție, folosiți Redis sau alt sistem de cache)
 $tokenCache = [];
@@ -89,7 +89,7 @@ function getAccessToken($email, $apiSecret) {
 function getProducts($email, $apiSecret, $cif) {
     $token = getAccessToken($email, $apiSecret);
     
-    $url = OBLIO_BASE_URL . '/nomenclatures/products?cif=' . urlencode($cif);
+    $url = OBLIO_BASE_URL . '/nomenclature/products?cif=' . urlencode($cif);
     
     $ch = curl_init($url);
     curl_setopt_array($ch, [
