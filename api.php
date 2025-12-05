@@ -86,15 +86,29 @@ function getAccessToken($email, $apiSecret)
 }
 
 /**
- * Obține produsele din Oblio
+ * Obține produsele din Oblio cu paginare pentru a obține TOATE produsele
  */
 function getProducts($email, $apiSecret, $cif)
 {
     $token = getAccessToken($email, $apiSecret);
 
-    // Endpoint pentru produse - poate că trebuie să folosim un alt endpoint pentru detalii complete
-    // Sau să adăugăm parametri suplimentari pentru a obține codul de produs
-    $url = OBLIO_BASE_URL . '/nomenclature/products?cif=' . urlencode($cif);
+    // Conform documentației Oblio API, folosim paginare pentru a obține toate produsele
+    // limitPerPage: maxim 250 (conform documentației)
+    // offset: pentru paginare
+    $allProducts = [];
+    $limitPerPage = 250; // Maxim permis de API
+    $offset = 0;
+    $hasMore = true;
+    
+    error_log("=== FETCHING ALL PRODUCTS WITH PAGINATION ===");
+    
+    while ($hasMore) {
+        // Construiește URL cu parametri de paginare
+        $url = OBLIO_BASE_URL . '/nomenclature/products?cif=' . urlencode($cif) . 
+               '&limitPerPage=' . $limitPerPage . 
+               '&offset=' . $offset;
+        
+        error_log("Fetching products: offset=$offset, limit=$limitPerPage");
 
     // Încearcă să obțină detalii complete pentru fiecare produs folosind endpoint-ul individual
     // Dacă endpoint-ul de listă nu returnează codul de produs
@@ -130,9 +144,33 @@ function getProducts($email, $apiSecret, $cif)
         throw new Exception("Eroare API Oblio: HTTP $httpCode");
     }
 
-    $data = json_decode($response, true);
+        $data = json_decode($response, true);
 
-    if (!isset($data['data']) || !is_array($data['data'])) {
+        if (!isset($data['data']) || !is_array($data['data'])) {
+            $hasMore = false;
+            break;
+        }
+        
+        $pageProducts = $data['data'];
+        $allProducts = array_merge($allProducts, $pageProducts);
+        
+        error_log("Fetched " . count($pageProducts) . " products (total so far: " . count($allProducts) . ")");
+        
+        // Verifică dacă mai sunt produse de obținut
+        // Dacă am primit mai puțin decât limitPerPage, înseamnă că am ajuns la final
+        if (count($pageProducts) < $limitPerPage) {
+            $hasMore = false;
+        } else {
+            $offset += $limitPerPage;
+        }
+    }
+    
+    error_log("=== TOTAL PRODUCTS FETCHED: " . count($allProducts) . " ===");
+    
+    // Folosește toate produsele obținute
+    $data = ['data' => $allProducts];
+    
+    if (empty($data['data'])) {
         return [];
     }
 
