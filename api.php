@@ -133,7 +133,8 @@ function getProducts($email, $apiSecret, $cif) {
     foreach ($data['data'] as $p) {
         $products[] = [
             'name' => $p['name'] ?? 'Produs fără nume',
-            'code' => $p['code'] ?? '',
+            'code' => $p['code'] ?? '', // Cod CPV
+            'productCode' => $p['productCode'] ?? $p['ean'] ?? $p['barcode'] ?? '', // Cod produs (EAN)
             'price' => floatval($p['price'] ?? 0),
             'measuringUnit' => $p['measuringUnit'] ?? 'buc',
             'vatPercentage' => floatval($p['vatPercentage'] ?? 19),
