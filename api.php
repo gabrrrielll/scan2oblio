@@ -250,7 +250,7 @@ function getProducts($email, $apiSecret, $cif) {
     // Mapează produsele la formatul așteptat
     $products = [];
     foreach ($data['data'] as $p) {
-        // Extrage informații din stock array (primul element)
+        // Extrage informații din stock array
         $stockData = null;
         $totalStock = 0;
         $price = 0;
@@ -258,17 +258,28 @@ function getProducts($email, $apiSecret, $cif) {
         $currency = 'RON';
         
         if (isset($p['stock']) && is_array($p['stock']) && !empty($p['stock'])) {
-            // Folosește primul element din stock array
+            // Folosește primul element din stock array pentru preț și TVA
             $stockData = $p['stock'][0];
-            $totalStock = floatval($stockData['quantity'] ?? 0);
             $price = floatval($stockData['price'] ?? 0);
             $vatPercentage = floatval($stockData['vatPercentage'] ?? 19);
             $currency = $stockData['currency'] ?? 'RON';
             
-            // Sumă stocul din toate locațiile dacă există mai multe
+            // Sumă stocul din toate locațiile (fără a dubla primul element)
             foreach ($p['stock'] as $stockItem) {
                 $totalStock += floatval($stockItem['quantity'] ?? 0);
             }
+        } elseif (isset($p['quantity'])) {
+            // Fallback: dacă nu există array stock, folosește câmpul quantity direct
+            $totalStock = floatval($p['quantity'] ?? 0);
+            $price = floatval($p['price'] ?? 0);
+            $vatPercentage = floatval($p['vatPercentage'] ?? 19);
+            $currency = $p['currency'] ?? 'RON';
+        } elseif (isset($p['stock']) && is_numeric($p['stock'])) {
+            // Fallback: dacă stock este un număr direct, nu un array
+            $totalStock = floatval($p['stock']);
+            $price = floatval($p['price'] ?? 0);
+            $vatPercentage = floatval($p['vatPercentage'] ?? 19);
+            $currency = $p['currency'] ?? 'RON';
         }
         
         // Conform documentației API Oblio, câmpul 'code' este codul produsului (EAN)
