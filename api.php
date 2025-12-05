@@ -99,50 +99,50 @@ function getProducts($email, $apiSecret, $cif)
     $limitPerPage = 250; // Maxim permis de API
     $offset = 0;
     $hasMore = true;
-    
+
     error_log("=== FETCHING ALL PRODUCTS WITH PAGINATION ===");
-    
+
     while ($hasMore) {
         // Construiește URL cu parametri de paginare
-        $url = OBLIO_BASE_URL . '/nomenclature/products?cif=' . urlencode($cif) . 
-               '&limitPerPage=' . $limitPerPage . 
+        $url = OBLIO_BASE_URL . '/nomenclature/products?cif=' . urlencode($cif) .
+               '&limitPerPage=' . $limitPerPage .
                '&offset=' . $offset;
-        
+
         error_log("Fetching products: offset=$offset, limit=$limitPerPage");
 
-    // Încearcă să obțină detalii complete pentru fiecare produs folosind endpoint-ul individual
-    // Dacă endpoint-ul de listă nu returnează codul de produs
+        // Încearcă să obțină detalii complete pentru fiecare produs folosind endpoint-ul individual
+        // Dacă endpoint-ul de listă nu returnează codul de produs
 
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => [
-            'Authorization: Bearer ' . $token,
-            'X-Oblio-Email: ' . $email,
-            'Content-Type: application/json'
-        ]
-    ]);
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => [
+                'Authorization: Bearer ' . $token,
+                'X-Oblio-Email: ' . $email,
+                'Content-Type: application/json'
+            ]
+        ]);
 
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $error = curl_error($ch);
-    curl_close($ch);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
 
-    if ($error) {
-        throw new Exception("Eroare conexiune: " . $error);
-    }
+        if ($error) {
+            throw new Exception("Eroare conexiune: " . $error);
+        }
 
-    if ($httpCode === 401) {
-        throw new Exception("Token expirat sau invalid. Reîncercați.");
-    }
+        if ($httpCode === 401) {
+            throw new Exception("Token expirat sau invalid. Reîncercați.");
+        }
 
-    if ($httpCode === 404) {
-        throw new Exception("Nu s-au găsit date (CIF incorect?).");
-    }
+        if ($httpCode === 404) {
+            throw new Exception("Nu s-au găsit date (CIF incorect?).");
+        }
 
-    if ($httpCode !== 200) {
-        throw new Exception("Eroare API Oblio: HTTP $httpCode");
-    }
+        if ($httpCode !== 200) {
+            throw new Exception("Eroare API Oblio: HTTP $httpCode");
+        }
 
         $data = json_decode($response, true);
 
@@ -150,12 +150,12 @@ function getProducts($email, $apiSecret, $cif)
             $hasMore = false;
             break;
         }
-        
+
         $pageProducts = $data['data'];
         $allProducts = array_merge($allProducts, $pageProducts);
-        
+
         error_log("Fetched " . count($pageProducts) . " products (total so far: " . count($allProducts) . ")");
-        
+
         // Verifică dacă mai sunt produse de obținut
         // Dacă am primit mai puțin decât limitPerPage, înseamnă că am ajuns la final
         if (count($pageProducts) < $limitPerPage) {
@@ -164,12 +164,12 @@ function getProducts($email, $apiSecret, $cif)
             $offset += $limitPerPage;
         }
     }
-    
+
     error_log("=== TOTAL PRODUCTS FETCHED: " . count($allProducts) . " ===");
-    
+
     // Folosește toate produsele obținute
     $data = ['data' => $allProducts];
-    
+
     if (empty($data['data'])) {
         return [];
     }
