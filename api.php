@@ -89,7 +89,12 @@ function getAccessToken($email, $apiSecret) {
 function getProducts($email, $apiSecret, $cif) {
     $token = getAccessToken($email, $apiSecret);
     
+    // Endpoint pentru produse - poate că trebuie să folosim un alt endpoint pentru detalii complete
+    // Sau să adăugăm parametri suplimentari pentru a obține codul de produs
     $url = OBLIO_BASE_URL . '/nomenclature/products?cif=' . urlencode($cif);
+    
+    // Încearcă să obțină detalii complete pentru fiecare produs folosind endpoint-ul individual
+    // Dacă endpoint-ul de listă nu returnează codul de produs
     
     $ch = curl_init($url);
     curl_setopt_array($ch, [
@@ -133,6 +138,32 @@ function getProducts($email, $apiSecret, $cif) {
         $firstProductRaw = $data['data'][0];
         error_log("Oblio API RAW First Product Keys: " . json_encode(array_keys($firstProductRaw)));
         error_log("Oblio API RAW First Product Full: " . json_encode($firstProductRaw));
+        
+        // Încearcă să obțină detalii complete pentru primul produs folosind ID-ul
+        if (isset($firstProductRaw['id'])) {
+            $productId = $firstProductRaw['id'];
+            $detailUrl = OBLIO_BASE_URL . '/nomenclature/products/' . urlencode($productId) . '?cif=' . urlencode($cif);
+            
+            $chDetail = curl_init($detailUrl);
+            curl_setopt_array($chDetail, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HTTPHEADER => [
+                    'Authorization: Bearer ' . $token,
+                    'X-Oblio-Email: ' . $email,
+                    'Content-Type: application/json'
+                ]
+            ]);
+            
+            $detailResponse = curl_exec($chDetail);
+            $detailHttpCode = curl_getinfo($chDetail, CURLINFO_HTTP_CODE);
+            curl_close($chDetail);
+            
+            if ($detailHttpCode === 200) {
+                $detailData = json_decode($detailResponse, true);
+                error_log("Oblio API Product Detail Keys: " . json_encode(array_keys($detailData)));
+                error_log("Oblio API Product Detail Full: " . json_encode($detailData));
+            }
+        }
     }
     
     // Mapează produsele la formatul așteptat
