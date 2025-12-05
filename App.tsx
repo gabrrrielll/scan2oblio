@@ -118,9 +118,14 @@ const App: React.FC = () => {
   const handleScan = useCallback((code: string) => {
     // 1. STRICT LOOKUP: Check if item exists in Inventory FIRST
     // Caută după codul de produs (EAN) sau codul CPV
-    const productInStock = inventory.find(p => 
-      p.productCode === code || p.code === code
-    );
+    // productCode = EAN (din câmpul 'code' al API-ului)
+    // code = CPV (dacă există)
+    const productInStock = inventory.find(p => {
+      // Caută după EAN (productCode) sau CPV (code)
+      const matchesEAN = p.productCode && p.productCode.trim() === code.trim();
+      const matchesCPV = p.code && p.code.trim() === code.trim() && p.code !== p.productCode;
+      return matchesEAN || matchesCPV;
+    });
 
     if (!productInStock) {
         if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
@@ -199,11 +204,12 @@ const App: React.FC = () => {
     
     // Check if query matches inventory (Code, ProductCode or Name)
     const lowerQuery = query.toLowerCase();
-    const match = inventory.find(p => 
-        p.code === query || 
-        p.productCode === query ||
-        p.name.toLowerCase().includes(lowerQuery)
-    );
+    const match = inventory.find(p => {
+        const matchesEAN = p.productCode && p.productCode.trim() === query.trim();
+        const matchesCPV = p.code && p.code.trim() === query.trim() && p.code !== p.productCode;
+        const matchesName = p.name.toLowerCase().includes(lowerQuery);
+        return matchesEAN || matchesCPV || matchesName;
+    });
     
     if (match) {
         const isStockZero = match.stock <= 0;
