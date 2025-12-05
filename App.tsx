@@ -116,6 +116,9 @@ const App: React.FC = () => {
 
   // Handlers
   const handleScan = useCallback((code: string) => {
+    console.log("handleScan called with code:", code);
+    console.log("Inventory length:", inventory.length);
+    
     // 1. STRICT LOOKUP: Check if item exists in Inventory FIRST
     // Caută după codul de produs (EAN) sau codul CPV
     // productCode = EAN (din câmpul 'code' al API-ului)
@@ -126,6 +129,8 @@ const App: React.FC = () => {
       const matchesCPV = p.code && p.code.trim() === code.trim() && p.code !== p.productCode;
       return matchesEAN || matchesCPV;
     });
+
+    console.log("Product found:", productInStock ? productInStock.name : "NOT FOUND");
 
     if (!productInStock) {
         if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
@@ -185,6 +190,7 @@ const App: React.FC = () => {
   }, [items, inventory]);
 
   const handleTestScan = (code: string) => {
+      console.log("handleTestScan called with code:", code);
       if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
       setIsTestScanning(false);
       setTestResult(code);

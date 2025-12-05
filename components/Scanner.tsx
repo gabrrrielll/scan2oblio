@@ -14,10 +14,15 @@ const Scanner: React.FC<ScannerProps> = ({ onScan, onClose }) => {
   // Zxing hook for barcode scanning
   const { ref } = useZxing({
     onDecodeResult(result) {
-      onScan(result.getText());
+      const scannedCode = result.getText();
+      console.log("Scanner detected code:", scannedCode);
+      if (scannedCode && scannedCode.trim()) {
+        onScan(scannedCode.trim());
+      }
     },
     onError(err) {
-      // Ignore routine scan errors, only log critical ones if needed
+      console.error("Scanner error:", err);
+      setError(err.message || "Eroare la scanare");
     },
     constraints: {
         video: {
