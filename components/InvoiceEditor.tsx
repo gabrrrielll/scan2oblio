@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, User, Calendar, FileText, Package, AlertCircle, Loader2 } from 'lucide-react';
-import { OblioConfig, OblioClient, ProductItem, InvoiceFormData } from '../types';
+import { OblioConfig, OblioClient, ProductItem, InvoiceFormData, Person } from '../types';
 import { getClientsFromOblio, createInvoiceInOblio } from '../services/oblioService';
+import PersonSelector from './PersonSelector';
 
 interface InvoiceEditorProps {
     config: OblioConfig;
@@ -15,6 +16,11 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ config, initialProducts, 
     const [clients, setClients] = useState<OblioClient[]>([]);
     const [isLoadingClients, setIsLoadingClients] = useState(false);
     const [clientSearchTerm, setClientSearchTerm] = useState('');
+
+    // State pentru persoane
+    const [selectedIssuer, setSelectedIssuer] = useState<Person | null>(null);
+    const [selectedDeputy, setSelectedDeputy] = useState<Person | null>(null);
+    const [selectedSalesAgent, setSelectedSalesAgent] = useState<Person | null>(null);
 
     // State pentru formular
     const [formData, setFormData] = useState<InvoiceFormData>({
@@ -338,65 +344,68 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ config, initialProducts, 
                         </div>
                     </div>
 
-                    {/* Additional Fields */}
+                    {/* Additional Fields - Person Selectors */}
                     <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-400 mb-1">Nume Emitent</label>
-                            <input
-                                type="text"
-                                value={formData.issuerName}
-                                onChange={(e) => setFormData(prev => ({ ...prev, issuerName: e.target.value }))}
-                                className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 outline-none"
+                        {/* Issuer */}
+                        <div className="md:col-span-2">
+                            <PersonSelector
+                                type="issuer"
+                                label="Emitent"
+                                value={selectedIssuer}
+                                onChange={(person) => {
+                                    setSelectedIssuer(person);
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        issuerName: person?.name || '',
+                                        issuerId: person?.cnp || ''
+                                    }));
+                                }}
+                                onFieldsChange={(fields) => {
+                                    setFormData(prev => ({ ...prev, ...fields }));
+                                }}
+                                placeholder="Selectează emitent sau adaugă nou..."
                             />
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-slate-400 mb-1">CNP Emitent</label>
-                            <input
-                                type="text"
-                                value={formData.issuerId}
-                                onChange={(e) => setFormData(prev => ({ ...prev, issuerId: e.target.value }))}
-                                className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 outline-none"
+                        {/* Deputy */}
+                        <div className="md:col-span-2">
+                            <PersonSelector
+                                type="deputy"
+                                label="Delegat"
+                                value={selectedDeputy}
+                                onChange={(person) => {
+                                    setSelectedDeputy(person);
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        deputyName: person?.name || '',
+                                        deputyIdentityCard: person?.identityCard || '',
+                                        deputyAuto: person?.auto || ''
+                                    }));
+                                }}
+                                onFieldsChange={(fields) => {
+                                    setFormData(prev => ({ ...prev, ...fields }));
+                                }}
+                                placeholder="Selectează delegat sau adaugă nou..."
                             />
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-slate-400 mb-1">Delegat</label>
-                            <input
-                                type="text"
-                                value={formData.deputyName}
-                                onChange={(e) => setFormData(prev => ({ ...prev, deputyName: e.target.value }))}
-                                className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 outline-none"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-slate-400 mb-1">CI Delegat</label>
-                            <input
-                                type="text"
-                                value={formData.deputyIdentityCard}
-                                onChange={(e) => setFormData(prev => ({ ...prev, deputyIdentityCard: e.target.value }))}
-                                className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 outline-none"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-slate-400 mb-1">Auto Delegat</label>
-                            <input
-                                type="text"
-                                value={formData.deputyAuto}
-                                onChange={(e) => setFormData(prev => ({ ...prev, deputyAuto: e.target.value }))}
-                                className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 outline-none"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-slate-400 mb-1">Agent Vânzări</label>
-                            <input
-                                type="text"
-                                value={formData.salesAgent}
-                                onChange={(e) => setFormData(prev => ({ ...prev, salesAgent: e.target.value }))}
-                                className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 outline-none"
+                        {/* Sales Agent */}
+                        <div className="md:col-span-2">
+                            <PersonSelector
+                                type="salesAgent"
+                                label="Agent Vânzări"
+                                value={selectedSalesAgent}
+                                onChange={(person) => {
+                                    setSelectedSalesAgent(person);
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        salesAgent: person?.name || ''
+                                    }));
+                                }}
+                                onFieldsChange={(fields) => {
+                                    setFormData(prev => ({ ...prev, ...fields }));
+                                }}
+                                placeholder="Selectează agent vânzări sau adaugă nou..."
                             />
                         </div>
                     </div>

@@ -95,3 +95,20 @@ export interface ScanResult {
   rawValue: string;
   format: string;
 }
+
+export interface Person {
+  id: string;
+  name: string;
+  type: 'issuer' | 'deputy' | 'salesAgent';
+  // Câmpuri specifice
+  cnp?: string;          // Pentru emitent
+  identityCard?: string; // Pentru delegat
+  auto?: string;         // Pentru delegat (mașina)
+  lastUsed?: string;     // Pentru sortare
+}
+
+export interface StoredPersons {
+  issuers: Person[];
+  deputies: Person[];
+  salesAgents: Person[];
+}
