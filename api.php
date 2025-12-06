@@ -394,6 +394,7 @@ function createInvoice($email, $apiSecret, $cif, $seriesName, $products, $workSt
                 'quantity' => $p['quantity'],
                 'price' => $p['price'],
                 'vatPercentage' => $p['vatPercentage'],
+                'management' => 'DEPOZIT', // Management/Gestiune pentru produs
                 'saveProduct' => false
             ];
         }, $products)
