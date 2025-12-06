@@ -12,7 +12,8 @@ const SAVED_DATA: OblioConfig = {
   email: 'VALLLLMIH@GMAIL.COM',
   apiSecret: '2d0b545eb566a056355fc3bb2fbb1817a3daaeee',
   cif: '28360867',
-  seriesName: 'CFB'
+  seriesName: 'CFB',
+  workStation: 'Sediu'
 };
 
 const Settings: React.FC<SettingsProps> = ({ config, onSave, onClose }) => {
@@ -61,12 +62,10 @@ const Settings: React.FC<SettingsProps> = ({ config, onSave, onClose }) => {
               onChange={(e) => handleToggleSavedData(e.target.checked)}
               className="sr-only"
             />
-            <div className={`w-11 h-6 rounded-full transition-colors duration-200 ${
-              useSavedData ? 'bg-emerald-600' : 'bg-slate-600'
-            }`}>
-              <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-200 ${
-                useSavedData ? 'translate-x-5' : 'translate-x-0.5'
-              } mt-0.5`}></div>
+            <div className={`w-11 h-6 rounded-full transition-colors duration-200 ${useSavedData ? 'bg-emerald-600' : 'bg-slate-600'
+              }`}>
+              <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-200 ${useSavedData ? 'translate-x-5' : 'translate-x-0.5'
+                } mt-0.5`}></div>
             </div>
           </div>
         </label>
@@ -105,48 +104,62 @@ const Settings: React.FC<SettingsProps> = ({ config, onSave, onClose }) => {
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-            <div>
+          <div>
             <label className="block text-sm font-medium text-slate-400 mb-1">CIF Companie</label>
             <input
-                type="text"
-                name="cif"
-                value={formData.cif}
-                onChange={handleChange}
-                className="w-full bg-slate-900 border border-slate-700 text-white rounded p-3 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                placeholder="RO123456"
-                disabled={useSavedData}
-                required
+              type="text"
+              name="cif"
+              value={formData.cif}
+              onChange={handleChange}
+              className="w-full bg-slate-900 border border-slate-700 text-white rounded p-3 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              placeholder="RO123456"
+              disabled={useSavedData}
+              required
             />
-            </div>
-            <div>
+          </div>
+          <div>
             <label className="block text-sm font-medium text-slate-400 mb-1">Serie Facturi</label>
             <input
-                type="text"
-                name="seriesName"
-                value={formData.seriesName}
-                onChange={handleChange}
-                className="w-full bg-slate-900 border border-slate-700 text-white rounded p-3 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                placeholder="Ex: XYZ"
-                disabled={useSavedData}
+              type="text"
+              name="seriesName"
+              value={formData.seriesName}
+              onChange={handleChange}
+              className="w-full bg-slate-900 border border-slate-700 text-white rounded p-3 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              placeholder="Ex: XYZ"
+              disabled={useSavedData}
             />
-            </div>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-400 mb-1">Gestiune / Punct de Lucru</label>
+          <input
+            type="text"
+            name="workStation"
+            value={formData.workStation || 'Sediu'}
+            onChange={handleChange}
+            className="w-full bg-slate-900 border border-slate-700 text-white rounded p-3 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+            placeholder="Sediu"
+            disabled={useSavedData}
+          />
+          <p className="text-xs text-slate-500 mt-1">Locația depozitului din care se scad produsele (ex: Sediu, Depozit 1, etc.)</p>
         </div>
 
         <div className="pt-4 flex gap-3">
-            <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 py-3 px-4 bg-slate-700 text-white rounded font-medium hover:bg-slate-600 transition-colors"
-            >
-                Anulează
-            </button>
-            <button
-                type="submit"
-                className="flex-1 py-3 px-4 bg-emerald-600 text-white rounded font-medium hover:bg-emerald-500 transition-colors flex items-center justify-center gap-2"
-            >
-                <Save className="w-4 h-4" />
-                Salvează
-            </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 py-3 px-4 bg-slate-700 text-white rounded font-medium hover:bg-slate-600 transition-colors"
+          >
+            Anulează
+          </button>
+          <button
+            type="submit"
+            className="flex-1 py-3 px-4 bg-emerald-600 text-white rounded font-medium hover:bg-emerald-500 transition-colors flex items-center justify-center gap-2"
+          >
+            <Save className="w-4 h-4" />
+            Salvează
+          </button>
         </div>
       </form>
     </div>

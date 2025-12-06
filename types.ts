@@ -3,6 +3,7 @@ export interface OblioConfig {
   apiSecret: string;
   cif: string; // Company CIF
   seriesName: string; // Invoice series
+  workStation?: string; // Warehouse/Management location (optional)
 }
 
 export interface OblioTokenResponse {

@@ -369,7 +369,7 @@ function getProducts($email, $apiSecret, $cif)
 /**
  * Creează factură în Oblio
  */
-function createInvoice($email, $apiSecret, $cif, $seriesName, $products)
+function createInvoice($email, $apiSecret, $cif, $seriesName, $products, $workStation = 'Sediu')
 {
     $token = getAccessToken($email, $apiSecret);
 
@@ -384,6 +384,7 @@ function createInvoice($email, $apiSecret, $cif, $seriesName, $products)
         ],
         'issueDate' => date('Y-m-d'),
         'seriesName' => $seriesName ?: '',
+        'workStation' => $workStation, // Gestiune (locație depozit)
         'products' => array_map(function ($p) {
             return [
                 'name' => $p['name'],
@@ -519,6 +520,7 @@ try {
             $apiSecret = $input['apiSecret'] ?? '';
             $cif = $input['cif'] ?? '';
             $seriesName = $input['seriesName'] ?? '';
+            $workStation = $input['workStation'] ?? 'Sediu'; // Default to 'Sediu' if not provided
             $products = $input['products'] ?? [];
 
             if (empty($email) || empty($apiSecret) || empty($cif)) {
@@ -529,7 +531,7 @@ try {
                 throw new Exception("Lista de produse este goală");
             }
 
-            $result = createInvoice($email, $apiSecret, $cif, $seriesName, $products);
+            $result = createInvoice($email, $apiSecret, $cif, $seriesName, $products, $workStation);
             echo json_encode(array_merge(['success' => true], $result));
             break;
 

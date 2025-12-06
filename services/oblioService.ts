@@ -9,7 +9,7 @@ const PHP_BACKEND_URL = './api.php';
  */
 export const getProductsFromOblio = async (config: OblioConfig): Promise<OblioProduct[]> => {
   console.log("Fetching inventory from Oblio via PHP backend...");
-  
+
   if (!config.email || !config.apiSecret || !config.cif) {
     throw new Error("Credențiale Oblio lipsă (Email, Secret, CIF).");
   }
@@ -67,6 +67,7 @@ export const createInvoiceInOblio = async (config: OblioConfig, products: Produc
     apiSecret: config.apiSecret.trim(),
     cif: config.cif.trim(),
     seriesName: config.seriesName?.trim() || '',
+    workStation: config.workStation?.trim() || 'Sediu', // Default to 'Sediu' if not specified
     products: products.map(p => ({
       name: p.name,
       barcode: p.barcode,
