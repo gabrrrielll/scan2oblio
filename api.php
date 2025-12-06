@@ -496,15 +496,15 @@ function createInvoice($email, $apiSecret, $cif, $invoiceData)
         }, $invoiceData['products'] ?? [])
     ];
 
-    // Add optional dates
-    if (!empty($invoiceData['dueDate'])) {
-        $payload['dueDate'] = $invoiceData['dueDate'];
+    // Add optional dates (only if not empty after trim)
+    if (!empty($invoiceData['dueDate']) && trim($invoiceData['dueDate']) !== '') {
+        $payload['dueDate'] = trim($invoiceData['dueDate']);
     }
-    if (!empty($invoiceData['deliveryDate'])) {
-        $payload['deliveryDate'] = $invoiceData['deliveryDate'];
+    if (!empty($invoiceData['deliveryDate']) && trim($invoiceData['deliveryDate']) !== '') {
+        $payload['deliveryDate'] = trim($invoiceData['deliveryDate']);
     }
-    if (!empty($invoiceData['collectDate'])) {
-        $payload['collectDate'] = $invoiceData['collectDate'];
+    if (!empty($invoiceData['collectDate']) && trim($invoiceData['collectDate']) !== '') {
+        $payload['collectDate'] = trim($invoiceData['collectDate']);
     }
 
     // Add language and currency

@@ -146,6 +146,11 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ config, initialProducts, 
                 noticeNumber: formData.noticeNumber || undefined
             };
 
+            // Debug: Log invoice data to check deliveryDate
+            console.log('=== INVOICE DATA BEING SENT ===');
+            console.log('deliveryDate:', invoiceData.deliveryDate);
+            console.log('Full invoice data:', invoiceData);
+
             await createInvoiceInOblio(config, invoiceData);
             onSuccess();
         } catch (err: any) {
