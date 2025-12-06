@@ -108,14 +108,37 @@ export const getClientsFromOblio = async (config: OblioConfig): Promise<OblioCli
 /**
  * Create Invoice in Oblio via PHP backend
  */
-export const createInvoiceInOblio = async (config: OblioConfig, products: ProductItem[]): Promise<any> => {
-  const payload = {
+export const createInvoiceInOblio = async (
+  config: OblioConfig,
+  invoiceData: {
+    client?: any;
+    issueDate?: string;
+    dueDate?: string;
+    deliveryDate?: string;
+    collectDate?: string;
+    seriesName?: string;
+    workStation?: string;
+    language?: string;
+    currency?: string;
+    products: ProductItem[];
+    mentions?: string;
+    internalNote?: string;
+    issuerName?: string;
+    issuerId?: string;
+    deputyName?: string;
+    deputyIdentityCard?: string;
+    deputyAuto?: string;
+    salesAgent?: string;
+    noticeNumber?: string;
+  }
+): Promise<any> => {
+  const payload: any = {
     email: config.email.trim(),
     apiSecret: config.apiSecret.trim(),
     cif: config.cif.trim(),
-    seriesName: config.seriesName?.trim() || '',
-    workStation: config.workStation?.trim() || 'Sediu', // Default to 'Sediu' if not specified
-    products: products.map(p => ({
+    seriesName: invoiceData.seriesName || config.seriesName?.trim() || '',
+    workStation: invoiceData.workStation || config.workStation?.trim() || 'Sediu',
+    products: invoiceData.products.map(p => ({
       name: p.name,
       barcode: p.barcode,
       unit: p.unit,
@@ -124,6 +147,40 @@ export const createInvoiceInOblio = async (config: OblioConfig, products: Produc
       vatPercentage: p.vatPercentage
     }))
   };
+
+  // Add client data if provided
+  if (invoiceData.client) {
+    payload.client = invoiceData.client;
+  }
+
+  // Add dates if provided
+  if (invoiceData.issueDate) payload.issueDate = invoiceData.issueDate;
+  if (invoiceData.dueDate) payload.dueDate = invoiceData.dueDate;
+  if (invoiceData.deliveryDate) payload.deliveryDate = invoiceData.deliveryDate;
+  if (invoiceData.collectDate) payload.collectDate = invoiceData.collectDate;
+
+  // Add language and currency
+  if (invoiceData.language) payload.language = invoiceData.language;
+  if (invoiceData.currency) payload.currency = invoiceData.currency;
+
+  // Add mentions and notes
+  if (invoiceData.mentions) payload.mentions = invoiceData.mentions;
+  if (invoiceData.internalNote) payload.internalNote = invoiceData.internalNote;
+
+  // Add issuer data
+  if (invoiceData.issuerName) payload.issuerName = invoiceData.issuerName;
+  if (invoiceData.issuerId) payload.issuerId = invoiceData.issuerId;
+
+  // Add deputy data
+  if (invoiceData.deputyName) payload.deputyName = invoiceData.deputyName;
+  if (invoiceData.deputyIdentityCard) payload.deputyIdentityCard = invoiceData.deputyIdentityCard;
+  if (invoiceData.deputyAuto) payload.deputyAuto = invoiceData.deputyAuto;
+
+  // Add sales agent
+  if (invoiceData.salesAgent) payload.salesAgent = invoiceData.salesAgent;
+
+  // Add notice number
+  if (invoiceData.noticeNumber) payload.noticeNumber = invoiceData.noticeNumber;
 
   try {
     const response = await fetch(PHP_BACKEND_URL, {

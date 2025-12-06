@@ -464,22 +464,23 @@ function getProducts($email, $apiSecret, $cif)
 /**
  * Creează factură în Oblio
  */
-function createInvoice($email, $apiSecret, $cif, $seriesName, $products, $workStation = 'Sediu')
+function createInvoice($email, $apiSecret, $cif, $invoiceData)
 {
     $token = getAccessToken($email, $apiSecret);
 
     $url = OBLIO_BASE_URL . '/docs/invoice';
 
+    // Build payload with all provided data
     $payload = [
         'cif' => $cif,
-        'client' => [
+        'client' => $invoiceData['client'] ?? [
             'cif' => '',
             'name' => 'Client Scan2Oblio',
             'email' => ''
         ],
-        'issueDate' => date('Y-m-d'),
-        'seriesName' => $seriesName ?: '',
-        'workStation' => $workStation, // Gestiune (locație depozit)
+        'issueDate' => $invoiceData['issueDate'] ?? date('Y-m-d'),
+        'seriesName' => $invoiceData['seriesName'] ?? '',
+        'workStation' => $invoiceData['workStation'] ?? 'Sediu',
         'products' => array_map(function ($p) {
             return [
                 'name' => $p['name'],
@@ -489,11 +490,67 @@ function createInvoice($email, $apiSecret, $cif, $seriesName, $products, $workSt
                 'quantity' => $p['quantity'],
                 'price' => $p['price'],
                 'vatPercentage' => $p['vatPercentage'],
-                'management' => 'DEPOZIT', // Management/Gestiune pentru produs
+                'management' => 'DEPOZIT',
                 'saveProduct' => false
             ];
-        }, $products)
+        }, $invoiceData['products'] ?? [])
     ];
+
+    // Add optional dates
+    if (!empty($invoiceData['dueDate'])) {
+        $payload['dueDate'] = $invoiceData['dueDate'];
+    }
+    if (!empty($invoiceData['deliveryDate'])) {
+        $payload['deliveryDate'] = $invoiceData['deliveryDate'];
+    }
+    if (!empty($invoiceData['collectDate'])) {
+        $payload['collectDate'] = $invoiceData['collectDate'];
+    }
+
+    // Add language and currency
+    if (!empty($invoiceData['language'])) {
+        $payload['language'] = $invoiceData['language'];
+    }
+    if (!empty($invoiceData['currency'])) {
+        $payload['currency'] = $invoiceData['currency'];
+    }
+
+    // Add mentions and notes
+    if (!empty($invoiceData['mentions'])) {
+        $payload['mentions'] = $invoiceData['mentions'];
+    }
+    if (!empty($invoiceData['internalNote'])) {
+        $payload['internalNote'] = $invoiceData['internalNote'];
+    }
+
+    // Add issuer data
+    if (!empty($invoiceData['issuerName'])) {
+        $payload['issuerName'] = $invoiceData['issuerName'];
+    }
+    if (!empty($invoiceData['issuerId'])) {
+        $payload['issuerId'] = $invoiceData['issuerId'];
+    }
+
+    // Add deputy data
+    if (!empty($invoiceData['deputyName'])) {
+        $payload['deputyName'] = $invoiceData['deputyName'];
+    }
+    if (!empty($invoiceData['deputyIdentityCard'])) {
+        $payload['deputyIdentityCard'] = $invoiceData['deputyIdentityCard'];
+    }
+    if (!empty($invoiceData['deputyAuto'])) {
+        $payload['deputyAuto'] = $invoiceData['deputyAuto'];
+    }
+
+    // Add sales agent
+    if (!empty($invoiceData['salesAgent'])) {
+        $payload['salesAgent'] = $invoiceData['salesAgent'];
+    }
+
+    // Add notice number
+    if (!empty($invoiceData['noticeNumber'])) {
+        $payload['noticeNumber'] = $invoiceData['noticeNumber'];
+    }
 
     // Log payload pentru debugging
     error_log("=== OBLIO INVOICE CREATE REQUEST ===");
@@ -628,8 +685,6 @@ try {
             $email = $input['email'] ?? '';
             $apiSecret = $input['apiSecret'] ?? '';
             $cif = $input['cif'] ?? '';
-            $seriesName = $input['seriesName'] ?? '';
-            $workStation = $input['workStation'] ?? 'Sediu'; // Default to 'Sediu' if not provided
             $products = $input['products'] ?? [];
 
             if (empty($email) || empty($apiSecret) || empty($cif)) {
@@ -640,7 +695,8 @@ try {
                 throw new Exception("Lista de produse este goală");
             }
 
-            $result = createInvoice($email, $apiSecret, $cif, $seriesName, $products, $workStation);
+            // Pass all invoice data to createInvoice
+            $result = createInvoice($email, $apiSecret, $cif, $input);
             echo json_encode(array_merge(['success' => true], $result));
             break;
 

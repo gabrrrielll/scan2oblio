@@ -109,14 +109,9 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ config, initialProducts, 
         setError(null);
 
         try {
-            // Pregătește payload-ul pentru API
-            const invoicePayload = {
-                email: config.email,
-                apiSecret: config.apiSecret,
-                cif: config.cif,
-                seriesName: formData.seriesName,
-                workStation: formData.workStation,
-                client: {
+            // Prepare invoice data
+            const invoiceData = {
+                client: formData.client ? {
                     cif: formData.client.cif,
                     name: formData.client.name,
                     rc: formData.client.rc || '',
@@ -130,21 +125,16 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ config, initialProducts, 
                     bank: formData.client.bank || '',
                     contact: formData.client.contact || '',
                     vatPayer: formData.client.vatPayer || false
-                },
+                } : undefined,
                 issueDate: formData.issueDate,
                 dueDate: formData.dueDate || undefined,
                 deliveryDate: formData.deliveryDate || undefined,
                 collectDate: formData.collectDate || undefined,
+                seriesName: formData.seriesName,
+                workStation: formData.workStation,
                 language: formData.language,
                 currency: formData.currency,
-                products: formData.products.map(p => ({
-                    name: p.name,
-                    barcode: p.barcode,
-                    unit: p.unit,
-                    quantity: p.quantity,
-                    price: p.price,
-                    vatPercentage: p.vatPercentage
-                })),
+                products: formData.products,
                 mentions: formData.mentions || undefined,
                 internalNote: formData.internalNote || undefined,
                 issuerName: formData.issuerName || undefined,
@@ -156,7 +146,7 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ config, initialProducts, 
                 noticeNumber: formData.noticeNumber || undefined
             };
 
-            await createInvoiceInOblio(config, formData.products);
+            await createInvoiceInOblio(config, invoiceData);
             onSuccess();
         } catch (err: any) {
             setError(err.message || 'Eroare la trimiterea facturii');
