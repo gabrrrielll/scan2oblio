@@ -398,6 +398,11 @@ function createInvoice($email, $apiSecret, $cif, $seriesName, $products)
         }, $products)
     ];
 
+    // Log payload pentru debugging
+    error_log("=== OBLIO INVOICE CREATE REQUEST ===");
+    error_log("URL: " . $url);
+    error_log("Payload: " . json_encode($payload, JSON_PRETTY_PRINT));
+
     $ch = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
@@ -415,6 +420,14 @@ function createInvoice($email, $apiSecret, $cif, $seriesName, $products)
     $error = curl_error($ch);
     curl_close($ch);
 
+    // Log response pentru debugging
+    error_log("=== OBLIO INVOICE CREATE RESPONSE ===");
+    error_log("HTTP Code: " . $httpCode);
+    error_log("Response: " . $response);
+    if ($error) {
+        error_log("CURL Error: " . $error);
+    }
+
     if ($error) {
         throw new Exception("Eroare conexiune: " . $error);
     }
@@ -422,7 +435,17 @@ function createInvoice($email, $apiSecret, $cif, $seriesName, $products)
     $data = json_decode($response, true);
 
     if ($httpCode !== 200) {
+        // Include mai multe detalii din răspunsul Oblio pentru debugging
         $message = $data['message'] ?? "Eroare $httpCode la generarea facturii.";
+        
+        // Dacă există statusMessage sau alte detalii, include-le
+        if (isset($data['statusMessage'])) {
+            $message .= " - " . $data['statusMessage'];
+        }
+        
+        // Log full error response
+        error_log("Invoice creation failed: " . json_encode($data));
+        
         throw new Exception($message);
     }
 
@@ -435,7 +458,19 @@ function createInvoice($email, $apiSecret, $cif, $seriesName, $products)
 
 // Procesează cererea
 try {
+    // Pentru cererile POST cu JSON body, citește action din JSON
     $action = $_GET['action'] ?? $_POST['action'] ?? '';
+    
+    // Dacă nu găsim action în GET/POST, verifică în JSON body
+    if (empty($action) && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $rawInput = file_get_contents('php://input');
+        if (!empty($rawInput)) {
+            $jsonData = json_decode($rawInput, true);
+            if (json_last_error() === JSON_ERROR_NONE && isset($jsonData['action'])) {
+                $action = $jsonData['action'];
+            }
+        }
+    }
 
     if (empty($action)) {
         throw new Exception("Parametrul 'action' este obligatoriu");
