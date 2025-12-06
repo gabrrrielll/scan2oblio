@@ -211,6 +211,9 @@ const App: React.FC = () => {
       };
       setItems(prev => [...prev, newItem]);
 
+      // Close scanner after successful add
+      setIsScanning(false);
+
       // Feedback based on stock
       if (isStockZero) {
         if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
