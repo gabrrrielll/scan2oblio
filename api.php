@@ -86,6 +86,101 @@ function getAccessToken($email, $apiSecret)
 }
 
 /**
+ * Obține clienții din Oblio cu paginare
+ */
+function getClients($email, $apiSecret, $cif)
+{
+    $token = getAccessToken($email, $apiSecret);
+
+    $allClients = [];
+    $limitPerPage = 250; // Maxim permis de API
+    $offset = 0;
+    $hasMore = true;
+
+    error_log("=== FETCHING ALL CLIENTS WITH PAGINATION ===");
+
+    while ($hasMore) {
+        $url = OBLIO_BASE_URL . '/nomenclature/clients?cif=' . urlencode($cif) .
+               '&limitPerPage=' . $limitPerPage .
+               '&offset=' . $offset;
+
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => [
+                'Authorization: Bearer ' . $token,
+                'X-Oblio-Email: ' . $email,
+                'Content-Type: application/json'
+            ]
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        if ($error) {
+            throw new Exception("Eroare conexiune: " . $error);
+        }
+
+        if ($httpCode === 401) {
+            throw new Exception("Token expirat sau invalid. Reîncercați.");
+        }
+
+        if ($httpCode === 404) {
+            throw new Exception("Nu s-au găsit clienți (CIF incorect?).");
+        }
+
+        if ($httpCode !== 200) {
+            throw new Exception("Eroare API Oblio: HTTP $httpCode");
+        }
+
+        $data = json_decode($response, true);
+
+        if (!isset($data['data']) || !is_array($data['data'])) {
+            $hasMore = false;
+            break;
+        }
+
+        $pageClients = $data['data'];
+        $allClients = array_merge($allClients, $pageClients);
+
+        error_log("Fetched " . count($pageClients) . " clients (total so far: " . count($allClients) . ")");
+
+        if (count($pageClients) < $limitPerPage) {
+            $hasMore = false;
+        } else {
+            $offset += $limitPerPage;
+        }
+    }
+
+    error_log("=== TOTAL CLIENTS FETCHED: " . count($allClients) . " ===");
+
+    // Mapează clienții la formatul așteptat
+    $clients = [];
+    foreach ($allClients as $c) {
+        $clients[] = [
+            'id' => $c['id'] ?? '',
+            'name' => $c['name'] ?? '',
+            'cif' => $c['cif'] ?? '',
+            'rc' => $c['rc'] ?? '',
+            'address' => $c['address'] ?? '',
+            'city' => $c['city'] ?? '',
+            'state' => $c['state'] ?? '',
+            'country' => $c['country'] ?? '',
+            'email' => $c['email'] ?? '',
+            'phone' => $c['phone'] ?? '',
+            'iban' => $c['iban'] ?? '',
+            'bank' => $c['bank'] ?? '',
+            'contact' => $c['contact'] ?? '',
+            'vatPayer' => $c['vatPayer'] ?? false
+        ];
+    }
+
+    return $clients;
+}
+
+/**
  * Obține produsele din Oblio cu paginare pentru a obține TOATE produsele
  */
 function getProducts($email, $apiSecret, $cif)
@@ -503,6 +598,19 @@ try {
 
             $products = getProducts($email, $apiSecret, $cif);
             echo json_encode(['success' => true, 'data' => $products]);
+            break;
+
+        case 'clients':
+            $email = $_GET['email'] ?? $_POST['email'] ?? '';
+            $apiSecret = $_GET['apiSecret'] ?? $_POST['apiSecret'] ?? '';
+            $cif = $_GET['cif'] ?? $_POST['cif'] ?? '';
+
+            if (empty($email) || empty($apiSecret) || empty($cif)) {
+                throw new Exception("Email, API Secret și CIF sunt obligatorii");
+            }
+
+            $clients = getClients($email, $apiSecret, $cif);
+            echo json_encode(['success' => true, 'data' => $clients]);
             break;
 
         case 'invoice':

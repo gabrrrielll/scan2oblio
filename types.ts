@@ -24,6 +24,54 @@ export interface OblioProduct {
   stock: number; // Current inventory quantity
 }
 
+export interface OblioClient {
+  id: string;
+  name: string;
+  cif: string;
+  rc?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  email?: string;
+  phone?: string;
+  iban?: string;
+  bank?: string;
+  contact?: string;
+  vatPayer?: boolean;
+}
+
+export interface InvoiceFormData {
+  // Client
+  client: OblioClient | null;
+
+  // Dates
+  issueDate: string;
+  dueDate?: string;
+  deliveryDate?: string;
+  collectDate?: string;
+
+  // Document info
+  seriesName: string;
+  workStation: string;
+  language: string;
+  currency: string;
+
+  // Products
+  products: ProductItem[];
+
+  // Additional info
+  mentions?: string;
+  internalNote?: string;
+  issuerName?: string;
+  issuerId?: string;
+  deputyName?: string;
+  deputyIdentityCard?: string;
+  deputyAuto?: string;
+  salesAgent?: string;
+  noticeNumber?: string;
+}
+
 export interface ProductItem {
   id: string;
   name: string;

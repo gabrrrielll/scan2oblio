@@ -1,4 +1,4 @@
-import { OblioConfig, ProductItem, OblioProduct } from '../types';
+import { OblioConfig, ProductItem, OblioProduct, OblioClient } from '../types';
 import { API_ENDPOINTS } from '../constants';
 
 // Backend PHP endpoint (relativ la domeniul aplicației)
@@ -51,6 +51,53 @@ export const getProductsFromOblio = async (config: OblioConfig): Promise<OblioPr
 
   } catch (error: any) {
     console.error("Oblio API Fetch Error:", error);
+    if (error.message.includes('Failed to fetch')) {
+      throw new Error("Eroare Conexiune. Verificați că backend-ul PHP este accesibil.");
+    }
+    throw error;
+  }
+};
+
+/**
+ * Fetch Clients from Oblio via PHP backend
+ */
+export const getClientsFromOblio = async (config: OblioConfig): Promise<OblioClient[]> => {
+  console.log("Fetching clients from Oblio via PHP backend...");
+
+  if (!config.email || !config.apiSecret || !config.cif) {
+    throw new Error("Credențiale Oblio lipsă (Email, Secret, CIF).");
+  }
+
+  const safeCif = encodeURIComponent(config.cif.trim());
+  const safeEmail = encodeURIComponent(config.email.trim());
+  const safeSecret = encodeURIComponent(config.apiSecret.trim());
+
+  const targetUrl = `${PHP_BACKEND_URL}?action=clients&email=${safeEmail}&apiSecret=${safeSecret}&cif=${safeCif}`;
+
+  try {
+    const response = await fetch(targetUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const json = await response.json();
+
+    if (!json.success) {
+      throw new Error(json.error || "Eroare la obținerea clienților din Oblio.");
+    }
+
+    if (!json.data || !Array.isArray(json.data)) {
+      console.warn("Unexpected API response format:", json);
+      return [];
+    }
+
+    console.log("Clients fetched:", json.data.length);
+    return json.data as OblioClient[];
+
+  } catch (error: any) {
+    console.error("Oblio Clients Fetch Error:", error);
     if (error.message.includes('Failed to fetch')) {
       throw new Error("Eroare Conexiune. Verificați că backend-ul PHP este accesibil.");
     }

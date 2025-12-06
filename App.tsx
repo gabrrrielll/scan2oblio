@@ -13,12 +13,14 @@ import {
   AlertCircle,
   Beaker,
   X,
-  Copy
+  Copy,
+  FileText
 } from 'lucide-react';
 import { ProductItem, OblioConfig, AppStatus, OblioProduct } from './types';
 import Scanner from './components/Scanner';
 import Settings from './components/Settings';
 import InventoryModal from './components/InventoryModal';
+import InvoiceEditor from './components/InvoiceEditor';
 import { createInvoiceInOblio, getProductsFromOblio } from './services/oblioService';
 import { STORAGE_KEYS } from './constants';
 
@@ -49,6 +51,7 @@ const App: React.FC = () => {
   const [inventory, setInventory] = useState<OblioProduct[]>([]);
   const [isInventoryLoading, setIsInventoryLoading] = useState(false);
   const [showInventoryList, setShowInventoryList] = useState(false);
+  const [showInvoiceEditor, setShowInvoiceEditor] = useState(false);
 
   const [isScanning, setIsScanning] = useState(false);
   // TEST MODE STATE
@@ -306,24 +309,22 @@ const App: React.FC = () => {
     setItems(prev => prev.filter(i => i.id !== id));
   };
 
-  const handleSendToOblio = async () => {
+  const handleCreateInvoice = () => {
     if (items.length === 0) return;
     if (!config.email || !config.apiSecret) {
       setShowSettings(true);
       return;
     }
+    setShowInvoiceEditor(true);
+  };
 
-    setStatus(AppStatus.SENDING_OBLIO);
-    try {
-      const response = await createInvoiceInOblio(config, items);
-      showStatus(AppStatus.SUCCESS, response.message, 5000);
-      // Clear cart on success
-      setTimeout(() => {
-        setItems([]);
-      }, 3000);
-    } catch (e) {
-      showStatus(AppStatus.ERROR, "Eroare la trimiterea facturii.");
-    }
+  const handleInvoiceSuccess = () => {
+    setShowInvoiceEditor(false);
+    showStatus(AppStatus.SUCCESS, "Factura a fost emisă cu succes!", 5000);
+    // Clear cart
+    setTimeout(() => {
+      setItems([]);
+    }, 2000);
   };
 
   const calculateTotal = () => {
@@ -613,17 +614,14 @@ const App: React.FC = () => {
             <Plus className="w-6 h-6 text-slate-300" />
           </button>
           <button
-            onClick={handleSendToOblio}
-            disabled={items.length === 0 || status === AppStatus.SENDING_OBLIO}
+            onClick={handleCreateInvoice}
+            disabled={items.length === 0}
             className={`flex-[2] py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]
                     ${items.length === 0 ? 'bg-slate-800 text-slate-600 cursor-not-allowed border border-slate-700' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 border border-emerald-500'}
                 `}
           >
-            {status === AppStatus.SENDING_OBLIO ? (
-              <span className="flex items-center gap-2"><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Se trimite...</span>
-            ) : (
-              <><Send className="w-5 h-5" /> Trimite Factura</>
-            )}
+            <FileText className="w-5 h-5" />
+            Creează Factură
           </button>
         </div>
       </div>
@@ -636,6 +634,17 @@ const App: React.FC = () => {
             setIsScanning(false);
             setIsTestScanning(false);
           }}
+        />
+      )}
+
+
+      {/* Invoice Editor Modal */}
+      {showInvoiceEditor && (
+        <InvoiceEditor
+          config={config}
+          initialProducts={items}
+          onClose={() => setShowInvoiceEditor(false)}
+          onSuccess={handleInvoiceSuccess}
         />
       )}
 
