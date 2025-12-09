@@ -624,10 +624,14 @@ function createClient($email, $apiSecret, $cif, $clientData)
     $payload = [
         'cif' => $clientData['cif'], // Client CIF/CNP
         'name' => $clientData['name'],
-        'code' => $clientData['cif'], // Also use as code
         'vatPayer' => $clientData['vatPayer'] ?? false,
         'homeCurrency' => 'RON',
     ];
+
+    // Only add code if CIF is present
+    if (!empty($clientData['cif'])) {
+        $payload['code'] = $clientData['cif'];
+    }
 
     // Optional fields
     $optionalFields = [
