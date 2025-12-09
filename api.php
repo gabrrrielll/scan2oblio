@@ -610,6 +610,84 @@ function createInvoice($email, $apiSecret, $cif, $invoiceData)
     ];
 }
 
+/**
+ * Creează client în Oblio
+ */
+function createClient($email, $apiSecret, $cif, $clientData)
+{
+    $token = getAccessToken($email, $apiSecret);
+
+    $url = OBLIO_BASE_URL . '/nomenclature/clients';
+
+    // Build payload
+    $payload = [
+        'cif' => $cif,
+        'name' => $clientData['name'],
+        'code' => $clientData['cif'], // Use CIF as code if not provided
+        'vatPayer' => $clientData['vatPayer'] ?? false,
+        'homeCurrency' => 'RON',
+    ];
+
+    // Optional fields
+    $optionalFields = [
+        'rc', 'address', 'city', 'state', 'country', 
+        'email', 'phone', 'iban', 'bank', 'contact'
+    ];
+
+    foreach ($optionalFields as $field) {
+        if (!empty($clientData[$field])) {
+            $payload[$field] = $clientData[$field];
+        }
+    }
+
+    // Log payload
+    error_log("=== OBLIO CLIENT CREATE REQUEST ===");
+    error_log("URL: " . $url);
+    error_log("Payload: " . json_encode($payload, JSON_PRETTY_PRINT));
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => json_encode($payload),
+        CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer ' . $token,
+            'X-Oblio-Email: ' . $email,
+            'Content-Type: application/json'
+        ]
+    ]);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $error = curl_error($ch);
+    curl_close($ch);
+
+    // Log response
+    error_log("=== OBLIO CLIENT CREATE RESPONSE ===");
+    error_log("HTTP Code: " . $httpCode);
+    error_log("Response: " . $response);
+
+    if ($error) {
+        throw new Exception("Eroare conexiune: " . $error);
+    }
+
+    $data = json_decode($response, true);
+
+    if ($httpCode !== 200 && $httpCode !== 201) {
+        $message = $data['message'] ?? "Eroare $httpCode la crearea clientului.";
+        if (isset($data['statusMessage'])) {
+            $message .= " - " . $data['statusMessage'];
+        }
+        throw new Exception($message);
+    }
+
+    return [
+        'status' => 200,
+        'message' => 'Clientul a fost adăugat cu succes!',
+        'data' => $data['data'] ?? null
+    ];
+}
+
 // Procesează cererea
 try {
     // Pentru cererile POST cu JSON body, citește action din JSON
@@ -697,6 +775,31 @@ try {
 
             // Pass all invoice data to createInvoice
             $result = createInvoice($email, $apiSecret, $cif, $input);
+            echo json_encode(array_merge(['success' => true], $result));
+            break;
+
+        case 'createClient':
+            $rawInput = file_get_contents('php://input');
+            $input = json_decode($rawInput, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new Exception("Date JSON invalide");
+            }
+
+            $email = $input['email'] ?? '';
+            $apiSecret = $input['apiSecret'] ?? '';
+            $cif = $input['cif'] ?? '';
+            $clientData = $input['client'] ?? [];
+
+            if (empty($email) || empty($apiSecret) || empty($cif)) {
+                throw new Exception("Email, API Secret și CIF sunt obligatorii");
+            }
+
+            if (empty($clientData) || empty($clientData['name'])) {
+                throw new Exception("Datele clientului (nume) sunt obligatorii");
+            }
+
+            $result = createClient($email, $apiSecret, $cif, $clientData);
             echo json_encode(array_merge(['success' => true], $result));
             break;
 
