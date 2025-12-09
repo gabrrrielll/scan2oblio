@@ -617,13 +617,14 @@ function createClient($email, $apiSecret, $cif, $clientData)
 {
     $token = getAccessToken($email, $apiSecret);
 
-    $url = OBLIO_BASE_URL . '/nomenclature/clients';
+    // Pass Issuer CIF in URL
+    $url = OBLIO_BASE_URL . '/nomenclature/clients?cif=' . urlencode($cif);
 
     // Build payload
     $payload = [
-        'cif' => $cif,
+        'cif' => $clientData['cif'], // Client CIF/CNP
         'name' => $clientData['name'],
-        'code' => $clientData['cif'], // Use CIF as code if not provided
+        'code' => $clientData['cif'], // Also use as code
         'vatPayer' => $clientData['vatPayer'] ?? false,
         'homeCurrency' => 'RON',
     ];
