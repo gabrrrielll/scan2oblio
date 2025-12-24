@@ -382,15 +382,31 @@ const App: React.FC = () => {
           </div>
           <div>
             <h1 className="text-lg font-bold text-white leading-tight">Scan2Oblio</h1>
-            <div
-              onClick={() => inventory.length > 0 && setShowInventoryList(true)}
-              className={`flex items-center gap-1.5 transition-all active:scale-95 ${inventory.length > 0 ? 'cursor-pointer hover:opacity-80' : 'opacity-70'}`}
-            >
-              <div className={`w-2 h-2 rounded-full ${isInventoryLoading ? 'bg-yellow-400 animate-pulse' : inventory.length > 0 ? 'bg-emerald-400' : 'bg-red-400'}`} />
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
-                {isInventoryLoading ? 'Se încarcă...' : inventory.length > 0 ? `${inventory.length} Produse Stoc` : 'Deconectat'}
-              </span>
-              {inventory.length > 0 && <span className="text-[9px] text-slate-600 ml-1">(Vezi)</span>}
+            <div className="flex items-center gap-3">
+              <div
+                onClick={() => inventory.length > 0 && setShowInventoryList(true)}
+                className={`flex items-center gap-1.5 transition-all active:scale-95 ${inventory.length > 0 ? 'cursor-pointer hover:opacity-80' : 'opacity-70'}`}
+              >
+                <div className={`w-2 h-2 rounded-full ${isInventoryLoading ? 'bg-yellow-400 animate-pulse' : inventory.length > 0 ? 'bg-emerald-400' : 'bg-red-400'}`} />
+                <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
+                  {isInventoryLoading ? 'Se încarcă...' : inventory.length > 0 ? `${inventory.length} PRODUSE` : 'Deconectat'}
+                </span>
+                {inventory.length > 0 && <span className="text-[9px] text-slate-600 ml-1">(Vezi)</span>}
+              </div>
+
+              {!isInventoryLoading && (
+                <div className="border-l border-slate-700 pl-3">
+                  <WorkStationSelector
+                    config={config}
+                    selectedStation={config.workStation || 'Sediu'}
+                    onSelect={(val) => {
+                      const newConfig = { ...config, workStation: val };
+                      setConfig(newConfig);
+                      localStorage.setItem('oblio_config', JSON.stringify(newConfig));
+                    }}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
