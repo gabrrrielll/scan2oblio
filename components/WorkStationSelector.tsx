@@ -19,21 +19,13 @@ const WorkStationSelector: React.FC<WorkStationSelectorProps> = ({ config, selec
 
             setLoading(true);
             try {
-                // Încercăm întâi Work Stations (puncte de lucru)
-                // De obicei acestea sunt cele relevante pentru "workStation" field
-                const ws = await getWorkStations(config);
-                console.log("[DEBUG] WorkStations fetched:", ws);
-
-                if (ws && ws.length > 0) {
-                    setStations(ws);
-                } else {
-                    // Fallback la Management Units (Gestiuni) dacă nu primim puncte de lucru
-                    const mu = await getManagementUnits(config);
-                    console.log("[DEBUG] ManagementUnits fetched:", mu);
-                    setStations(mu);
-                }
+                // Incarcam doar Gestiunile (Management Units)
+                // deoarece endpoint-ul work_stations nu exista ca atare in nomenclatura publica
+                const mu = await getManagementUnits(config);
+                console.log("[DEBUG] ManagementUnits fetched:", mu);
+                setStations(mu);
             } catch (e) {
-                console.error("Failed to load work stations", e);
+                console.error("Failed to load management units", e);
             } finally {
                 setLoading(false);
             }
@@ -62,9 +54,11 @@ const WorkStationSelector: React.FC<WorkStationSelectorProps> = ({ config, selec
                     ) : (
                         <>
                             <option value="Sediu">Sediu (Default)</option>
-                            {stations.map((s, idx) => (
-                                <option key={idx} value={s.name}>{s.name}</option>
-                            ))}
+                            {stations.map((s, idx) => {
+                                // Fallback pentru afisare daca lipseste name
+                                const label = s.name || s.management || s.workStation || `Gestiune ${idx + 1}`;
+                                return <option key={idx} value={s.name || label}>{label}</option>;
+                            })}
                         </>
                     )}
                 </select>
