@@ -21,6 +21,8 @@ import Scanner from './components/Scanner';
 import Settings from './components/Settings';
 import InventoryModal from './components/InventoryModal';
 import InvoiceEditor from './components/InvoiceEditor';
+import ProductListModal from './components/ProductListModal';
+import WorkStationSelector from './components/WorkStationSelector';
 import { createInvoiceInOblio, getProductsFromOblio } from './services/oblioService';
 import { STORAGE_KEYS } from './constants';
 

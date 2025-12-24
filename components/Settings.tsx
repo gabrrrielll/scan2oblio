@@ -133,13 +133,7 @@ const Settings: React.FC<SettingsProps> = ({ config, onSave, onClose }) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-400 mb-1">Gestiune / Punct de Lucru</label>
-          <WorkStationSelector
-            config={formData}
-            selectedStation={formData.workStation || 'Sediu'}
-            onSelect={(val) => setFormData(prev => ({ ...prev, workStation: val }))}
-          />
-          <p className="text-xs text-slate-500 mt-1">Locația depozitului din care se scad produsele (ex: Sediu, Depozit 1, etc.)</p>
+          {/* WorkStation moved to main header */}
         </div>
 
         <div className="pt-4 flex gap-3">

@@ -48,7 +48,7 @@ export const getProductsFromOblio = async (config: OblioConfig): Promise<OblioPr
     }
 
     // Procesare și filtrare locală a stocului
-    const processedProducts = json.data.map((p: any) => {
+    const processedProducts = json.data.reduce((acc: any[], p: any) => {
       // Dacă avem opțiunea de workStation setată și avem date brute despre stoc
       if (config.workStation && config.workStation !== 'Sediu' && p.raw_stock && Array.isArray(p.raw_stock)) {
         // Căutăm stocul specific pentru gestiunea selectată
@@ -59,29 +59,21 @@ export const getProductsFromOblio = async (config: OblioConfig): Promise<OblioPr
         );
 
         if (matchedStock) {
-          // Dacă am găsit stoc pe gestiune, suprascriem câmpul de stoc și preț
-          return {
+          // Dacă am găsit stoc pe gestiune, adăugăm produsul cu stocul și prețul actualizat
+          acc.push({
             ...p,
             stock: parseFloat(matchedStock.quantity || 0),
             price: parseFloat(matchedStock.price || p.price), // Prețul poate varia pe gestiune
             currency: matchedStock.currency || p.currency
-          };
-        } else {
-          // Dacă produsul nu există în această gestiune, stocul este 0
-          return {
-            ...p,
-            stock: 0
-          };
+          });
         }
+        // Dacă produsul nu există în această gestiune, NU îl adăugăm în listă (filtrăm efectiv lista)
+      } else {
+        // Dacă e Sediu sau nu e setată nicio gestiune, păstrăm produsul așa cum e (Total sau Sediu)
+        acc.push(p);
       }
-
-      // Dacă e Sediu sau nu e setată nicio gestiune, rămânem cu datele implicite (Total sau Sediu)
-      // Deși corect ar fi ca 'Sediu' să fie tratat specific, de multe ori e default-ul.
-      // Totuși, dacă userul selectează explicit 'Sediu', ar trebui să căutăm 'Sediu' sau 'Central'?
-      // Presupunem că dacă nu e găsit mai sus, folosim default-ul din API.
-
-      return p;
-    });
+      return acc;
+    }, []);
 
     return processedProducts as OblioProduct[];
 
