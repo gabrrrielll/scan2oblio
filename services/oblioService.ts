@@ -17,8 +17,9 @@ export const getProductsFromOblio = async (config: OblioConfig): Promise<OblioPr
   const safeCif = encodeURIComponent(config.cif.trim());
   const safeEmail = encodeURIComponent(config.email.trim());
   const safeSecret = encodeURIComponent(config.apiSecret.trim());
+  const safeWorkStation = config.workStation ? encodeURIComponent(config.workStation.trim()) : '';
 
-  const targetUrl = `${PHP_BACKEND_URL}?action=products&email=${safeEmail}&apiSecret=${safeSecret}&cif=${safeCif}`;
+  const targetUrl = `${PHP_BACKEND_URL}?action=products&email=${safeEmail}&apiSecret=${safeSecret}&cif=${safeCif}&management=${safeWorkStation}`;
 
   try {
     const response = await fetch(targetUrl, {

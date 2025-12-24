@@ -183,7 +183,7 @@ function getClients($email, $apiSecret, $cif)
 /**
  * Obține produsele din Oblio cu paginare pentru a obține TOATE produsele
  */
-function getProducts($email, $apiSecret, $cif)
+function getProducts($email, $apiSecret, $cif, $management = null)
 {
     $token = getAccessToken($email, $apiSecret);
 
@@ -195,7 +195,7 @@ function getProducts($email, $apiSecret, $cif)
     $offset = 0;
     $hasMore = true;
 
-    error_log("=== FETCHING ALL PRODUCTS WITH PAGINATION ===");
+    error_log("=== FETCHING ALL PRODUCTS WITH PAGINATION (Management: " . ($management ?? 'ALL') . ") ===");
 
     while ($hasMore) {
         // Construiește URL cu parametri de paginare
@@ -203,6 +203,11 @@ function getProducts($email, $apiSecret, $cif)
         $url = OBLIO_BASE_URL . '/nomenclature/products?cif=' . urlencode($cif) .
                '&limitPerPage=' . $limitPerPage .
                '&offset=' . $offset;
+        
+        // Adaugă filtru de gestiune dacă este specificat și nu este 'Sediu' (care e adesea default/null)
+        if (!empty($management) && $management !== 'Sediu') {
+            $url .= '&management=' . urlencode($management);
+        }
 
         error_log("=== PAGINATION REQUEST ===");
         error_log("URL: " . $url);
@@ -769,12 +774,13 @@ try {
             $email = $_GET['email'] ?? $_POST['email'] ?? '';
             $apiSecret = $_GET['apiSecret'] ?? $_POST['apiSecret'] ?? '';
             $cif = $_GET['cif'] ?? $_POST['cif'] ?? '';
+            $management = $_GET['management'] ?? $_POST['management'] ?? '';
 
             if (empty($email) || empty($apiSecret) || empty($cif)) {
                 throw new Exception("Email, API Secret și CIF sunt obligatorii");
             }
 
-            $products = getProducts($email, $apiSecret, $cif);
+            $products = getProducts($email, $apiSecret, $cif, $management);
             echo json_encode(['success' => true, 'data' => $products]);
             break;
 

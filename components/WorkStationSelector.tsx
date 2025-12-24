@@ -53,11 +53,11 @@ const WorkStationSelector: React.FC<WorkStationSelectorProps> = ({ config, selec
                         <option>Se încarcă...</option>
                     ) : (
                         <>
-                            <option value="Sediu">Sediu (Default)</option>
+                            <option value="Sediu" className="bg-slate-900 text-white">Sediu (Default)</option>
                             {stations.map((s, idx) => {
                                 // Fallback pentru afisare daca lipseste name
                                 const label = s.name || s.management || s.workStation || `Gestiune ${idx + 1}`;
-                                return <option key={idx} value={s.name || label}>{label}</option>;
+                                return <option key={idx} value={s.name || label} className="bg-slate-900 text-white">{label}</option>;
                             })}
                         </>
                     )}
