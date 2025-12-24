@@ -22,12 +22,14 @@ const WorkStationSelector: React.FC<WorkStationSelectorProps> = ({ config, selec
                 // Încercăm întâi Work Stations (puncte de lucru)
                 // De obicei acestea sunt cele relevante pentru "workStation" field
                 const ws = await getWorkStations(config);
+                console.log("[DEBUG] WorkStations fetched:", ws);
 
                 if (ws && ws.length > 0) {
                     setStations(ws);
                 } else {
                     // Fallback la Management Units (Gestiuni) dacă nu primim puncte de lucru
                     const mu = await getManagementUnits(config);
+                    console.log("[DEBUG] ManagementUnits fetched:", mu);
                     setStations(mu);
                 }
             } catch (e) {
