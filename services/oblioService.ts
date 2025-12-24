@@ -42,6 +42,7 @@ export const getProductsFromOblio = async (config: OblioConfig): Promise<OblioPr
 
     // Debug: log primul produs pentru a vedea structura
     if (json.data.length > 0) {
+      console.log("Toate produsele primite de la server (Raw):", json.data);
       console.log("First product from API:", json.data[0]);
       console.log("Product keys:", Object.keys(json.data[0]));
       console.log("All products sample (first 3):", json.data.slice(0, 3));
