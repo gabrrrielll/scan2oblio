@@ -204,8 +204,8 @@ function getProducts($email, $apiSecret, $cif, $management = null)
                '&limitPerPage=' . $limitPerPage .
                '&offset=' . $offset;
         
-        // Adaugă filtru de gestiune dacă este specificat și nu este 'Sediu' (care e adesea default/null)
-        if (!empty($management) && $management !== 'Sediu') {
+        // Adaugă filtru de gestiune dacă este specificat
+        if (!empty($management)) {
             $url .= '&management=' . urlencode($management);
         }
 
@@ -403,15 +403,39 @@ function getProducts($email, $apiSecret, $cif, $management = null)
         $currency = 'RON';
 
         if (isset($p['stock']) && is_array($p['stock']) && !empty($p['stock'])) {
-            // Folosește primul element din stock array pentru preț și TVA
-            $stockData = $p['stock'][0];
-            $price = floatval($stockData['price'] ?? 0);
-            $vatPercentage = floatval($stockData['vatPercentage'] ?? 19);
-            $currency = $stockData['currency'] ?? 'RON';
+            // Folosește primul element din stock array pentru preț și TVA (ca fallback)
+            // SAU caută elementul specific gestiunii dacă e setat
+            $targetStock = null;
+            
+            if (!empty($management)) {
+                foreach ($p['stock'] as $s) {
+                    if (isset($s['management']) && $s['management'] === $management) {
+                        $targetStock = $s;
+                        break;
+                    }
+                }
+            }
+            
+            // Dacă nu am găsit stoc specific sau nu s-a cerut filtru, luăm primul
+            if (!$targetStock) {
+                $targetStock = $p['stock'][0];
+            }
 
-            // Sumă stocul din toate locațiile (fără a dubla primul element)
+            $price = floatval($targetStock['price'] ?? 0);
+            $vatPercentage = floatval($targetStock['vatPercentage'] ?? 19);
+            $currency = $targetStock['currency'] ?? 'RON';
+
+            // Sumă stocul 
             foreach ($p['stock'] as $stockItem) {
-                $totalStock += floatval($stockItem['quantity'] ?? 0);
+                // Dacă avem filtru pe gestiune, adunăm DOAR cantitatea din acea gestiune
+                if (!empty($management)) {
+                    if (isset($stockItem['management']) && $stockItem['management'] === $management) {
+                        $totalStock += floatval($stockItem['quantity'] ?? 0);
+                    }
+                } else {
+                    // Dacă nu avem filtru, adunăm tot (comportament vechi)
+                    $totalStock += floatval($stockItem['quantity'] ?? 0);
+                }
             }
         } elseif (isset($p['quantity'])) {
             // Fallback: dacă nu există array stock, folosește câmpul quantity direct
