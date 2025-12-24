@@ -17,9 +17,10 @@ export const getProductsFromOblio = async (config: OblioConfig): Promise<OblioPr
   const safeCif = encodeURIComponent(config.cif.trim());
   const safeEmail = encodeURIComponent(config.email.trim());
   const safeSecret = encodeURIComponent(config.apiSecret.trim());
-  const safeWorkStation = config.workStation ? encodeURIComponent(config.workStation.trim()) : '';
+  // Nu mai trimitem management filter catre API, se face filtrarea in frontend
+  // const safeWorkStation = config.workStation ? encodeURIComponent(config.workStation.trim()) : '';
 
-  const targetUrl = `${PHP_BACKEND_URL}?action=products&email=${safeEmail}&apiSecret=${safeSecret}&cif=${safeCif}&management=${safeWorkStation}`;
+  const targetUrl = `${PHP_BACKEND_URL}?action=products&email=${safeEmail}&apiSecret=${safeSecret}&cif=${safeCif}`;
 
   try {
     const response = await fetch(targetUrl, {
@@ -43,13 +44,46 @@ export const getProductsFromOblio = async (config: OblioConfig): Promise<OblioPr
     // Debug: log primul produs pentru a vedea structura
     if (json.data.length > 0) {
       console.log("Toate produsele primite de la server (Raw):", json.data);
-      console.log("First product from API:", json.data[0]);
-      console.log("Product keys:", Object.keys(json.data[0]));
-      console.log("All products sample (first 3):", json.data.slice(0, 3));
+      console.log("Se filtreaza dupa Gestiunea:", config.workStation);
     }
 
-    // Datele vin deja mapate corect din PHP
-    return json.data as OblioProduct[];
+    // Procesare și filtrare locală a stocului
+    const processedProducts = json.data.map((p: any) => {
+      // Dacă avem opțiunea de workStation setată și avem date brute despre stoc
+      if (config.workStation && config.workStation !== 'Sediu' && p.raw_stock && Array.isArray(p.raw_stock)) {
+        // Căutăm stocul specific pentru gestiunea selectată
+        // Matching-ul se face pe numele gestiunii (field 'management' in Oblio response)
+        const matchedStock = p.raw_stock.find((s: any) =>
+          s.management === config.workStation ||
+          s.workStation === config.workStation
+        );
+
+        if (matchedStock) {
+          // Dacă am găsit stoc pe gestiune, suprascriem câmpul de stoc și preț
+          return {
+            ...p,
+            stock: parseFloat(matchedStock.quantity || 0),
+            price: parseFloat(matchedStock.price || p.price), // Prețul poate varia pe gestiune
+            currency: matchedStock.currency || p.currency
+          };
+        } else {
+          // Dacă produsul nu există în această gestiune, stocul este 0
+          return {
+            ...p,
+            stock: 0
+          };
+        }
+      }
+
+      // Dacă e Sediu sau nu e setată nicio gestiune, rămânem cu datele implicite (Total sau Sediu)
+      // Deși corect ar fi ca 'Sediu' să fie tratat specific, de multe ori e default-ul.
+      // Totuși, dacă userul selectează explicit 'Sediu', ar trebui să căutăm 'Sediu' sau 'Central'?
+      // Presupunem că dacă nu e găsit mai sus, folosim default-ul din API.
+
+      return p;
+    });
+
+    return processedProducts as OblioProduct[];
 
   } catch (error: any) {
     console.error("Oblio API Fetch Error:", error);
