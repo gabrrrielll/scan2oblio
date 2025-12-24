@@ -5,6 +5,7 @@ import { getClientsFromOblio, createInvoiceInOblio } from '../services/oblioServ
 import PersonSelector from './PersonSelector';
 import ClientFormModal from './ClientFormModal';
 import DatePicker from './DatePicker';
+import WorkStationSelector from './WorkStationSelector';
 
 interface InvoiceEditorProps {
     config: OblioConfig;
@@ -334,12 +335,10 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ config, initialProducts, 
 
                         <div>
                             <label className="block text-sm font-medium text-slate-400 mb-1">Gestiune</label>
-                            <input
-                                type="text"
-                                value={formData.workStation}
-                                onChange={(e) => setFormData(prev => ({ ...prev, workStation: e.target.value }))}
-                                className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 outline-none"
-                                placeholder="Sediu"
+                            <WorkStationSelector
+                                config={config}
+                                selectedStation={formData.workStation}
+                                onSelect={(val) => setFormData(prev => ({ ...prev, workStation: val }))}
                             />
                         </div>
 

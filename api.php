@@ -462,6 +462,44 @@ function getProducts($email, $apiSecret, $cif)
 }
 
 /**
+ * Obține nomenclatoare din Oblio (generic)
+ */
+function getNomenclature($email, $apiSecret, $cif, $type)
+{
+    $token = getAccessToken($email, $apiSecret);
+
+    // Type poate fi: management, work_stations, etc.
+    $url = OBLIO_BASE_URL . '/nomenclature/' . urlencode($type) . '?cif=' . urlencode($cif);
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer ' . $token,
+            'X-Oblio-Email: ' . $email,
+            'Content-Type: application/json'
+        ]
+    ]);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $error = curl_error($ch);
+    curl_close($ch);
+
+    if ($error) {
+        throw new Exception("Eroare conexiune: " . $error);
+    }
+
+    if ($httpCode !== 200) {
+        throw new Exception("Eroare API Oblio ($type): HTTP $httpCode");
+    }
+
+    $data = json_decode($response, true);
+
+    return $data['data'] ?? [];
+}
+
+/**
  * Creează factură în Oblio
  */
 function createInvoice($email, $apiSecret, $cif, $invoiceData)
@@ -781,6 +819,20 @@ try {
             // Pass all invoice data to createInvoice
             $result = createInvoice($email, $apiSecret, $cif, $input);
             echo json_encode(array_merge(['success' => true], $result));
+            break;
+
+        case 'nomenclature':
+            $email = $_GET['email'] ?? $_POST['email'] ?? '';
+            $apiSecret = $_GET['apiSecret'] ?? $_POST['apiSecret'] ?? '';
+            $cif = $_GET['cif'] ?? $_POST['cif'] ?? '';
+            $type = $_GET['type'] ?? $_POST['type'] ?? '';
+
+            if (empty($email) || empty($apiSecret) || empty($cif) || empty($type)) {
+                throw new Exception("Email, API Secret, CIF și Type sunt obligatorii");
+            }
+
+            $data = getNomenclature($email, $apiSecret, $cif, $type);
+            echo json_encode(['success' => true, 'data' => $data]);
             break;
 
         case 'createClient':

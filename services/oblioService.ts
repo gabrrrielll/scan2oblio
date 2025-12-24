@@ -262,3 +262,52 @@ export const createInvoiceInOblio = async (
     throw error;
   }
 };
+
+/**
+ * Get Nomenclature (generic)
+ */
+export const getNomenclature = async (
+  config: OblioConfig,
+  type: 'management' | 'work_stations' | 'vat_rates' | 'languages' | 'currencies'
+): Promise<any[]> => {
+  if (!config.email || !config.apiSecret || !config.cif) {
+    console.warn("Credentials missing for nomenclature fetch");
+    return [];
+  }
+
+  const safeCif = encodeURIComponent(config.cif.trim());
+  const safeEmail = encodeURIComponent(config.email.trim());
+  const safeSecret = encodeURIComponent(config.apiSecret.trim());
+  const safeType = encodeURIComponent(type);
+
+  const targetUrl = `${PHP_BACKEND_URL}?action=nomenclature&email=${safeEmail}&apiSecret=${safeSecret}&cif=${safeCif}&type=${safeType}`;
+
+  try {
+    const response = await fetch(targetUrl);
+    const json = await response.json();
+
+    if (!json.success) {
+      console.warn(`Failed to fetch nomenclature ${type}:`, json.error);
+      return [];
+    }
+
+    return json.data || [];
+  } catch (error) {
+    console.error(`Error fetching nomenclature ${type}:`, error);
+    return [];
+  }
+};
+
+/**
+ * Get Work Stations (Puncte de lucru)
+ */
+export const getWorkStations = async (config: OblioConfig): Promise<any[]> => {
+  return await getNomenclature(config, 'work_stations');
+};
+
+/**
+ * Get Management Units (Gestiuni)
+ */
+export const getManagementUnits = async (config: OblioConfig): Promise<any[]> => {
+  return await getNomenclature(config, 'management');
+};

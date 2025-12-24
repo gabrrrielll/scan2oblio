@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { OblioConfig } from '../types';
 import { Save, Lock, AlertCircle } from 'lucide-react';
+import WorkStationSelector from './WorkStationSelector';
 
 interface SettingsProps {
   config: OblioConfig;
@@ -133,14 +134,10 @@ const Settings: React.FC<SettingsProps> = ({ config, onSave, onClose }) => {
 
         <div>
           <label className="block text-sm font-medium text-slate-400 mb-1">Gestiune / Punct de Lucru</label>
-          <input
-            type="text"
-            name="workStation"
-            value={formData.workStation || 'Sediu'}
-            onChange={handleChange}
-            className="w-full bg-slate-900 border border-slate-700 text-white rounded p-3 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-            placeholder="Sediu"
-            disabled={useSavedData}
+          <WorkStationSelector
+            config={formData}
+            selectedStation={formData.workStation || 'Sediu'}
+            onSelect={(val) => setFormData(prev => ({ ...prev, workStation: val }))}
           />
           <p className="text-xs text-slate-500 mt-1">Locația depozitului din care se scad produsele (ex: Sediu, Depozit 1, etc.)</p>
         </div>
