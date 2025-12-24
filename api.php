@@ -483,7 +483,8 @@ function getProducts($email, $apiSecret, $cif, $management = null)
             'measuringUnit' => $p['measuringUnit'] ?? 'buc',
             'vatPercentage' => $vatPercentage,
             'currency' => $currency,
-            'stock' => $totalStock
+            'stock' => $totalStock,
+            'raw_stock' => $p['stock'] ?? [] // Adăugăm datele brute de stoc pentru debugging
         ];
     }
 
