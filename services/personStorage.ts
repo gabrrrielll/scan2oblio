@@ -6,23 +6,24 @@ const STORAGE_KEY = 'scan2oblio_persons';
  * Obține toate persoanele salvate din localStorage
  */
 export const getStoredPersons = (): StoredPersons => {
+    const defaults: StoredPersons = {
+        issuers: [],
+        deputies: [],
+        salesAgents: []
+    };
+
     try {
         const stored = localStorage.getItem(STORAGE_KEY);
+        console.log('[DEBUG] Raw localStorage value:', stored);
         if (!stored) {
-            return {
-                issuers: [],
-                deputies: [],
-                salesAgents: []
-            };
+            return defaults;
         }
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        // Merge with defaults to ensure all arrays exist
+        return { ...defaults, ...parsed };
     } catch (error) {
         console.error('Error loading persons from localStorage:', error);
-        return {
-            issuers: [],
-            deputies: [],
-            salesAgents: []
-        };
+        return defaults;
     }
 };
 

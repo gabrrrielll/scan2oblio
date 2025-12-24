@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, User, Calendar, FileText, Package, AlertCircle, Loader2 } from 'lucide-react';
+import { X, Save, User, Calendar, FileText, Package, AlertCircle, Loader2, Plus } from 'lucide-react';
 import { OblioConfig, OblioClient, ProductItem, InvoiceFormData, Person } from '../types';
 import { getClientsFromOblio, createInvoiceInOblio } from '../services/oblioService';
 import PersonSelector from './PersonSelector';
+import ClientFormModal from './ClientFormModal';
+import DatePicker from './DatePicker';
 
 interface InvoiceEditorProps {
     config: OblioConfig;
@@ -16,6 +18,7 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ config, initialProducts, 
     const [clients, setClients] = useState<OblioClient[]>([]);
     const [isLoadingClients, setIsLoadingClients] = useState(false);
     const [clientSearchTerm, setClientSearchTerm] = useState('');
+    const [showAddClientModal, setShowAddClientModal] = useState(false);
 
     // State pentru persoane
     const [selectedIssuer, setSelectedIssuer] = useState<Person | null>(null);
@@ -237,6 +240,14 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ config, initialProducts, 
                                 className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none"
                             />
 
+                            <button
+                                onClick={() => setShowAddClientModal(true)}
+                                className="w-full py-3 bg-slate-900/50 border border-dashed border-slate-600 text-slate-400 hover:text-white hover:border-emerald-500 hover:bg-slate-800 rounded-lg transition-all flex items-center justify-center gap-2 group"
+                            >
+                                <Plus className="w-5 h-5 group-hover:text-emerald-400" />
+                                <span>Adaugă Client Nou</span>
+                            </button>
+
                             {isLoadingClients ? (
                                 <div className="flex items-center justify-center py-8">
                                     <Loader2 className="w-6 h-6 text-emerald-400 animate-spin" />
@@ -264,6 +275,20 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ config, initialProducts, 
                     )}
                 </div>
 
+                {/* Add Client Modal */}
+                {showAddClientModal && (
+                    <ClientFormModal
+                        config={config}
+                        onClose={() => setShowAddClientModal(false)}
+                        onSuccess={(newClient) => {
+                            setClients(prev => [...prev, newClient]);
+                            setFormData(prev => ({ ...prev, client: newClient }));
+                            setShowAddClientModal(false);
+                            // Optional: load clients again to get fresh list
+                        }}
+                    />
+                )}
+
                 {/* Invoice Details Section */}
                 <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
                     <div className="flex items-center gap-2 mb-4">
@@ -273,32 +298,26 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ config, initialProducts, 
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-slate-400 mb-1">Data Emiterii *</label>
-                            <input
-                                type="date"
+                            <DatePicker
+                                label="Data Emiterii *"
                                 value={formData.issueDate}
-                                onChange={(e) => setFormData(prev => ({ ...prev, issueDate: e.target.value }))}
-                                className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 outline-none"
+                                onChange={(date) => setFormData(prev => ({ ...prev, issueDate: date }))}
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-400 mb-1">Data Scadență</label>
-                            <input
-                                type="date"
-                                value={formData.dueDate}
-                                onChange={(e) => setFormData(prev => ({ ...prev, dueDate: e.target.value }))}
-                                className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 outline-none"
+                            <DatePicker
+                                label="Data Scadență"
+                                value={formData.dueDate || ''}
+                                onChange={(date) => setFormData(prev => ({ ...prev, dueDate: date }))}
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-400 mb-1">Data Livrare</label>
-                            <input
-                                type="date"
-                                value={formData.deliveryDate}
-                                onChange={(e) => setFormData(prev => ({ ...prev, deliveryDate: e.target.value }))}
-                                className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-emerald-500 outline-none"
+                            <DatePicker
+                                label="Data Livrare"
+                                value={formData.deliveryDate || ''}
+                                onChange={(date) => setFormData(prev => ({ ...prev, deliveryDate: date }))}
                             />
                         </div>
 

@@ -334,6 +334,41 @@ const App: React.FC = () => {
     return items.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2);
   };
 
+  const handleAddToCartFromInventory = (product: OblioProduct, quantity: number) => {
+    const isStockZero = product.stock <= 0;
+
+    // Check if already in cart
+    const matchBarcode = product.productCode || product.code;
+    const existingIndex = items.findIndex(i => i.barcode === matchBarcode || i.barcode === product.code || i.barcode === product.productCode);
+
+    if (existingIndex >= 0) {
+      setItems(prev => {
+        const newItems = [...prev];
+        newItems[existingIndex].quantity += quantity;
+        return newItems;
+      });
+      showStatus(AppStatus.SUCCESS, `Cantitate actualizată (+${quantity})`);
+    } else {
+      const newItem: ProductItem = {
+        id: Date.now().toString(),
+        name: product.name,
+        barcode: product.productCode || product.code,
+        quantity: quantity,
+        price: product.price,
+        vatPercentage: product.vatPercentage,
+        unit: product.measuringUnit
+      };
+      setItems(prev => [...prev, newItem]);
+      showStatus(AppStatus.SUCCESS, `Produs adăugat în coș (+${quantity})`);
+    }
+
+    if (isStockZero) {
+      setTimeout(() => {
+        showStatus(AppStatus.WARNING, "Atenție: Stoc 0 în Oblio", 3000);
+      }, 1500);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-900 pb-24 relative overflow-hidden font-sans">
 
@@ -387,6 +422,7 @@ const App: React.FC = () => {
           <InventoryModal
             inventory={inventory}
             onClose={() => setShowInventoryList(false)}
+            onAddToCart={handleAddToCartFromInventory}
           />
         )}
 

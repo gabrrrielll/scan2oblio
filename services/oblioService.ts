@@ -105,6 +105,54 @@ export const getClientsFromOblio = async (config: OblioConfig): Promise<OblioCli
   }
 };
 
+
+/**
+ * Create Client in Oblio via PHP backend
+ */
+export const createClientInOblio = async (
+  config: OblioConfig,
+  client: Partial<OblioClient>
+): Promise<any> => {
+  const payload = {
+    email: config.email.trim(),
+    apiSecret: config.apiSecret.trim(),
+    cif: config.cif.trim(),
+    client: client
+  };
+
+  try {
+    const response = await fetch(PHP_BACKEND_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        action: 'createClient',
+        ...payload
+      })
+    });
+
+    const json = await response.json();
+
+    if (!json.success) {
+      throw new Error(json.error || "Eroare la crearea clientului.");
+    }
+
+    return {
+      status: json.status || 200,
+      message: json.message || "Clientul a fost creat cu succes!",
+      data: json.data
+    };
+
+  } catch (error: any) {
+    console.error("Oblio Client Create Error:", error);
+    if (error.message.includes('Failed to fetch')) {
+      throw new Error("Eroare Conexiune. Verificați că backend-ul PHP este accesibil.");
+    }
+    throw error;
+  }
+};
+
 /**
  * Create Invoice in Oblio via PHP backend
  */

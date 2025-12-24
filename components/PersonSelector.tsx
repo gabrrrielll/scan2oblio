@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Search, User, Trash2 } from 'lucide-react';
 import { Person } from '../types';
-import { getPersonsByType, addPerson, deletePerson, updatePersonLastUsed, generatePersonId } from '../services/personStorage';
+import { getPersonsByType, addPerson, deletePerson, updatePersonLastUsed, generatePersonId, getStoredPersons } from '../services/personStorage';
 
 interface PersonSelectorProps {
     type: 'issuer' | 'deputy' | 'salesAgent';
@@ -36,12 +36,17 @@ const PersonSelector: React.FC<PersonSelectorProps> = ({
     }, [type]);
 
     const loadPersons = () => {
+        const allStored = getStoredPersons();
+        console.log('[DEBUG] FULL LOCAL STORAGE content:', allStored);
+
         const loadedPersons = getPersonsByType(type);
+        console.log(`[DEBUG] Loaded persons for current type '${type}':`, loadedPersons);
+
         setPersons(loadedPersons);
     };
 
     const filteredPersons = persons.filter(p =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase())
+        p && p.name && p.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const handleSelectPerson = (person: Person) => {
@@ -114,7 +119,7 @@ const PersonSelector: React.FC<PersonSelectorProps> = ({
     };
 
     return (
-        <div className="relative">
+        <div className={`relative ${showDropdown ? 'z-50' : 'z-auto'}`}>
             <label className="block text-sm font-medium text-slate-400 mb-1">{label}</label>
 
             {/* Selected Person Display */}
@@ -203,7 +208,10 @@ const PersonSelector: React.FC<PersonSelectorProps> = ({
                                     ))
                                 ) : (
                                     <div className="px-4 py-8 text-center text-slate-400">
-                                        {searchTerm ? 'Nu s-au găsit rezultate' : 'Nicio persoană salvată'}
+                                        {searchTerm
+                                            ? `Nu s-au găsit rezultate (${persons.length} salvate)`
+                                            : `Nicio persoană salvată (${persons.length})`
+                                        }
                                     </div>
                                 )}
                             </div>

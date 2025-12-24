@@ -26,6 +26,18 @@ function log(message, color = colors.reset) {
   console.log(`${color}${message}${colors.reset}`);
 }
 
+function cleanup() {
+  if (exists('index.html.development')) {
+    log('🔄 Restoring development index.html (cleanup)...', colors.yellow);
+    try {
+      fs.copyFileSync('index.html.development', 'index.html');
+      fs.unlinkSync('index.html.development');
+    } catch (e) {
+      log('❌ Failed to restore index.html during cleanup', colors.red);
+    }
+  }
+}
+
 function exec(command, options = {}) {
   try {
     return execSync(command, {
@@ -35,6 +47,7 @@ function exec(command, options = {}) {
     });
   } catch (error) {
     log(`❌ Error executing: ${command}`, colors.red);
+    cleanup();
     process.exit(1);
   }
 }
@@ -101,6 +114,14 @@ function copyRecursive(src, dest) {
   }
 }
 
+// Backup index.html before overwriting
+log('💾 Backing up development index.html...', colors.cyan);
+try {
+  fs.copyFileSync('index.html', 'index.html.development');
+} catch (e) {
+  log('⚠️  Could not backup index.html (it might not exist)', colors.yellow);
+}
+
 // Copy dist files to root (overwrites existing index.html)
 copyRecursive('dist', '.');
 
@@ -117,6 +138,7 @@ if (exists('.htaccess')) {
 log('✅ Production files prepared in repository root', colors.green);
 
 // Step 3: Check git status
+// ... (Git init logic remains same, skipping for brevity in this replace block if not changing) ...
 if (!exists('.git')) {
   log('⚠️  Git repository not initialized. Initializing...', colors.yellow);
   exec('git init');
@@ -131,25 +153,20 @@ if (!exists('.git')) {
 log('📝 Committing production files...', colors.cyan);
 
 try {
-  // Add production files (index.html, assets/, api.php, .htaccess)
-  // Exclude source files from this commit
   try {
-    exec('git add index.html assets/ api.php .htaccess', { stdio: 'pipe' });
-  } catch {
-    try {
-      exec('git add index.html assets/ api.php', { stdio: 'pipe' });
-    } catch {
-      // Ignore if files don't exist
-    }
+    // Add all files (source code + production artifacts)
+    exec('git add .', { stdio: 'pipe' });
+  } catch (e) {
+    // Ignore error if nothing to add
   }
-  
-  const status = execSync('git status --porcelain', { encoding: 'utf8', stdio: 'pipe' });
-  if (status.trim()) {
+
+  const staged = execSync('git diff --name-only --cached', { encoding: 'utf8', stdio: 'pipe' });
+  if (staged.trim()) {
     const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
     exec(`git commit -m "Deploy: Update production files ${timestamp}"`);
     log('✅ Changes committed', colors.green);
   } else {
-    log('⚠️  No changes to commit (files are up to date)', colors.yellow);
+    log('⚠️  No changes to commit (build artifacts unchanged)', colors.yellow);
   }
 } catch (error) {
   // No changes or not a git repo
@@ -162,13 +179,13 @@ log('⬆️  Pushing to repository...', colors.cyan);
 try {
   // Get current branch name
   const currentBranch = execSync('git branch --show-current', { encoding: 'utf8' }).trim();
-  
+
   if (!currentBranch) {
     // Fallback: try to get branch from git status
     const statusOutput = execSync('git status -b --porcelain', { encoding: 'utf8' });
     const branchMatch = statusOutput.match(/## (.+?)(?:\.\.\.|$)/);
     const branch = branchMatch ? branchMatch[1] : 'master';
-    
+
     log(`📌 Detected branch: ${branch}`, colors.cyan);
     exec(`git push origin ${branch}`);
   } else {
@@ -184,6 +201,18 @@ try {
     log('⚠️  Push failed. You may need to set upstream:', colors.yellow);
     const currentBranch = execSync('git branch --show-current', { encoding: 'utf8' }).trim() || 'master';
     log(`   git push -u origin ${currentBranch}`, colors.yellow);
+  }
+}
+
+// Step 6: Restore development index.html
+log('🔄 Restoring development index.html...', colors.cyan);
+if (exists('index.html.development')) {
+  try {
+    fs.copyFileSync('index.html.development', 'index.html');
+    fs.unlinkSync('index.html.development'); // Remove backup
+    log('✅ Development index.html restored', colors.green);
+  } catch (e) {
+    log('❌ Failed to restore index.html', colors.red);
   }
 }
 
