@@ -129,4 +129,5 @@ export interface StockItem {
   "sidesType": string;
   "woodColor": string;
   "material": string;
+  "lastEdit"?: string; // dd:MM:yy HH:mm
 }

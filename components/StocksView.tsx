@@ -20,6 +20,16 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
     const [isImporting, setIsImporting] = useState(false);
     const [isScanning, setIsScanning] = useState(false);
 
+    const formatDate = () => {
+        const now = new Date();
+        const dd = String(now.getDate()).padStart(2, '0');
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const yy = String(now.getFullYear()).slice(-2);
+        const HH = String(now.getHours()).padStart(2, '0');
+        const min = String(now.getMinutes()).padStart(2, '0');
+        return `${dd}:${mm}:${yy} ${HH}:${min}`;
+    };
+
     // Initial load
     useEffect(() => {
         loadStocks();
@@ -97,6 +107,7 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
 
     const handleSaveProduct = async (product: StockItem) => {
         try {
+            const productWithDate = { ...product, lastEdit: formatDate() };
             let newStocks = [...stocks];
 
             if (isNewProduct) {
@@ -105,12 +116,12 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
                     alert("Există deja un produs cu acest cod!");
                     return;
                 }
-                newStocks.push(product);
+                newStocks.push(productWithDate);
             } else {
                 // Update existing
                 const index = newStocks.findIndex(s => s["Cod produs"] === product["Cod produs"]);
                 if (index !== -1) {
-                    newStocks[index] = product;
+                    newStocks[index] = productWithDate;
                 }
             }
 
@@ -314,6 +325,7 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
                                         <span className="font-mono bg-slate-900 px-1.5 rounded">{item["Cod produs"]}</span>
                                         <span>Preț: <span className="text-emerald-300 font-bold">{item["Pret vanzare"]} {item["Moneda vanzare"]}</span></span>
                                         <span>Tip: {item["Tip"]}</span>
+                                        {item.lastEdit && <span className="text-slate-500 italic">Editat: {item.lastEdit}</span>}
                                     </div>
                                 </div>
 
