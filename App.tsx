@@ -402,28 +402,30 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          {/* Mode Switcher - Centered Absolute */}
-          <div className="absolute left-1/2 -translate-x-1/2 flex bg-slate-800 rounded-lg p-1 border border-slate-700 shadow-xl">
+          {/* Right Side: Mode Switcher & Settings */}
+          <div className="flex items-center gap-2">
+            <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-700 shadow-xl">
+              <button
+                onClick={() => setAppMode('INVOICE')}
+                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${appMode === 'INVOICE' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+              >
+                Facturare
+              </button>
+              <button
+                onClick={() => setAppMode('STOCKS')}
+                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${appMode === 'STOCKS' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+              >
+                Stocuri
+              </button>
+            </div>
+
             <button
-              onClick={() => setAppMode('INVOICE')}
-              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${appMode === 'INVOICE' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+              onClick={() => setShowSettings(!showSettings)}
+              className="p-2 text-slate-400 hover:text-white transition-colors bg-slate-800 rounded-full hover:bg-slate-700"
             >
-              Facturare
-            </button>
-            <button
-              onClick={() => setAppMode('STOCKS')}
-              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${appMode === 'STOCKS' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
-            >
-              Stocuri
+              <SettingsIcon className="w-5 h-5" />
             </button>
           </div>
-
-          <button
-            onClick={() => setShowSettings(!showSettings)}
-            className="p-2 text-slate-400 hover:text-white transition-colors bg-slate-800 rounded-full hover:bg-slate-700"
-          >
-            <SettingsIcon className="w-5 h-5" />
-          </button>
         </div>
 
         {/* Second Row: WorkStation Selector */}
