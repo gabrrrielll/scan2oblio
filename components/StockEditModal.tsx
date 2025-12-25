@@ -44,6 +44,46 @@ const StockEditModal: React.FC<StockEditModalProps> = ({ product, isNew, onClose
         setFormData(prev => ({ ...prev, [field]: value }));
     };
 
+    const generateEAN13 = () => {
+        // 1. Generate first 12 digits randomly (or use a prefix if desired, e.g. 200 for internal use)
+        // Using "200" prefix for internal/in-store codes is common
+        let code = "200";
+        for (let i = 0; i < 9; i++) {
+            code += Math.floor(Math.random() * 10);
+        }
+
+        // 2. Calculate Checksum
+        // Sum of odd positions (1st, 3rd...) * 1
+        // Sum of even positions (2nd, 4th...) * 3
+        let sum = 0;
+        for (let i = 0; i < 12; i++) {
+            const digit = parseInt(code[i]);
+            if (i % 2 === 0) {
+                // Even index in 0-based array is Odd position (1st, 3rd) -> Weight 1
+                // Wait, EAN13 spec:
+                // "The positions are numbered from right to left" - this is confusing.
+                // Standard algorithm:
+                // - Read left to right (indices 0 to 11)
+                // - Odd positions (index 0, 2...) multiplied by 1
+                // - Even positions (index 1, 3...) multiplied by 3
+                sum += digit * (i % 2 === 0 ? 1 : 3);
+            } else {
+                sum += digit * 3;
+            }
+        }
+
+        // Re-checking standard algorithm:
+        // Digit 1 (index 0): weight 1
+        // Digit 2 (index 1): weight 3
+        // ...
+
+        const remainder = sum % 10;
+        const checkDigit = remainder === 0 ? 0 : 10 - remainder;
+
+        const fullCode = code + checkDigit;
+        handleChange("Cod produs", fullCode);
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         onSave(formData);
@@ -77,13 +117,23 @@ const StockEditModal: React.FC<StockEditModalProps> = ({ product, isNew, onClose
 
                         <div>
                             <label className="block text-xs font-medium text-slate-400 mb-1">Cod Produs</label>
-                            <input
-                                type="text"
-                                value={formData["Cod produs"]}
-                                onChange={e => handleChange("Cod produs", e.target.value)}
-                                className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-emerald-500 outline-none"
-                                required
-                            />
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={formData["Cod produs"]}
+                                    onChange={e => handleChange("Cod produs", e.target.value)}
+                                    className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                                    required
+                                />
+                                <button
+                                    type="button"
+                                    onClick={generateEAN13}
+                                    title="Generează cod EAN13"
+                                    className="px-3 py-2 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 hover:text-white transition-colors text-xs font-bold"
+                                >
+                                    GEN
+                                </button>
+                            </div>
                         </div>
 
                         <div>

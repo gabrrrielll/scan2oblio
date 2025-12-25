@@ -137,6 +137,49 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
         }
     };
 
+    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const text = e.target?.result as string;
+                const json = JSON.parse(text);
+
+                // Basic validation - check if it looks like our structure or just an array
+                let dataToSave: StockItem[] = [];
+
+                if (Array.isArray(json)) {
+                    dataToSave = json;
+                } else if (json.data && Array.isArray(json.data)) {
+                    dataToSave = json.data;
+                } else {
+                    throw new Error("Format JSON invalid. Se așteaptă un array de produse.");
+                }
+
+                if (!confirm(`Sunteți sigur că doriți să importați ${dataToSave.length} produse? Aceasta va suprascrie stocul existent.`)) {
+                    // Reset input matches
+                    event.target.value = '';
+                    return;
+                }
+
+                setLoading(true);
+                await saveStocksToFile(dataToSave);
+                setStocks(dataToSave);
+                alert("Stocuri importate cu succes!");
+            } catch (err: any) {
+                console.error("Upload error:", err);
+                alert(`Eroare la import: ${err.message}`);
+            } finally {
+                setLoading(false);
+                // Reset input
+                event.target.value = '';
+            }
+        };
+        reader.readAsText(file);
+    };
+
     const filteredStocks = useMemo(() => {
         if (!searchQuery) return stocks;
         const lowerQ = searchQuery.toLowerCase();
@@ -170,6 +213,22 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
                         {isImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                         Import Sincronizare
                     </button>
+
+                    {/* Hidden File Input for JSON Upload */}
+                    <input
+                        type="file"
+                        accept=".json"
+                        id="json-upload"
+                        className="hidden"
+                        onChange={handleFileUpload}
+                    />
+                    <label
+                        htmlFor="json-upload"
+                        className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-slate-300 border border-slate-600 rounded-lg hover:bg-slate-600 transition-colors whitespace-nowrap cursor-pointer"
+                    >
+                        <Upload className="w-4 h-4" />
+                        Upload JSON
+                    </label>
 
                     <button
                         onClick={handleExport}
