@@ -112,3 +112,21 @@ export interface StoredPersons {
   deputies: Person[];
   salesAgents: Person[];
 }
+
+export interface StockItem {
+  "Denumire produs": string;
+  "Tip": string;
+  "Cod produs": string;
+  "Stoc": number;
+  "U.M.": string;
+  "Cost achizitie fara TVA": number;
+  "Moneda achizitie": string;
+  "Pret vanzare": number;
+  "Cota TVA": number;
+  "TVA inclus": string;
+  "Moneda vanzare": string;
+  "Furnizor": string;
+  "sidesType": string;
+  "woodColor": string;
+  "material": string;
+}

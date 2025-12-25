@@ -798,6 +798,43 @@ try {
             echo json_encode(['success' => true, 'data' => $clients]);
             break;
 
+        case 'get_stocks_file':
+            $file = 'stocuri.json';
+            if (file_exists($file)) {
+                $content = file_get_contents($file);
+                // Verificăm dacă fișierul este gol
+                if (empty(trim($content))) {
+                    echo json_encode(['success' => true, 'data' => []]);
+                } else {
+                    $json = json_decode($content, true);
+                    if (json_last_error() !== JSON_ERROR_NONE) {
+                         // Dacă JSON-ul e corupt, returnăm array gol
+                        echo json_encode(['success' => true, 'data' => []]);
+                    } else {
+                        echo json_encode(['success' => true, 'data' => $json]);
+                    }
+                }
+            } else {
+                echo json_encode(['success' => true, 'data' => []]);
+            }
+            break;
+
+        case 'save_stocks_file':
+            $rawInput = file_get_contents('php://input');
+            $input = json_decode($rawInput, true);
+            
+            if (!isset($input['data'])) {
+                throw new Exception("Date lipsă");
+            }
+            
+            $file = 'stocuri.json';
+            if (file_put_contents($file, json_encode($input['data'], JSON_PRETTY_PRINT)) === false) {
+                 throw new Exception("Eroare la scrierea fișierului pe server");
+            }
+            
+            echo json_encode(['success' => true]);
+            break;
+
         case 'invoice':
             $rawInput = file_get_contents('php://input');
             $input = json_decode($rawInput, true);

@@ -22,6 +22,7 @@ import Settings from './components/Settings';
 import InventoryModal from './components/InventoryModal';
 import InvoiceEditor from './components/InvoiceEditor';
 import WorkStationSelector from './components/WorkStationSelector';
+import StocksView from './components/StocksView';
 import { createInvoiceInOblio, getProductsFromOblio } from './services/oblioService';
 import { STORAGE_KEYS } from './constants';
 
@@ -65,6 +66,9 @@ const App: React.FC = () => {
 
   const [manualCode, setManualCode] = useState('');
   const [connectionError, setConnectionError] = useState<string | null>(null);
+
+  // App Mode State
+  const [appMode, setAppMode] = useState<'INVOICE' | 'STOCKS'>('INVOICE');
 
   // Persist config to localStorage whenever it changes
   useEffect(() => {
@@ -379,36 +383,55 @@ const App: React.FC = () => {
           <div className="bg-emerald-500 p-2 rounded-lg shadow-emerald-500/20 shadow-lg">
             <ScanLine className="w-5 h-5 text-white" />
           </div>
-          <div>
+          <div className="hidden sm:block">
             <h1 className="text-lg font-bold text-white leading-tight">Scan2Oblio</h1>
-            <div className="flex items-center gap-3">
-              <div
-                onClick={() => inventory.length > 0 && setShowInventoryList(true)}
-                className={`flex items-center gap-1.5 transition-all active:scale-95 ${inventory.length > 0 ? 'cursor-pointer hover:opacity-80' : 'opacity-70'}`}
-              >
-                <div className={`w-2 h-2 rounded-full ${isInventoryLoading ? 'bg-yellow-400 animate-pulse' : inventory.length > 0 ? 'bg-emerald-400' : 'bg-red-400'}`} />
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
-                  {isInventoryLoading ? 'Se încarcă...' : inventory.length > 0 ? `${inventory.length} PRODUSE` : 'Deconectat'}
-                </span>
-                {inventory.length > 0 && <span className="text-[9px] text-slate-600 ml-1">(Vezi)</span>}
-              </div>
-
-              {!isInventoryLoading && (
-                <div className="border-l border-slate-700 pl-3">
-                  <WorkStationSelector
-                    config={config}
-                    selectedStation={config.workStation || 'Sediu'}
-                    onSelect={(val) => {
-                      const newConfig = { ...config, workStation: val };
-                      setConfig(newConfig);
-                      localStorage.setItem('oblio_config', JSON.stringify(newConfig));
-                    }}
-                  />
+            {appMode === 'INVOICE' && (
+              <div className="flex items-center gap-3">
+                <div
+                  onClick={() => inventory.length > 0 && setShowInventoryList(true)}
+                  className={`flex items-center gap-1.5 transition-all active:scale-95 ${inventory.length > 0 ? 'cursor-pointer hover:opacity-80' : 'opacity-70'}`}
+                >
+                  <div className={`w-2 h-2 rounded-full ${isInventoryLoading ? 'bg-yellow-400 animate-pulse' : inventory.length > 0 ? 'bg-emerald-400' : 'bg-red-400'}`} />
+                  <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
+                    {isInventoryLoading ? 'Se încarcă...' : inventory.length > 0 ? `${inventory.length} PRODUSE` : 'Deconectat'}
+                  </span>
+                  {inventory.length > 0 && <span className="text-[9px] text-slate-600 ml-1">(Vezi)</span>}
                 </div>
-              )}
-            </div>
+
+                {!isInventoryLoading && (
+                  <div className="border-l border-slate-700 pl-3">
+                    <WorkStationSelector
+                      config={config}
+                      selectedStation={config.workStation || ''}
+                      onSelect={(val) => {
+                        const newConfig = { ...config, workStation: val };
+                        setConfig(newConfig);
+                        localStorage.setItem('oblio_config', JSON.stringify(newConfig));
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Mode Switcher */}
+        <div className="absolute left-1/2 -translate-x-1/2 flex bg-slate-800 rounded-lg p-1 border border-slate-700 shadow-xl">
+          <button
+            onClick={() => setAppMode('INVOICE')}
+            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${appMode === 'INVOICE' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+          >
+            Facturare
+          </button>
+          <button
+            onClick={() => setAppMode('STOCKS')}
+            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${appMode === 'STOCKS' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+          >
+            Stocuri
+          </button>
+        </div>
+
         <button
           onClick={() => setShowSettings(!showSettings)}
           className="p-2 text-slate-400 hover:text-white transition-colors bg-slate-800 rounded-full hover:bg-slate-700"
@@ -434,253 +457,261 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* Inventory Modal */}
-        {showInventoryList && (
-          <InventoryModal
-            inventory={inventory}
-            onClose={() => setShowInventoryList(false)}
-            onAddToCart={handleAddToCartFromInventory}
-          />
-        )}
+        {appMode === 'STOCKS' ? (
+          <StocksView config={config} />
+        ) : (
+          <>
+            {/* Inventory Modal */}
+            {showInventoryList && (
+              <InventoryModal
+                inventory={inventory}
+                onClose={() => setShowInventoryList(false)}
+                onAddToCart={handleAddToCartFromInventory}
+              />
+            )}
 
-        {/* Test Result Modal */}
-        {testResult && (
-          <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in zoom-in duration-200">
-            <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-sm shadow-2xl relative">
-              <button
-                onClick={() => setTestResult(null)}
-                className="absolute top-4 right-4 p-1 hover:bg-slate-800 rounded-full transition-colors text-slate-400"
-              >
-                <X className="w-5 h-5" />
-              </button>
-
-              <div className="flex flex-col items-center text-center gap-4">
-                <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center">
-                  <Beaker className="w-8 h-8 text-blue-400" />
-                </div>
-                <div>
-                  <h3 className="text-white text-lg font-bold mb-1">Rezultat Scanare Test</h3>
-                  <p className="text-slate-400 text-sm">Acesta este numărul decodat din imagine:</p>
-                </div>
-
-                <div className="bg-black/50 border border-slate-700 rounded-lg p-4 w-full flex items-center justify-between gap-3">
-                  <code className="text-emerald-400 font-mono text-xl font-bold tracking-wider truncate">
-                    {testResult}
-                  </code>
+            {/* Test Result Modal */}
+            {testResult && (
+              <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in zoom-in duration-200">
+                <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-sm shadow-2xl relative">
                   <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(testResult);
-                      showStatus(AppStatus.SUCCESS, "Copiat!", 1500);
-                    }}
-                    className="p-2 hover:bg-slate-800 rounded text-slate-500 hover:text-white transition-colors"
+                    onClick={() => setTestResult(null)}
+                    className="absolute top-4 right-4 p-1 hover:bg-slate-800 rounded-full transition-colors text-slate-400"
                   >
-                    <Copy className="w-4 h-4" />
+                    <X className="w-5 h-5" />
                   </button>
+
+                  <div className="flex flex-col items-center text-center gap-4">
+                    <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center">
+                      <Beaker className="w-8 h-8 text-blue-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-white text-lg font-bold mb-1">Rezultat Scanare Test</h3>
+                      <p className="text-slate-400 text-sm">Acesta este numărul decodat din imagine:</p>
+                    </div>
+
+                    <div className="bg-black/50 border border-slate-700 rounded-lg p-4 w-full flex items-center justify-between gap-3">
+                      <code className="text-emerald-400 font-mono text-xl font-bold tracking-wider truncate">
+                        {testResult}
+                      </code>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(testResult);
+                          showStatus(AppStatus.SUCCESS, "Copiat!", 1500);
+                        }}
+                        className="p-2 hover:bg-slate-800 rounded text-slate-500 hover:text-white transition-colors"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <button
+                      onClick={() => setTestResult(null)}
+                      className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition-colors mt-2"
+                    >
+                      Închide
+                    </button>
+                  </div>
                 </div>
-
-                <button
-                  onClick={() => setTestResult(null)}
-                  className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold transition-colors mt-2"
-                >
-                  Închide
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Connection Error Banner */}
-        {connectionError && (
-          <div className="bg-red-500/10 border border-red-500/50 rounded-xl p-4 flex items-start gap-3 shadow-lg">
-            <div className="bg-red-500/20 p-2 rounded-full shrink-0">
-              <AlertTriangle className="w-5 h-5 text-red-400" />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-red-200 font-bold text-sm">Eroare Conexiune Oblio</h3>
-              <p className="text-red-300/80 text-xs mt-1 leading-relaxed">{connectionError}</p>
-              <button
-                onClick={() => setShowSettings(true)}
-                className="mt-3 text-xs font-semibold bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-400 transition-colors shadow-lg shadow-red-900/20"
-              >
-                Verifică Setările
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Product List */}
-        {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center mt-8 text-slate-500 gap-6 px-8 text-center">
-            <div className="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center mb-2 relative">
-              <ShoppingBag className="w-10 h-10 text-slate-600" />
-              <div className={`absolute bottom-0 right-0 p-2 rounded-full border-4 border-slate-900 ${connectionError ? 'bg-red-500' : 'bg-emerald-500'}`}>
-                {connectionError ? <AlertTriangle className="w-4 h-4 text-white" /> : <Database className="w-4 h-4 text-white" />}
-              </div>
-            </div>
-            <div>
-              <h3 className="text-white text-lg font-medium mb-2">Coșul este gol</h3>
-              <p className="text-sm">
-                {connectionError
-                  ? "Rezolvați eroarea de conexiune pentru a continua."
-                  : "Scanați produse pentru a le căuta în inventarul Oblio."}
-              </p>
-            </div>
-
-            <button
-              onClick={() => setIsScanning(true)}
-              disabled={inventory.length === 0}
-              className={`mt-2 px-8 py-3.5 rounded-xl font-bold shadow-lg transition-all flex items-center gap-2 transform active:scale-95 w-full max-w-xs justify-center
-                 ${inventory.length > 0 ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-500/20' : 'bg-slate-700 text-slate-400 cursor-not-allowed'}
-              `}
-            >
-              <ScanLine className="w-5 h-5" />
-              {inventory.length > 0 ? 'Începe Scanarea' : 'Conectare necesară'}
-            </button>
-
-            {/* Test Button - Available even without connection */}
-            <button
-              onClick={() => setIsTestScanning(true)}
-              className="w-full max-w-xs py-2 px-4 rounded-lg border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors text-sm font-medium flex items-center justify-center gap-2"
-            >
-              <Beaker className="w-4 h-4" />
-              Test Scanner (Fără Oblio)
-            </button>
-
-            {/* Quick Add By Code Input - Empty State */}
-            {inventory.length > 0 && (
-              <div className="flex items-center gap-2 w-full max-w-xs">
-                <div className="relative flex-1">
-                  <input
-                    type="text"
-                    value={manualCode}
-                    onChange={(e) => setManualCode(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleManualCodeSubmit()}
-                    placeholder="Sau introdu cod manual..."
-                    className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg py-3 pl-10 pr-4 focus:ring-2 focus:ring-emerald-500 outline-none placeholder:text-slate-500 text-sm"
-                  />
-                  <Keyboard className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                </div>
-                <button
-                  onClick={handleManualCodeSubmit}
-                  disabled={!manualCode}
-                  className="bg-slate-700 hover:bg-slate-600 text-white p-3 rounded-lg border border-slate-600 transition-colors disabled:opacity-50"
-                >
-                  <Plus className="w-5 h-5" />
-                </button>
               </div>
             )}
-          </div>
-        ) : (
-          <div className="space-y-3 pb-8">
 
-            {/* Quick Add By Code Input - List State */}
-            <div className="flex items-center gap-2 mb-4 bg-slate-800/80 backdrop-blur p-2 rounded-xl border border-slate-700 shadow-sm sticky top-0 z-10">
-              <Keyboard className="w-5 h-5 text-emerald-500 ml-2" />
-              <input
-                value={manualCode}
-                onChange={e => setManualCode(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleManualCodeSubmit()}
-                placeholder="Adaugă rapid un produs după cod..."
-                className="flex-1 bg-transparent text-white border-none focus:outline-none placeholder:text-slate-500 text-sm h-8"
-              />
-              <button
-                onClick={handleManualCodeSubmit}
-                disabled={!manualCode}
-                className="bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 text-white p-1.5 rounded-lg transition-colors"
-              >
-                <Plus className="w-5 h-5" />
-              </button>
-            </div>
-
-            {items.map((item) => (
-              <div key={item.id} className="group bg-slate-800 hover:bg-slate-750 transition-colors rounded-xl p-4 flex items-center justify-between shadow-lg border border-slate-700/50">
-                <div className="flex-1 min-w-0 pr-4">
-                  <div className="flex items-start justify-between mb-1">
-                    <h3 className="font-semibold text-white truncate text-base leading-tight">{item.name}</h3>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-slate-400">
-                    {item.barcode ? (
-                      <span className="bg-slate-900 px-1.5 py-0.5 rounded text-slate-300 font-mono tracking-wide">{item.barcode}</span>
-                    ) : (
-                      <span className="bg-emerald-500/10 text-emerald-300 px-1.5 py-0.5 rounded flex items-center gap-1">Manual</span>
-                    )}
-                    <span>|</span>
-                    <span>{item.price} RON</span>
-                    <span>|</span>
-                    <span>TVA {item.vatPercentage}%</span>
-                  </div>
+            {/* Connection Error Banner */}
+            {connectionError && (
+              <div className="bg-red-500/10 border border-red-500/50 rounded-xl p-4 flex items-start gap-3 shadow-lg">
+                <div className="bg-red-500/20 p-2 rounded-full shrink-0">
+                  <AlertTriangle className="w-5 h-5 text-red-400" />
                 </div>
-
-                <div className="flex items-center gap-3 shrink-0">
-                  <div className="flex items-center bg-slate-900 rounded-lg border border-slate-700 h-9">
-                    <button
-                      onClick={() => updateQuantity(item.id, -1)}
-                      className="w-8 h-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 rounded-l-lg transition-colors"
-                    >
-                      -
-                    </button>
-                    <span className="w-8 text-center text-sm font-bold text-white tabular-nums">{item.quantity}</span>
-                    <button
-                      onClick={() => updateQuantity(item.id, 1)}
-                      className="w-8 h-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 rounded-r-lg transition-colors"
-                    >
-                      +
-                    </button>
-                  </div>
+                <div className="flex-1">
+                  <h3 className="text-red-200 font-bold text-sm">Eroare Conexiune Oblio</h3>
+                  <p className="text-red-300/80 text-xs mt-1 leading-relaxed">{connectionError}</p>
                   <button
-                    onClick={() => removeItem(item.id)}
-                    className="w-9 h-9 flex items-center justify-center text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-colors"
+                    onClick={() => setShowSettings(true)}
+                    className="mt-3 text-xs font-semibold bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-400 transition-colors shadow-lg shadow-red-900/20"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    Verifică Setările
                   </button>
                 </div>
               </div>
-            ))}
+            )}
 
-            {/* Total Card */}
-            <div className="mt-6 bg-gradient-to-r from-slate-800 to-slate-800/80 rounded-xl p-5 border border-slate-700 shadow-xl">
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400 font-medium">Total Estimativ</span>
-                <span className="text-2xl font-bold text-white tracking-tight">{calculateTotal()} <span className="text-sm font-normal text-emerald-400">RON</span></span>
+            {/* Product List */}
+            {items.length === 0 ? (
+              <div className="flex flex-col items-center justify-center mt-8 text-slate-500 gap-6 px-8 text-center">
+                <div className="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center mb-2 relative">
+                  <ShoppingBag className="w-10 h-10 text-slate-600" />
+                  <div className={`absolute bottom-0 right-0 p-2 rounded-full border-4 border-slate-900 ${connectionError ? 'bg-red-500' : 'bg-emerald-500'}`}>
+                    {connectionError ? <AlertTriangle className="w-4 h-4 text-white" /> : <Database className="w-4 h-4 text-white" />}
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-white text-lg font-medium mb-2">Coșul este gol</h3>
+                  <p className="text-sm">
+                    {connectionError
+                      ? "Rezolvați eroarea de conexiune pentru a continua."
+                      : "Scanați produse pentru a le căuta în inventarul Oblio."}
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setIsScanning(true)}
+                  disabled={inventory.length === 0}
+                  className={`mt-2 px-8 py-3.5 rounded-xl font-bold shadow-lg transition-all flex items-center gap-2 transform active:scale-95 w-full max-w-xs justify-center
+                 ${inventory.length > 0 ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-500/20' : 'bg-slate-700 text-slate-400 cursor-not-allowed'}
+              `}
+                >
+                  <ScanLine className="w-5 h-5" />
+                  {inventory.length > 0 ? 'Începe Scanarea' : 'Conectare necesară'}
+                </button>
+
+                {/* Test Button - Available even without connection */}
+                <button
+                  onClick={() => setIsTestScanning(true)}
+                  className="w-full max-w-xs py-2 px-4 rounded-lg border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors text-sm font-medium flex items-center justify-center gap-2"
+                >
+                  <Beaker className="w-4 h-4" />
+                  Test Scanner (Fără Oblio)
+                </button>
+
+                {/* Quick Add By Code Input - Empty State */}
+                {inventory.length > 0 && (
+                  <div className="flex items-center gap-2 w-full max-w-xs">
+                    <div className="relative flex-1">
+                      <input
+                        type="text"
+                        value={manualCode}
+                        onChange={(e) => setManualCode(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleManualCodeSubmit()}
+                        placeholder="Sau introdu cod manual..."
+                        className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg py-3 pl-10 pr-4 focus:ring-2 focus:ring-emerald-500 outline-none placeholder:text-slate-500 text-sm"
+                      />
+                      <Keyboard className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                    </div>
+                    <button
+                      onClick={handleManualCodeSubmit}
+                      disabled={!manualCode}
+                      className="bg-slate-700 hover:bg-slate-600 text-white p-3 rounded-lg border border-slate-600 transition-colors disabled:opacity-50"
+                    >
+                      <Plus className="w-5 h-5" />
+                    </button>
+                  </div>
+                )}
               </div>
-            </div>
-          </div>
+            ) : (
+              <div className="space-y-3 pb-8">
+
+                {/* Quick Add By Code Input - List State */}
+                <div className="flex items-center gap-2 mb-4 bg-slate-800/80 backdrop-blur p-2 rounded-xl border border-slate-700 shadow-sm sticky top-0 z-10">
+                  <Keyboard className="w-5 h-5 text-emerald-500 ml-2" />
+                  <input
+                    value={manualCode}
+                    onChange={e => setManualCode(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleManualCodeSubmit()}
+                    placeholder="Adaugă rapid un produs după cod..."
+                    className="flex-1 bg-transparent text-white border-none focus:outline-none placeholder:text-slate-500 text-sm h-8"
+                  />
+                  <button
+                    onClick={handleManualCodeSubmit}
+                    disabled={!manualCode}
+                    className="bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 text-white p-1.5 rounded-lg transition-colors"
+                  >
+                    <Plus className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {items.map((item) => (
+                  <div key={item.id} className="group bg-slate-800 hover:bg-slate-750 transition-colors rounded-xl p-4 flex items-center justify-between shadow-lg border border-slate-700/50">
+                    <div className="flex-1 min-w-0 pr-4">
+                      <div className="flex items-start justify-between mb-1">
+                        <h3 className="font-semibold text-white truncate text-base leading-tight">{item.name}</h3>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-slate-400">
+                        {item.barcode ? (
+                          <span className="bg-slate-900 px-1.5 py-0.5 rounded text-slate-300 font-mono tracking-wide">{item.barcode}</span>
+                        ) : (
+                          <span className="bg-emerald-500/10 text-emerald-300 px-1.5 py-0.5 rounded flex items-center gap-1">Manual</span>
+                        )}
+                        <span>|</span>
+                        <span>{item.price} RON</span>
+                        <span>|</span>
+                        <span>TVA {item.vatPercentage}%</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 shrink-0">
+                      <div className="flex items-center bg-slate-900 rounded-lg border border-slate-700 h-9">
+                        <button
+                          onClick={() => updateQuantity(item.id, -1)}
+                          className="w-8 h-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 rounded-l-lg transition-colors"
+                        >
+                          -
+                        </button>
+                        <span className="w-8 text-center text-sm font-bold text-white tabular-nums">{item.quantity}</span>
+                        <button
+                          onClick={() => updateQuantity(item.id, 1)}
+                          className="w-8 h-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 rounded-r-lg transition-colors"
+                        >
+                          +
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => removeItem(item.id)}
+                        className="w-9 h-9 flex items-center justify-center text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Total Card */}
+                <div className="mt-6 bg-gradient-to-r from-slate-800 to-slate-800/80 rounded-xl p-5 border border-slate-700 shadow-xl">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 font-medium">Total Estimativ</span>
+                    <span className="text-2xl font-bold text-white tracking-tight">{calculateTotal()} <span className="text-sm font-normal text-emerald-400">RON</span></span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
       </main>
 
-      {/* Floating Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 p-4 safe-area-pb z-30">
-        <div className="max-w-2xl mx-auto flex gap-3">
-          <button
-            onClick={() => setIsScanning(true)}
-            disabled={inventory.length === 0}
-            className={`flex-1 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] border border-slate-700
+      {/* Floating Action Bar - Only in Invoice Mode */}
+      {appMode === 'INVOICE' && (
+        <div className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 p-4 safe-area-pb z-30">
+          <div className="max-w-2xl mx-auto flex gap-3">
+            <button
+              onClick={() => setIsScanning(true)}
+              disabled={inventory.length === 0}
+              className={`flex-1 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] border border-slate-700
                     ${inventory.length > 0 ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-slate-800/50 text-slate-600 cursor-not-allowed'}
                 `}
-          >
-            <ScanLine className={`w-5 h-5 ${inventory.length > 0 ? 'text-emerald-400' : 'text-slate-600'}`} />
-            Scan
-          </button>
-          <button
-            onClick={handleManualAdd}
-            className="px-4 bg-slate-800 text-white rounded-xl font-medium border border-slate-700 hover:bg-slate-700 flex items-center justify-center transition-all active:scale-[0.98]"
-            aria-label="Adaugă Manual"
-          >
-            <Plus className="w-6 h-6 text-slate-300" />
-          </button>
-          <button
-            onClick={handleCreateInvoice}
-            disabled={items.length === 0}
-            className={`flex-[2] py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]
+            >
+              <ScanLine className={`w-5 h-5 ${inventory.length > 0 ? 'text-emerald-400' : 'text-slate-600'}`} />
+              Scan
+            </button>
+            <button
+              onClick={handleManualAdd}
+              className="px-4 bg-slate-800 text-white rounded-xl font-medium border border-slate-700 hover:bg-slate-700 flex items-center justify-center transition-all active:scale-[0.98]"
+              aria-label="Adaugă Manual"
+            >
+              <Plus className="w-6 h-6 text-slate-300" />
+            </button>
+            <button
+              onClick={handleCreateInvoice}
+              disabled={items.length === 0}
+              className={`flex-[2] py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]
                     ${items.length === 0 ? 'bg-slate-800 text-slate-600 cursor-not-allowed border border-slate-700' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 border border-emerald-500'}
                 `}
-          >
-            <FileText className="w-5 h-5" />
-            Creează Factură
-          </button>
+            >
+              <FileText className="w-5 h-5" />
+              Creează Factură
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Full Screen Scanner Overlay - Shared for both Business Scan and Test Scan */}
       {(isScanning || isTestScanning) && (
