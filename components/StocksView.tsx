@@ -323,8 +323,8 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
                                     </div>
                                     <div className="flex gap-4 text-xs text-slate-400">
                                         <span className="font-mono bg-slate-900 px-1.5 rounded">{item["Cod produs"]}</span>
-                                        <span>Preț: <span className="text-emerald-300 font-bold">{item["Pret vanzare"]} {item["Moneda vanzare"]}</span></span>
-                                        <span>Tip: {item["Tip"]}</span>
+                                        <span>Preț de vânzare: <span className="text-emerald-300 font-bold">{item["Pret vanzare"]} {item["Moneda vanzare"]}</span></span>
+                                        <span>Preț achiziție: <span className="text-blue-300 font-bold">{item["Cost achizitie fara TVA"]} {item["Moneda achizitie"]}</span></span>
                                         {item.lastEdit && <span className="text-slate-500 italic">Editat: {item.lastEdit}</span>}
                                     </div>
                                 </div>
