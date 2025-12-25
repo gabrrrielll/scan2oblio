@@ -46,14 +46,13 @@ const WorkStationSelector: React.FC<WorkStationSelectorProps> = ({ config, selec
                 <select
                     value={selectedStation}
                     onChange={(e) => onSelect(e.target.value)}
-                    className="bg-transparent text-sm font-bold text-white outline-none border-none p-0 cursor-pointer hover:text-emerald-400 transition-colors w-full min-w-[120px]"
+                    className="bg-slate-800 text-sm font-bold text-white outline-none border-none p-0 cursor-pointer hover:text-emerald-400 transition-colors w-full min-w-[120px]"
                     disabled={loading}
                 >
                     {loading ? (
                         <option>Se încarcă...</option>
                     ) : (
                         <>
-                            <option value="Sediu" className="bg-slate-900 text-white">Sediu (Default)</option>
                             {stations.map((s, idx) => {
                                 // Fallback pentru afisare daca lipseste name
                                 const label = s.name || s.management || s.workStation || `Gestiune ${idx + 1}`;
