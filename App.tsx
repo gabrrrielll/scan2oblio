@@ -378,18 +378,19 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-slate-900 pb-24 relative overflow-hidden font-sans">
 
       {/* Top Bar */}
-      <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3 flex justify-between items-center shadow-md">
-        <div className="flex items-center gap-3">
-          <div className="bg-emerald-500 p-2 rounded-lg shadow-emerald-500/20 shadow-lg">
-            <ScanLine className="w-5 h-5 text-white" />
-          </div>
-          <div className="hidden sm:block">
-            <h1 className="text-lg font-bold text-white leading-tight">Scan2Oblio</h1>
-            {appMode === 'INVOICE' && (
-              <div className="flex flex-col items-start gap-1 mt-1">
+      {/* Top Bar */}
+      <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3 flex flex-col gap-2 shadow-md">
+        <div className="flex justify-between items-center w-full relative">
+          <div className="flex items-center gap-3">
+            <div className="bg-emerald-500 p-2 rounded-lg shadow-emerald-500/20 shadow-lg">
+              <ScanLine className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-white leading-tight">Scan2Oblio</h1>
+              {appMode === 'INVOICE' && (
                 <div
                   onClick={() => inventory.length > 0 && setShowInventoryList(true)}
-                  className={`flex items-center gap-1.5 transition-all active:scale-95 ${inventory.length > 0 ? 'cursor-pointer hover:opacity-80' : 'opacity-70'}`}
+                  className={`flex items-center gap-1.5 mt-1 transition-all active:scale-95 ${inventory.length > 0 ? 'cursor-pointer hover:opacity-80' : 'opacity-70'}`}
                 >
                   <div className={`w-2 h-2 rounded-full ${isInventoryLoading ? 'bg-yellow-400 animate-pulse' : inventory.length > 0 ? 'bg-emerald-400' : 'bg-red-400'}`} />
                   <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
@@ -397,47 +398,48 @@ const App: React.FC = () => {
                   </span>
                   {inventory.length > 0 && <span className="text-[9px] text-slate-600 ml-1">(Vezi)</span>}
                 </div>
-
-                {!isInventoryLoading && (
-                  <div>
-                    <WorkStationSelector
-                      config={config}
-                      selectedStation={config.workStation || ''}
-                      onSelect={(val) => {
-                        const newConfig = { ...config, workStation: val };
-                        setConfig(newConfig);
-                        localStorage.setItem('oblio_config', JSON.stringify(newConfig));
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
+              )}
+            </div>
           </div>
+
+          {/* Mode Switcher - Centered Absolute */}
+          <div className="absolute left-1/2 -translate-x-1/2 flex bg-slate-800 rounded-lg p-1 border border-slate-700 shadow-xl">
+            <button
+              onClick={() => setAppMode('INVOICE')}
+              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${appMode === 'INVOICE' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+            >
+              Facturare
+            </button>
+            <button
+              onClick={() => setAppMode('STOCKS')}
+              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${appMode === 'STOCKS' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+            >
+              Stocuri
+            </button>
+          </div>
+
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            className="p-2 text-slate-400 hover:text-white transition-colors bg-slate-800 rounded-full hover:bg-slate-700"
+          >
+            <SettingsIcon className="w-5 h-5" />
+          </button>
         </div>
 
-        {/* Mode Switcher */}
-        <div className="absolute left-1/2 -translate-x-1/2 flex bg-slate-800 rounded-lg p-1 border border-slate-700 shadow-xl">
-          <button
-            onClick={() => setAppMode('INVOICE')}
-            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${appMode === 'INVOICE' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
-          >
-            Facturare
-          </button>
-          <button
-            onClick={() => setAppMode('STOCKS')}
-            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${appMode === 'STOCKS' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
-          >
-            Stocuri
-          </button>
-        </div>
-
-        <button
-          onClick={() => setShowSettings(!showSettings)}
-          className="p-2 text-slate-400 hover:text-white transition-colors bg-slate-800 rounded-full hover:bg-slate-700"
-        >
-          <SettingsIcon className="w-5 h-5" />
-        </button>
+        {/* Second Row: WorkStation Selector */}
+        {appMode === 'INVOICE' && !isInventoryLoading && (
+          <div className="w-full">
+            <WorkStationSelector
+              config={config}
+              selectedStation={config.workStation || ''}
+              onSelect={(val) => {
+                const newConfig = { ...config, workStation: val };
+                setConfig(newConfig);
+                localStorage.setItem('oblio_config', JSON.stringify(newConfig));
+              }}
+            />
+          </div>
+        )}
       </header>
 
       {/* Main Content */}
