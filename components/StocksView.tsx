@@ -306,7 +306,7 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
                         {filteredStocks.map((item, idx) => (
                             <div
                                 key={idx}
-                                className="p-4 hover:bg-slate-700/50 transition-colors flex items-center justify-between group"
+                                className="p-2 hover:bg-slate-700/50 transition-colors flex items-center justify-between group"
                             >
                                 <div
                                     className="flex-1 min-w-0 cursor-pointer"
@@ -329,7 +329,7 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-2 px-2">
+                                <div className="flex flex-col md:flex-row items-center gap-2 px-2">
                                     <button
                                         onClick={() => {
                                             setEditingProduct(item);
