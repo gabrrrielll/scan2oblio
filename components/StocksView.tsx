@@ -3,7 +3,7 @@ import { OblioConfig, OblioProduct, StockItem } from '../types';
 import { getProductsFromOblio } from '../services/oblioService';
 import { fetchStocksFromFile, saveStocksToFile } from '../services/stockFileService';
 import StockEditModal from './StockEditModal';
-import { Search, Download, Upload, Plus, Edit2, Loader2, Save } from 'lucide-react';
+import { Search, Download, Upload, Plus, Edit2, Loader2, Save, Trash2 } from 'lucide-react';
 
 interface StocksViewProps {
     config: OblioConfig;
@@ -192,8 +192,9 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
     return (
         <div className="flex flex-col h-full space-y-4">
             {/* Toolbar */}
-            <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col md:flex-row gap-4 items-center justify-between shadow-lg">
-                <div className="relative w-full md:w-96">
+            <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col gap-4 shadow-lg">
+                {/* Row 1: Search */}
+                <div className="relative w-full">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
                     <input
                         type="text"
@@ -204,11 +205,12 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
                     />
                 </div>
 
-                <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+                {/* Row 2: Import/Export Actions */}
+                <div className="flex gap-2 w-full overflow-x-auto pb-1 md:pb-0">
                     <button
                         onClick={handleImportFromOblio}
                         disabled={isImporting}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-600/30 transition-colors whitespace-nowrap"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-600/30 transition-colors whitespace-nowrap"
                     >
                         {isImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                         Import Sincronizare
@@ -224,7 +226,7 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
                     />
                     <label
                         htmlFor="json-upload"
-                        className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-slate-300 border border-slate-600 rounded-lg hover:bg-slate-600 transition-colors whitespace-nowrap cursor-pointer"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-700 text-slate-300 border border-slate-600 rounded-lg hover:bg-slate-600 transition-colors whitespace-nowrap cursor-pointer"
                     >
                         <Upload className="w-4 h-4" />
                         Upload JSON
@@ -232,26 +234,25 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
 
                     <button
                         onClick={handleExport}
-                        className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-slate-300 border border-slate-600 rounded-lg hover:bg-slate-600 transition-colors whitespace-nowrap"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-700 text-slate-300 border border-slate-600 rounded-lg hover:bg-slate-600 transition-colors whitespace-nowrap"
                     >
                         <Download className="w-4 h-4" />
                         Export
                     </button>
-
-                    <button
-                        onClick={() => {
-                            setEditingProduct(null); // Clear previous selection to ensure clean state
-                            setIsNewProduct(true);
-                            // Need to handle state update delay, so we pass a dummy object slightly later or handle in Modal
-                            // Actually StockEditModal handles null product as "new/empty" but we set isNew=true
-                            setEditingProduct({} as StockItem); // Hack to trigger modal open
-                        }}
-                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors font-medium whitespace-nowrap shadow-lg shadow-emerald-500/20"
-                    >
-                        <Plus className="w-4 h-4" />
-                        Produs Nou
-                    </button>
                 </div>
+
+                {/* Row 3: Add Product (Full Width) */}
+                <button
+                    onClick={() => {
+                        setEditingProduct(null);
+                        setIsNewProduct(true);
+                        setEditingProduct({} as StockItem);
+                    }}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors font-bold shadow-lg shadow-emerald-500/20"
+                >
+                    <Plus className="w-5 h-5" />
+                    Produs Nou
+                </button>
             </div>
 
             {/* Error Message */}
@@ -277,13 +278,15 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
                         {filteredStocks.map((item, idx) => (
                             <div
                                 key={idx}
-                                onClick={() => {
-                                    setEditingProduct(item);
-                                    setIsNewProduct(false);
-                                }}
-                                className="p-4 hover:bg-slate-700/50 transition-colors cursor-pointer flex items-center justify-between group"
+                                className="p-4 hover:bg-slate-700/50 transition-colors flex items-center justify-between group"
                             >
-                                <div className="flex-1 min-w-0">
+                                <div
+                                    className="flex-1 min-w-0 cursor-pointer"
+                                    onClick={() => {
+                                        setEditingProduct(item);
+                                        setIsNewProduct(false);
+                                    }}
+                                >
                                     <div className="flex items-center gap-3 mb-1">
                                         <span className="font-semibold text-white text-lg truncate">{item["Denumire produs"]}</span>
                                         <span className={`px-2 py-0.5 rounded textxs font-bold ${item["Stoc"] > 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
@@ -297,8 +300,29 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
                                     </div>
                                 </div>
 
-                                <div className="opacity-0 group-hover:opacity-100 transition-opacity px-2">
-                                    <Edit2 className="w-4 h-4 text-slate-400" />
+                                <div className="flex items-center gap-2 px-2">
+                                    <button
+                                        onClick={() => {
+                                            setEditingProduct(item);
+                                            setIsNewProduct(false);
+                                        }}
+                                        className="p-2 hover:bg-slate-600 rounded-lg text-slate-400 hover:text-white transition-colors"
+                                        title="Editează"
+                                    >
+                                        <Edit2 className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (confirm('Sigur doriți să ștergeți acest produs?')) {
+                                                handleDeleteProduct(item["Cod produs"]);
+                                            }
+                                        }}
+                                        className="p-2 hover:bg-red-500/20 rounded-lg text-slate-400 hover:text-red-400 transition-colors"
+                                        title="Șterge"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
                                 </div>
                             </div>
                         ))}
