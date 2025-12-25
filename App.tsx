@@ -386,7 +386,7 @@ const App: React.FC = () => {
           <div className="hidden sm:block">
             <h1 className="text-lg font-bold text-white leading-tight">Scan2Oblio</h1>
             {appMode === 'INVOICE' && (
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col items-start gap-1 mt-1">
                 <div
                   onClick={() => inventory.length > 0 && setShowInventoryList(true)}
                   className={`flex items-center gap-1.5 transition-all active:scale-95 ${inventory.length > 0 ? 'cursor-pointer hover:opacity-80' : 'opacity-70'}`}
@@ -399,7 +399,7 @@ const App: React.FC = () => {
                 </div>
 
                 {!isInventoryLoading && (
-                  <div className="border-l border-slate-700 pl-3">
+                  <div>
                     <WorkStationSelector
                       config={config}
                       selectedStation={config.workStation || ''}
