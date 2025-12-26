@@ -947,6 +947,7 @@ try {
             echo '</xml>';
             echo '<![endif]-->';
             echo '<meta http-equiv="content-type" content="text/plain; charset=UTF-8"/>';
+            echo '<style> .text { mso-number-format:"\@"; } </style>';
             echo '</head>';
             echo '<body>';
             
@@ -967,18 +968,21 @@ try {
                     foreach ($columns as $col) {
                         $val = isset($row[$col]) ? $row[$col] : '';
                         
+                        $class = '';
                         $style = '';
+                        
                         // Format specific types if needed
                         // Force text format for "Cod" columns to prevent scientific notation (EAN13)
-                        if (stripos($col, 'Cod') !== false || stripos($col, 'code') !== false || stripos($col, 'ean') !== false) {
-                            $style = ' style=\'mso-number-format:"\@"\'';
+                        // Explicitly checking "Cod produs" and variations
+                        if ($col === 'Cod produs' || stripos($col, 'Cod') !== false || stripos($col, 'code') !== false || stripos($col, 'ean') !== false) {
+                            $class = ' class="text"';
                         }
                         // Format prices
                         elseif (is_numeric($val) && (strpos($col, 'Pret') !== false || strpos($col, 'Cost') !== false)) {
                             $val = str_replace('.', ',', $val); 
                         }
                         
-                        echo '<td' . $style . '>' . htmlspecialchars($val) . '</td>';
+                        echo '<td' . $class . $style . '>' . htmlspecialchars($val) . '</td>';
                     }
                     echo '</tr>';
                 }
