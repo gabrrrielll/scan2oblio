@@ -24,6 +24,20 @@ define('OBLIO_BASE_URL', 'https://www.oblio.eu/api');
 $tokenCache = [];
 
 /**
+ * Elimină diacriticele dintr-un string
+ */
+function removeDiacritics($string) {
+    if (is_null($string)) {
+        return '';
+    }
+    
+    $search  = ['ă', 'â', 'î', 'ș', 'ț', 'Ă', 'Â', 'Î', 'Ș', 'Ț', 'ş', 'ţ', 'Ş', 'Ţ'];
+    $replace = ['a', 'a', 'i', 's', 't', 'A', 'A', 'I', 'S', 'T', 's', 't', 'S', 'T'];
+    
+    return str_replace($search, $replace, $string);
+}
+
+/**
  * Obține token de acces de la Oblio
  */
 function getAccessToken($email, $apiSecret)
@@ -958,7 +972,7 @@ try {
                 $columns = array_keys($data[0]);
                 echo '<tr>';
                 foreach ($columns as $col) {
-                    echo '<th style="background-color: #f0f0f0; font-weight: bold;">' . htmlspecialchars($col) . '</th>';
+                    echo '<th style="background-color: #f0f0f0; font-weight: bold;">' . htmlspecialchars(removeDiacritics($col)) . '</th>';
                 }
                 echo '</tr>';
                 
@@ -982,7 +996,7 @@ try {
                             $val = str_replace('.', ',', $val); 
                         }
                         
-                        echo '<td' . $class . $style . '>' . htmlspecialchars($val) . '</td>';
+                        echo '<td' . $class . $style . '>' . htmlspecialchars(removeDiacritics($val)) . '</td>';
                     }
                     echo '</tr>';
                 }
