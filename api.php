@@ -967,12 +967,18 @@ try {
                     foreach ($columns as $col) {
                         $val = isset($row[$col]) ? $row[$col] : '';
                         
+                        $style = '';
                         // Format specific types if needed
-                        if (is_numeric($val) && (strpos($col, 'Pret') !== false || strpos($col, 'Cost') !== false)) {
-                            $val = str_replace('.', ',', $val); // Excel often prefers comma for decimals in some locales, or just keep as is
+                        // Force text format for "Cod" columns to prevent scientific notation (EAN13)
+                        if (stripos($col, 'Cod') !== false || stripos($col, 'code') !== false || stripos($col, 'ean') !== false) {
+                            $style = ' style=\'mso-number-format:"\@"\'';
+                        }
+                        // Format prices
+                        elseif (is_numeric($val) && (strpos($col, 'Pret') !== false || strpos($col, 'Cost') !== false)) {
+                            $val = str_replace('.', ',', $val); 
                         }
                         
-                        echo '<td>' . htmlspecialchars($val) . '</td>';
+                        echo '<td' . $style . '>' . htmlspecialchars($val) . '</td>';
                     }
                     echo '</tr>';
                 }
