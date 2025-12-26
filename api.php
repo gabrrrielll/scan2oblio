@@ -969,9 +969,27 @@ try {
             
             // Header row
             if (!empty($data)) {
-                $columns = array_keys($data[0]);
+                // Define exact column order based on Export_stoc_Test.xls
+                $allowedColumns = [
+                    'Denumire produs',
+                    'Tip', 
+                    'Cod produs',
+                    'Stoc',
+                    'U.M.',
+                    'Cost achizitie fara TVA',
+                    'Moneda achizitie',
+                    'Pret vanzare',
+                    'Cota TVA',
+                    'TVA inclus',
+                    'Moneda vanzare'
+                ];
+                
+                // If data has keys that match allowed columns (case insensitive or similar), map them? 
+                // For now assuming keys in JSON match exactly or we just grab what exists.
+                // We will iterate $allowedColumns and try to find the value in $row.
+                
                 echo '<tr>';
-                foreach ($columns as $col) {
+                foreach ($allowedColumns as $col) {
                     echo '<th style="background-color: #f0f0f0; font-weight: bold;">' . htmlspecialchars(removeDiacritics($col)) . '</th>';
                 }
                 echo '</tr>';
@@ -979,7 +997,7 @@ try {
                 // Data rows
                 foreach ($data as $row) {
                     echo '<tr>';
-                    foreach ($columns as $col) {
+                    foreach ($allowedColumns as $col) {
                         $val = isset($row[$col]) ? $row[$col] : '';
                         
                         $class = '';
