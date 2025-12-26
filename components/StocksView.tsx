@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { OblioConfig, OblioProduct, StockItem } from '../types';
 import { getProductsFromOblio } from '../services/oblioService';
-import { fetchStocksFromFile, saveStocksToFile } from '../services/stockFileService';
+import { fetchStocksFromFile, saveStocksToFile, getExportStocksXlsUrl } from '../services/stockFileService';
 import Scanner from './Scanner';
 import StockEditModal from './StockEditModal';
 import { Search, Download, Upload, Plus, Edit2, Loader2, Save, Trash2, ScanLine } from 'lucide-react';
@@ -261,11 +261,23 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
                     </label>
 
                     <button
-                        onClick={handleExport}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-700 text-slate-300 border border-slate-600 rounded-lg hover:bg-slate-600 transition-colors whitespace-nowrap"
+                        onClick={() => {
+                            window.location.href = getExportStocksXlsUrl();
+                        }}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-emerald-700/50 text-emerald-100 border border-emerald-600/50 rounded-lg hover:bg-emerald-600/50 transition-colors whitespace-nowrap"
+                        title="Descarcă format Excel"
                     >
                         <Download className="w-4 h-4" />
-                        Export
+                        Export XLS
+                    </button>
+
+                    <button
+                        onClick={handleExport}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-700 text-slate-300 border border-slate-600 rounded-lg hover:bg-slate-600 transition-colors whitespace-nowrap"
+                        title="Descarcă format JSON"
+                    >
+                        <Download className="w-4 h-4" />
+                        Export JSON
                     </button>
                 </div>
 

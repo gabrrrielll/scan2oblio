@@ -904,6 +904,88 @@ try {
             echo json_encode(array_merge(['success' => true], $result));
             break;
 
+        case 'export_stocks_xls':
+            $file = 'stocuri.json';
+            $data = [];
+            
+            if (file_exists($file)) {
+                $content = file_get_contents($file);
+                if (!empty(trim($content))) {
+                    $json = json_decode($content, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($json)) {
+                        $data = $json;
+                    }
+                }
+            }
+            
+            // Dacă nu avem date, returnăm eroare sau fișier gol
+            if (empty($data)) {
+                 $data = [];
+            }
+            
+            // Set headers for download
+            header('Content-Type: application/vnd.ms-excel; charset=utf-8');
+            header('Content-Disposition: attachment; filename="stocuri_export_' . date('Y-m-d_H-i') . '.xls"');
+            header('Pragma: no-cache');
+            header('Expires: 0');
+            
+            // Generate HTML Table for XLS
+            echo '<html xmlns:x="urn:schemas-microsoft-com:office:excel">';
+            echo '<head>';
+            echo '<!--[if gte mso 9]>';
+            echo '<xml>';
+            echo '<x:ExcelWorkbook>';
+            echo '<x:ExcelWorksheets>';
+            echo '<x:ExcelWorksheet>';
+            echo '<x:Name>Stocuri</x:Name>';
+            echo '<x:WorksheetOptions>';
+            echo '<x:DisplayGridlines/>';
+            echo '</x:WorksheetOptions>';
+            echo '</x:ExcelWorksheet>';
+            echo '</x:ExcelWorksheets>';
+            echo '</x:ExcelWorkbook>';
+            echo '</xml>';
+            echo '<![endif]-->';
+            echo '<meta http-equiv="content-type" content="text/plain; charset=UTF-8"/>';
+            echo '</head>';
+            echo '<body>';
+            
+            echo '<table border="1">';
+            
+            // Header row
+            if (!empty($data)) {
+                $columns = array_keys($data[0]);
+                echo '<tr>';
+                foreach ($columns as $col) {
+                    echo '<th style="background-color: #f0f0f0; font-weight: bold;">' . htmlspecialchars($col) . '</th>';
+                }
+                echo '</tr>';
+                
+                // Data rows
+                foreach ($data as $row) {
+                    echo '<tr>';
+                    foreach ($columns as $col) {
+                        $val = isset($row[$col]) ? $row[$col] : '';
+                        
+                        // Format specific types if needed
+                        if (is_numeric($val) && (strpos($col, 'Pret') !== false || strpos($col, 'Cost') !== false)) {
+                            $val = str_replace('.', ',', $val); // Excel often prefers comma for decimals in some locales, or just keep as is
+                        }
+                        
+                        echo '<td>' . htmlspecialchars($val) . '</td>';
+                    }
+                    echo '</tr>';
+                }
+            } else {
+                 echo '<tr><td>Nu există date de exportat.</td></tr>';
+            }
+            
+            echo '</table>';
+            echo '</body>';
+            echo '</html>';
+            exit; // Stop execution after outputting file
+            break;
+
         default:
             throw new Exception("Acțiune necunoscută: $action");
     }

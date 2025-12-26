@@ -38,3 +38,7 @@ export const saveStocksToFile = async (stocks: StockItem[]): Promise<void> => {
         throw error;
     }
 };
+
+export const getExportStocksXlsUrl = (): string => {
+    return `${API_URL}?action=export_stocks_xls`;
+};
