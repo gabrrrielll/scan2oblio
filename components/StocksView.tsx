@@ -105,7 +105,7 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
         downloadAnchorNode.remove();
     };
 
-    const handleSaveProduct = async (product: StockItem) => {
+    const handleSaveProduct = async (product: StockItem, originalCode?: string) => {
         try {
             const productWithDate = { ...product, lastEdit: formatDate() };
             let newStocks = [...stocks];
@@ -119,9 +119,23 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
                 newStocks.push(productWithDate);
             } else {
                 // Update existing
-                const index = newStocks.findIndex(s => s["Cod produs"] === product["Cod produs"]);
+                const searchCode = originalCode || product["Cod produs"];
+                const index = newStocks.findIndex(s => s["Cod produs"] === searchCode);
+
                 if (index !== -1) {
+                    // If code changed, check if new code matches ANOTHER existing product
+                    if (product["Cod produs"] !== searchCode) {
+                        const duplicateIndex = newStocks.findIndex(s => s["Cod produs"] === product["Cod produs"]);
+                        if (duplicateIndex !== -1 && duplicateIndex !== index) {
+                            alert(`Există deja un produs cu codul ${product["Cod produs"]}!`);
+                            return;
+                        }
+                    }
                     newStocks[index] = productWithDate;
+                } else {
+                    console.error("Could not find original product to update:", searchCode);
+                    setError("Eroare internă: Produsul original nu a fost găsit pentru actualizare.");
+                    return;
                 }
             }
 

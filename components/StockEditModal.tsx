@@ -6,7 +6,7 @@ interface StockEditModalProps {
     product: StockItem | null;
     isNew: boolean;
     onClose: () => void;
-    onSave: (product: StockItem) => void;
+    onSave: (product: StockItem, originalProductCode?: string) => void;
     onDelete?: (productCode: string) => void;
 }
 
@@ -32,11 +32,15 @@ const StockEditModal: React.FC<StockEditModalProps> = ({ product, isNew, onClose
 
     const [formData, setFormData] = useState<StockItem>(defaultProduct);
 
+    const [originalCode, setOriginalCode] = useState("");
+
     useEffect(() => {
         if (product) {
             setFormData(product);
+            setOriginalCode(product["Cod produs"]);
         } else {
             setFormData(defaultProduct);
+            setOriginalCode("");
         }
     }, [product]);
 
@@ -86,7 +90,7 @@ const StockEditModal: React.FC<StockEditModalProps> = ({ product, isNew, onClose
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSave(formData);
+        onSave(formData, originalCode);
     };
 
     return (
