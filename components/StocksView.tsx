@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { OblioConfig, OblioProduct, StockItem } from '../types';
 import { getProductsFromOblio } from '../services/oblioService';
 import { fetchStocksFromFile, saveStocksToFile, getExportStocksXlsUrl } from '../services/stockFileService';
+import { generateEAN13 } from '../services/productUtils';
 import Scanner from './Scanner';
 import StockEditModal from './StockEditModal';
 import { Search, Download, Upload, Plus, Edit2, Loader2, Save, Trash2, ScanLine } from 'lucide-react';
@@ -110,33 +111,57 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
             const productWithDate = { ...product, lastEdit: formatDate() };
             let newStocks = [...stocks];
 
+            const searchCode = originalCode || product["Cod produs"];
+            let index = -1;
+
             if (isNewProduct) {
-                // Check for duplicates
+                // Determine if there's a strict existing product to prevent overwrite
+                // Actually, for new products, we just append, BUT we check collisions
                 if (stocks.some(s => s["Cod produs"] === product["Cod produs"])) {
-                    alert("Există deja un produs cu acest cod!");
-                    return;
+                    // This is where we might auto-correct OR alert.
+                    // User asked to auto-correct "rest of products with same code".
+                    // But if I am adding a NEW product that collides, maybe I should auto-correct the NEW one?
+                    // User specific request: "when I save a product... modification rest of products with same code"
+                    // This implies I want THIS product to have THIS code, and OTHERS should move away.
+                    // So we proceed, and subsequent logic will fix the others.
                 }
                 newStocks.push(productWithDate);
+                index = newStocks.length - 1; // It's the last one
             } else {
                 // Update existing
-                const searchCode = originalCode || product["Cod produs"];
-                const index = newStocks.findIndex(s => s["Cod produs"] === searchCode);
+                index = newStocks.findIndex(s => s["Cod produs"] === searchCode);
 
                 if (index !== -1) {
-                    // If code changed, check if new code matches ANOTHER existing product
-                    if (product["Cod produs"] !== searchCode) {
-                        const duplicateIndex = newStocks.findIndex(s => s["Cod produs"] === product["Cod produs"]);
-                        if (duplicateIndex !== -1 && duplicateIndex !== index) {
-                            alert(`Există deja un produs cu codul ${product["Cod produs"]}!`);
-                            return;
-                        }
-                    }
                     newStocks[index] = productWithDate;
                 } else {
+                    // Fallback: Code might have been changed in UI but original not passed or bad state
+                    // Try to find by ID if we had one, but we don't.
+                    // Try to find strict match on new code? No, that would overwrite another.
                     console.error("Could not find original product to update:", searchCode);
                     setError("Eroare internă: Produsul original nu a fost găsit pentru actualizare.");
                     return;
                 }
+            }
+
+            // AUTO-RESOLVE DUPLICATES
+            // We want to ensure 'productWithDate' keeps its code 'productWithDate["Cod produs"]'.
+            // Any OTHER product in newStocks that has the same code must be changed.
+            const targetCode = productWithDate["Cod produs"];
+            let conflictsFixed = 0;
+
+            // We iterate all stocks. If we find a stock that is NOT our current index (or same object ref)
+            // but HAS the same code, we regenerate its code.
+            // Note: 'index' points to our just-updated product in 'newStocks'.
+            newStocks = newStocks.map((s, idx) => {
+                if (idx !== index && s["Cod produs"] === targetCode) {
+                    conflictsFixed++;
+                    return { ...s, "Cod produs": generateEAN13(), lastEdit: formatDate() };
+                }
+                return s;
+            });
+
+            if (conflictsFixed > 0) {
+                alert(`Atenție: Au fost găsite ${conflictsFixed} alte produse cu același cod (${targetCode}). Acestea au fost actualizate automat cu coduri EAN13 noi pentru a elimina duplicatele.`);
             }
 
             // Optimistic update
