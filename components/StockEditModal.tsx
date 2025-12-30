@@ -272,21 +272,14 @@ const StockEditModal: React.FC<StockEditModalProps> = ({ product, isNew, onClose
                                         onDelete(formData["Cod produs"]);
                                     }
                                 }}
-                                className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors"
+                                className="flex items-center justify-center p-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors"
+                                title="Șterge produsul"
                             >
-                                <Trash2 className="w-4 h-4" />
-                                Șterge
+                                <Trash2 className="w-5 h-5" />
                             </button>
                         ) : <div></div>}
 
                         <div className="flex gap-3">
-                            <button
-                                type="button"
-                                onClick={onClose}
-                                className="px-6 py-2 bg-slate-800 text-slate-300 rounded-lg hover:bg-slate-700 transition-colors"
-                            >
-                                Anulează
-                            </button>
                             <button
                                 type="submit"
                                 className="flex items-center gap-2 px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors font-medium shadow-lg shadow-emerald-500/20"
