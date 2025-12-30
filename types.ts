@@ -130,4 +130,5 @@ export interface StockItem {
   "woodColor": string;
   "material": string;
   "lastEdit"?: string; // dd:MM:yy HH:mm
+  "verified"?: boolean;
 }

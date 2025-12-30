@@ -5,7 +5,7 @@ import { fetchStocksFromFile, saveStocksToFile, getExportStocksXlsUrl } from '..
 import { generateEAN13 } from '../services/productUtils';
 import Scanner from './Scanner';
 import StockEditModal from './StockEditModal';
-import { Search, Download, Upload, Plus, Edit2, Loader2, Save, Trash2, ScanLine } from 'lucide-react';
+import { Search, Download, Upload, Plus, Edit2, Loader2, Save, Trash2, ScanLine, CheckCircle2, CheckSquare, Square, Filter, Circle } from 'lucide-react';
 
 interface StocksViewProps {
     config: OblioConfig;
@@ -20,6 +20,8 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
     const [isNewProduct, setIsNewProduct] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
     const [isScanning, setIsScanning] = useState(false);
+    const [filterStatus, setFilterStatus] = useState<'all' | 'in_stock' | 'out_of_stock'>('all');
+    const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
 
     const formatDate = () => {
         const now = new Date();
@@ -182,9 +184,68 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
             const newStocks = stocks.filter(s => s["Cod produs"] !== productCode);
             setStocks(newStocks);
             setEditingProduct(null);
+            // Also remove from selection if present
+            if (selectedProducts.has(productCode)) {
+                const newSelection = new Set(selectedProducts);
+                newSelection.delete(productCode);
+                setSelectedProducts(newSelection);
+            }
             await saveStocksToFile(newStocks);
         } catch (err: any) {
             setError(`Eroare la ștergere: ${err.message}`);
+            loadStocks();
+        }
+    };
+
+    const toggleVerified = async (productCode: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        const newStocks = stocks.map(s =>
+            s["Cod produs"] === productCode
+                ? { ...s, verified: !s.verified }
+                : s
+        );
+        // Optimistic update
+        setStocks(newStocks);
+        try {
+            await saveStocksToFile(newStocks);
+        } catch (err: any) {
+            setError(`Eroare la salvare status: ${err.message}`);
+            // Revert on error? For now just reload
+            loadStocks();
+        }
+    };
+
+    const toggleSelect = (productCode: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        const newSelection = new Set(selectedProducts);
+        if (newSelection.has(productCode)) {
+            newSelection.delete(productCode);
+        } else {
+            newSelection.add(productCode);
+        }
+        setSelectedProducts(newSelection);
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedProducts.size === filteredStocks.length) {
+            setSelectedProducts(new Set());
+        } else {
+            const allCodes = new Set(filteredStocks.map(s => s["Cod produs"]));
+            setSelectedProducts(allCodes);
+        }
+    };
+
+    const handleDeleteSelected = async () => {
+        if (selectedProducts.size === 0) return;
+        if (!confirm(`Sigur doriți să ștergeți ${selectedProducts.size} produse selectate?`)) return;
+
+        try {
+            const newStocks = stocks.filter(s => !selectedProducts.has(s["Cod produs"]));
+            setStocks(newStocks);
+            setSelectedProducts(new Set());
+            await saveStocksToFile(newStocks);
+        } catch (err: any) {
+            setError(`Eroare la ștergere multiplă: ${err.message}`);
             loadStocks();
         }
     };
@@ -239,13 +300,26 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
     };
 
     const filteredStocks = useMemo(() => {
-        if (!searchQuery) return stocks;
-        const lowerQ = searchQuery.toLowerCase();
-        return stocks.filter(s =>
-            s["Denumire produs"].toLowerCase().includes(lowerQ) ||
-            s["Cod produs"].toLowerCase().includes(lowerQ)
-        );
-    }, [stocks, searchQuery]);
+        let result = stocks;
+
+        // Apply Search
+        if (searchQuery) {
+            const lowerQ = searchQuery.toLowerCase();
+            result = result.filter(s =>
+                s["Denumire produs"].toLowerCase().includes(lowerQ) ||
+                s["Cod produs"].toLowerCase().includes(lowerQ)
+            );
+        }
+
+        // Apply Filter
+        if (filterStatus === 'in_stock') {
+            result = result.filter(s => s["Stoc"] > 0);
+        } else if (filterStatus === 'out_of_stock') {
+            result = result.filter(s => s["Stoc"] <= 0);
+        }
+
+        return result;
+    }, [stocks, searchQuery, filterStatus]);
 
     return (
         <div className="flex flex-col h-full space-y-4">
@@ -320,6 +394,56 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
                     </button>
                 </div>
 
+                {/* Row 2.5: Filters & Bulk Actions */}
+                <div className="flex flex-col md:flex-row gap-2 justify-between items-center bg-slate-700/30 p-2 rounded-lg">
+                    {/* Filters */}
+                    <div className="flex gap-1 w-full md:w-auto overflow-x-auto">
+                        <button
+                            onClick={() => setFilterStatus('all')}
+                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${filterStatus === 'all' ? 'bg-slate-600 text-white shadow' : 'text-slate-400 hover:bg-slate-700/50'}`}
+                        >
+                            Toate ({stocks.length})
+                        </button>
+                        <button
+                            onClick={() => setFilterStatus('in_stock')}
+                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${filterStatus === 'in_stock' ? 'bg-emerald-600/50 text-emerald-100 shadow' : 'text-slate-400 hover:bg-slate-700/50'}`}
+                        >
+                            În Stoc
+                        </button>
+                        <button
+                            onClick={() => setFilterStatus('out_of_stock')}
+                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${filterStatus === 'out_of_stock' ? 'bg-red-600/50 text-red-100 shadow' : 'text-slate-400 hover:bg-slate-700/50'}`}
+                        >
+                            Fără Stoc
+                        </button>
+                    </div>
+
+                    {/* Bulk Actions */}
+                    {selectedProducts.size > 0 ? (
+                        <div className="flex items-center gap-3 w-full md:w-auto justify-end animate-in fade-in bg-red-900/20 px-3 py-1 rounded-md border border-red-900/30">
+                            <span className="text-xs text-red-200 font-semibold">{selectedProducts.size} selectate</span>
+                            <button
+                                onClick={handleDeleteSelected}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-500 text-sm transition-colors"
+                            >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                Șterge Selectate
+                            </button>
+                        </div>
+                    ) : (
+                        // Select All Toggle (Visible when no selection active for easier access)
+                        filteredStocks.length > 0 && (
+                            <button
+                                onClick={toggleSelectAll}
+                                className="hidden md:flex items-center gap-2 px-3 py-1.5 text-slate-400 hover:text-white transition-colors text-sm"
+                            >
+                                {selectedProducts.size === filteredStocks.length ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                                Selectează Tot
+                            </button>
+                        )
+                    )}
+                </div>
+
                 {/* Row 3: Add Product (Full Width) */}
                 <button
                     onClick={() => {
@@ -367,8 +491,24 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
                                     }}
                                 >
                                     <div className="flex items-center gap-3 mb-1">
-                                        <span className="font-semibold text-white text-lg truncate">{item["Denumire produs"]}</span>
-                                        <span className={`px-2 py-0.5 rounded textxs font-bold ${item["Stoc"] > 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
+                                        <div
+                                            onClick={(e) => toggleSelect(item["Cod produs"], e)}
+                                            className="text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+                                        >
+                                            {selectedProducts.has(item["Cod produs"])
+                                                ? <CheckSquare className="w-5 h-5 text-emerald-500" />
+                                                : <Square className="w-5 h-5" />
+                                            }
+                                        </div>
+
+                                        <div className="flex-1 min-w-0 flex items-center gap-2">
+                                            <span className={`font-semibold text-lg truncate ${item.verified ? 'text-emerald-400' : 'text-white'}`}>
+                                                {item["Denumire produs"]}
+                                            </span>
+                                            {item.verified && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
+                                        </div>
+
+                                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${item["Stoc"] > 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
                                             {item["Stoc"]} {item["U.M."]}
                                         </span>
                                     </div>
@@ -381,6 +521,13 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
                                 </div>
 
                                 <div className="flex flex-col md:flex-row items-center gap-2 px-2">
+                                    <button
+                                        onClick={(e) => toggleVerified(item["Cod produs"], e)}
+                                        className={`p-2 rounded-lg transition-colors ${item.verified ? 'text-emerald-500 hover:bg-emerald-500/10' : 'text-slate-600 hover:bg-slate-600 hover:text-slate-300'}`}
+                                        title={item.verified ? "Debifează ca verificat" : "Bifează ca verificat"}
+                                    >
+                                        {item.verified ? <CheckCircle2 className="w-4 h-4 fill-emerald-500/20" /> : <Circle className="w-4 h-4" />}
+                                    </button>
                                     <button
                                         onClick={() => {
                                             setEditingProduct(item);
