@@ -24,7 +24,7 @@ const CreatableSelect: React.FC<CreatableSelectProps> = ({
 
     // Sync internal state with prop value
     useEffect(() => {
-        setSearchTerm(value);
+        setSearchTerm(value || "");
     }, [value]);
 
     // Close dropdown when clicking outside
@@ -32,18 +32,18 @@ const CreatableSelect: React.FC<CreatableSelectProps> = ({
         const handleClickOutside = (event: MouseEvent) => {
             if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
                 setIsOpen(false);
-                // Ensure value is synced on close if user typed something but didn't select
-                // Actually, we want onChange to fire as they type potentially? 
-                // Or only on blur? For "Creatable", typing IS selecting.
             }
         };
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const filteredOptions = options.filter(opt =>
-        opt.toLowerCase().includes(searchTerm.toLowerCase()) && opt !== searchTerm
-    );
+    const filteredOptions = (options || []).filter(opt => {
+        if (!opt) return false;
+        const safeOpt = String(opt);
+        const safeSearch = String(searchTerm || "");
+        return safeOpt.toLowerCase().includes(safeSearch.toLowerCase()) && safeOpt !== safeSearch;
+    });
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newValue = e.target.value;

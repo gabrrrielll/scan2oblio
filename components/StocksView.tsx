@@ -308,11 +308,11 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
         const v = new Set<string>();
 
         stocks.forEach(s => {
-            if (s["Furnizor"]) f.add(s["Furnizor"]);
-            if (s["material"]) m.add(s["material"]);
-            if (s["woodColor"]) wc.add(s["woodColor"]);
-            if (s["sidesType"]) st.add(s["sidesType"]);
-            if (s["U.M."]) u.add(s["U.M."]);
+            if (s["Furnizor"]) f.add(String(s["Furnizor"]));
+            if (s["material"]) m.add(String(s["material"]));
+            if (s["woodColor"]) wc.add(String(s["woodColor"]));
+            if (s["sidesType"]) st.add(String(s["sidesType"]));
+            if (s["U.M."]) u.add(String(s["U.M."]));
             if (s["Cota TVA"] !== undefined) v.add(String(s["Cota TVA"]));
         });
 

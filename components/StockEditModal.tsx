@@ -167,7 +167,7 @@ const StockEditModal: React.FC<StockEditModalProps> = ({ product, isNew, onClose
                         <div>
                             <CreatableSelect
                                 label="U.M."
-                                value={formData["U.M."]}
+                                value={formData["U.M."] || ""}
                                 onChange={(val) => handleChange("U.M.", val)}
                                 options={options?.um || ["BUC", "KG", "M", "L"]}
                             />
