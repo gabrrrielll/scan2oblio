@@ -299,6 +299,33 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
         if (navigator.vibrate) navigator.vibrate(50);
     };
 
+    const { furnizorOptions, materialOptions, woodColorOptions, sidesTypeOptions, umOptions, vatRateOptions } = useMemo(() => {
+        const f = new Set<string>();
+        const m = new Set<string>();
+        const wc = new Set<string>();
+        const st = new Set<string>();
+        const u = new Set<string>();
+        const v = new Set<string>();
+
+        stocks.forEach(s => {
+            if (s["Furnizor"]) f.add(s["Furnizor"]);
+            if (s["material"]) m.add(s["material"]);
+            if (s["woodColor"]) wc.add(s["woodColor"]);
+            if (s["sidesType"]) st.add(s["sidesType"]);
+            if (s["U.M."]) u.add(s["U.M."]);
+            if (s["Cota TVA"] !== undefined) v.add(String(s["Cota TVA"]));
+        });
+
+        return {
+            furnizorOptions: Array.from(f).sort(),
+            materialOptions: Array.from(m).sort(),
+            woodColorOptions: Array.from(wc).sort(),
+            sidesTypeOptions: Array.from(st).sort(),
+            umOptions: Array.from(u).sort(),
+            vatRateOptions: Array.from(v).sort((a, b) => parseFloat(a) - parseFloat(b))
+        };
+    }, [stocks]);
+
     const filteredStocks = useMemo(() => {
         let result = stocks;
 
@@ -307,7 +334,8 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
             const lowerQ = searchQuery.toLowerCase();
             result = result.filter(s =>
                 s["Denumire produs"].toLowerCase().includes(lowerQ) ||
-                s["Cod produs"].toLowerCase().includes(lowerQ)
+                s["Cod produs"].toLowerCase().includes(lowerQ) ||
+                (s["Furnizor"] && s["Furnizor"].toLowerCase().includes(lowerQ))
             );
         }
 
@@ -331,7 +359,7 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
                         <input
                             type="text"
-                            placeholder="Caută produse (Nume sau Cod)..."
+                            placeholder="Caută produse (Nume, Cod, Furnizor)..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-10 pr-4 py-2 text-white focus:ring-2 focus:ring-emerald-500 outline-none placeholder:text-slate-600"
@@ -560,11 +588,19 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
             {/* Edit Modal */}
             {editingProduct && (
                 <StockEditModal
-                    product={isNewProduct ? null : editingProduct}
+                    product={editingProduct}
                     isNew={isNewProduct}
                     onClose={() => setEditingProduct(null)}
                     onSave={handleSaveProduct}
                     onDelete={handleDeleteProduct}
+                    options={{
+                        furnizor: furnizorOptions,
+                        material: materialOptions,
+                        woodColor: woodColorOptions,
+                        sidesType: sidesTypeOptions,
+                        um: umOptions,
+                        vatRate: vatRateOptions
+                    }}
                 />
             )}
 

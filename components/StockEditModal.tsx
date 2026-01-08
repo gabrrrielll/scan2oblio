@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StockItem } from '../types';
 import { generateEAN13 } from '../services/productUtils';
 import { X, Save, Trash2 } from 'lucide-react';
+import CreatableSelect from './CreatableSelect';
 
 interface StockEditModalProps {
     product: StockItem | null;
@@ -9,9 +10,17 @@ interface StockEditModalProps {
     onClose: () => void;
     onSave: (product: StockItem, originalProductCode?: string) => void;
     onDelete?: (productCode: string) => void;
+    options?: {
+        furnizor: string[];
+        material: string[];
+        woodColor: string[];
+        sidesType: string[];
+        um: string[];
+        vatRate: string[];
+    };
 }
 
-const StockEditModal: React.FC<StockEditModalProps> = ({ product, isNew, onClose, onSave, onDelete }) => {
+const StockEditModal: React.FC<StockEditModalProps> = ({ product, isNew, onClose, onSave, onDelete, options }) => {
     // Default empty product
     const defaultProduct: StockItem = {
         "Denumire produs": "",
@@ -31,8 +40,8 @@ const StockEditModal: React.FC<StockEditModalProps> = ({ product, isNew, onClose
         "material": "BRAD"
     };
 
-    const [formData, setFormData] = useState<StockItem>(defaultProduct);
-
+    // We use a local state that allows strings for numbers to handle empty inputs gracefully
+    const [formData, setFormData] = useState<any>(defaultProduct);
     const [originalCode, setOriginalCode] = useState("");
 
     useEffect(() => {
@@ -46,14 +55,18 @@ const StockEditModal: React.FC<StockEditModalProps> = ({ product, isNew, onClose
     }, [product]);
 
     const handleChange = (field: keyof StockItem, value: any) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
+        setFormData((prev: any) => ({ ...prev, [field]: value }));
     };
 
+    const handleNumberChange = (field: keyof StockItem, value: string) => {
+        if (value === "") {
+            handleChange(field, "");
+            return;
+        }
+        const num = parseFloat(value);
+        handleChange(field, isNaN(num) ? value : num);
+    };
 
-
-    // ... (imports)
-
-    // Inside component
     const handleGenerateEAN13 = () => {
         const fullCode = generateEAN13();
         handleChange("Cod produs", fullCode);
@@ -61,7 +74,15 @@ const StockEditModal: React.FC<StockEditModalProps> = ({ product, isNew, onClose
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSave(formData, originalCode);
+        // Ensure numbers are numbers before saving
+        const finalData = { ...formData };
+        ["Stoc", "Cost achizitie fara TVA", "Pret vanzare", "Cota TVA"].forEach(field => {
+            if (typeof finalData[field] === 'string') {
+                finalData[field] = parseFloat(finalData[field]) || 0;
+            }
+        });
+
+        onSave(finalData as StockItem, originalCode);
     };
 
     return (
@@ -139,26 +160,24 @@ const StockEditModal: React.FC<StockEditModalProps> = ({ product, isNew, onClose
                             <input
                                 type="number"
                                 value={formData["Stoc"]}
-                                onChange={e => handleChange("Stoc", parseFloat(e.target.value) || 0)}
+                                onChange={e => handleNumberChange("Stoc", e.target.value)}
                                 className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-emerald-500 outline-none"
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-slate-400 mb-1">U.M.</label>
-                            <input
-                                type="text"
+                            <CreatableSelect
+                                label="U.M."
                                 value={formData["U.M."]}
-                                onChange={e => handleChange("U.M.", e.target.value)}
-                                className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                                onChange={(val) => handleChange("U.M.", val)}
+                                options={options?.um || ["BUC", "KG", "M", "L"]}
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-slate-400 mb-1">Furnizor</label>
-                            <input
-                                type="text"
-                                value={formData["Furnizor"]}
-                                onChange={e => handleChange("Furnizor", e.target.value)}
-                                className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                            <CreatableSelect
+                                label="Furnizor"
+                                value={formData["Furnizor"] || ""}
+                                onChange={(val) => handleChange("Furnizor", val)}
+                                options={options?.furnizor || []}
                             />
                         </div>
                     </div>
@@ -169,7 +188,7 @@ const StockEditModal: React.FC<StockEditModalProps> = ({ product, isNew, onClose
                             <input
                                 type="number"
                                 value={formData["Pret vanzare"]}
-                                onChange={e => handleChange("Pret vanzare", parseFloat(e.target.value) || 0)}
+                                onChange={e => handleNumberChange("Pret vanzare", e.target.value)}
                                 className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-emerald-500 outline-none bg-emerald-900/10 border-emerald-900/30"
                             />
                         </div>
@@ -186,12 +205,11 @@ const StockEditModal: React.FC<StockEditModalProps> = ({ product, isNew, onClose
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-slate-400 mb-1">Cota TVA (%)</label>
-                            <input
-                                type="number"
-                                value={formData["Cota TVA"]}
-                                onChange={e => handleChange("Cota TVA", parseFloat(e.target.value) || 0)}
-                                className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                            <CreatableSelect
+                                label="Cota TVA (%)"
+                                value={String(formData["Cota TVA"])}
+                                onChange={(val) => handleNumberChange("Cota TVA", val)}
+                                options={options?.vatRate || ["19", "9", "5", "0"]}
                             />
                         </div>
                         <div>
@@ -213,7 +231,7 @@ const StockEditModal: React.FC<StockEditModalProps> = ({ product, isNew, onClose
                             <input
                                 type="number"
                                 value={formData["Cost achizitie fara TVA"]}
-                                onChange={e => handleChange("Cost achizitie fara TVA", parseFloat(e.target.value) || 0)}
+                                onChange={e => handleNumberChange("Cost achizitie fara TVA", e.target.value)}
                                 className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-emerald-500 outline-none"
                             />
                         </div>
@@ -234,30 +252,27 @@ const StockEditModal: React.FC<StockEditModalProps> = ({ product, isNew, onClose
                     {/* Specific Props */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-slate-800 pt-4">
                         <div>
-                            <label className="block text-xs font-medium text-slate-400 mb-1">Sides Type</label>
-                            <input
-                                type="text"
-                                value={formData["sidesType"]}
-                                onChange={e => handleChange("sidesType", e.target.value)}
-                                className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                            <CreatableSelect
+                                label="Sides Type"
+                                value={formData["sidesType"] || ""}
+                                onChange={(val) => handleChange("sidesType", val)}
+                                options={options?.sidesType || []}
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-slate-400 mb-1">Wood Color</label>
-                            <input
-                                type="text"
-                                value={formData["woodColor"]}
-                                onChange={e => handleChange("woodColor", e.target.value)}
-                                className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                            <CreatableSelect
+                                label="Wood Color"
+                                value={formData["woodColor"] || ""}
+                                onChange={(val) => handleChange("woodColor", val)}
+                                options={options?.woodColor || []}
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-slate-400 mb-1">Material</label>
-                            <input
-                                type="text"
-                                value={formData["material"]}
-                                onChange={e => handleChange("material", e.target.value)}
-                                className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                            <CreatableSelect
+                                label="Material"
+                                value={formData["material"] || ""}
+                                onChange={(val) => handleChange("material", val)}
+                                options={options?.material || []}
                             />
                         </div>
                     </div>
@@ -268,7 +283,7 @@ const StockEditModal: React.FC<StockEditModalProps> = ({ product, isNew, onClose
                             <button
                                 type="button"
                                 onClick={() => {
-                                    if (confirm('Sigur doriți să ștergeți acest produs din listă?')) {
+                                    if (confirm('Sigur doriți să ștergeți acest produs dis listă?')) {
                                         onDelete(formData["Cod produs"]);
                                     }
                                 }}
