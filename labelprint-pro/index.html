@@ -1,0 +1,83 @@
+
+<!DOCTYPE html>
+<html lang="ro">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Generator Etichete Funerare</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&family=Libre+Barcode+EAN13&family=Libre+Barcode+EAN13+Text&display=swap" rel="stylesheet">
+    <style>
+      /* Print Specific Styles */
+      @media print {
+        @page {
+          size: A4;
+          margin: 0;
+        }
+        body {
+          margin: 0;
+          padding: 0;
+          background: white;
+        }
+        .no-print {
+          display: none !important;
+        }
+        .print-area {
+          display: block !important;
+          width: 210mm;
+          height: auto;
+        }
+        .label-page {
+          page-break-after: always;
+          height: 297mm;
+          width: 210mm;
+          /* Grid Layout for stability - Always 2 rows */
+          display: grid;
+          grid-template-rows: 1fr 1fr;
+          padding: 10mm;
+          box-sizing: border-box;
+        }
+        .label-container {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+          width: 100%;
+          height: 100%;
+        }
+        /* Dashed line only after the first item on the page */
+        .label-container:nth-child(1) {
+          border-bottom: 1px dashed #ccc;
+        }
+        .label-container:nth-child(2) {
+          border-bottom: none;
+        }
+        /* Ensure background colors print */
+        * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+      }
+
+      /* Screen Styles */
+      .print-area {
+        display: none;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-gray-100 text-gray-800">
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

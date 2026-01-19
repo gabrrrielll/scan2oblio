@@ -14,7 +14,8 @@ import {
   Beaker,
   X,
   Copy,
-  FileText
+  FileText,
+  Tags
 } from 'lucide-react';
 import { ProductItem, OblioConfig, AppStatus, OblioProduct } from './types';
 import Scanner from './components/Scanner';
@@ -24,6 +25,7 @@ import InvoiceEditor from './components/InvoiceEditor';
 import WorkStationSelector from './components/WorkStationSelector';
 import StocksView from './components/StocksView';
 import { createInvoiceInOblio, getProductsFromOblio } from './services/oblioService';
+import { LabelsView } from './components/LabelPrint/LabelsView';
 import { STORAGE_KEYS } from './constants';
 
 // Initial Mock Config
@@ -68,7 +70,7 @@ const App: React.FC = () => {
   const [connectionError, setConnectionError] = useState<string | null>(null);
 
   // App Mode State
-  const [appMode, setAppMode] = useState<'INVOICE' | 'STOCKS'>('INVOICE');
+  const [appMode, setAppMode] = useState<'INVOICE' | 'STOCKS' | 'LABELS'>('INVOICE');
 
   // Persist config to localStorage whenever it changes
   useEffect(() => {
@@ -417,6 +419,12 @@ const App: React.FC = () => {
               >
                 Stocuri
               </button>
+              <button
+                onClick={() => setAppMode('LABELS')}
+                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${appMode === 'LABELS' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+              >
+                Etichete
+              </button>
             </div>
 
             <button
@@ -463,6 +471,8 @@ const App: React.FC = () => {
 
         {appMode === 'STOCKS' ? (
           <StocksView config={config} />
+        ) : appMode === 'LABELS' ? (
+          <LabelsView inventory={inventory} />
         ) : (
           <>
             {/* Inventory Modal */}
