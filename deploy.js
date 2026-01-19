@@ -123,10 +123,21 @@ try {
 }
 
 // Copy dist files to root (overwrites existing index.html)
+log('🚚 Copying production files to root...', colors.cyan);
+
+// Clean up old assets folder to prevent stale files
+if (exists('assets')) {
+  log('🧹 Cleaning up old assets folder...', colors.yellow);
+  fs.rmSync('assets', { recursive: true, force: true });
+}
+
 copyRecursive('dist', '.');
 
 // Copy api.php to root
-fs.copyFileSync('api.php', 'api.php');
+if (exists('api.php')) {
+  // Only copy if it exists in current dir (it should)
+  // fs.copyFileSync('api.php', 'api.php'); // Redundant if already there, but script dies if it fails
+}
 
 // Copy .htaccess to root if exists
 if (exists('.htaccess')) {
