@@ -969,55 +969,69 @@ try {
             
             // Header row
             if (!empty($data)) {
-                // Define exact column order based on Export_stoc_Test.xls
-                $allowedColumns = [
-                    'Denumire produs',
-                    'Tip', 
-                    'Cod produs',
-                    'Stoc',
-                    'U.M.',
-                    'Cost achizitie fara TVA',
-                    'Moneda achizitie',
-                    'Pret vanzare',
-                    'Cota TVA',
-                    'TVA inclus',
-                    'Moneda vanzare'
+                // Definire coloane export conform cerinței
+                $exportColumns = [
+                    'Numele' => 'Denumire produs',
+                    'Codul' => 'Cod produs',
+                    'Pretul vanzare' => 'Pret vanzare',
+                    'Cantitatea' => 'Stoc',
+                    'Totalul' => 'Total'
                 ];
                 
-                // If data has keys that match allowed columns (case insensitive or similar), map them? 
-                // For now assuming keys in JSON match exactly or we just grab what exists.
-                // We will iterate $allowedColumns and try to find the value in $row.
+                $totalToateProdusele = 0;
+                $sumaValoareTotala = 0;
                 
                 echo '<tr>';
-                foreach ($allowedColumns as $col) {
-                    echo '<th style="background-color: #f0f0f0; font-weight: bold;">' . htmlspecialchars(removeDiacritics($col)) . '</th>';
+                foreach (array_keys($exportColumns) as $header) {
+                    echo '<th style="background-color: #f0f0f0; font-weight: bold;">' . htmlspecialchars($header) . '</th>';
                 }
                 echo '</tr>';
                 
                 // Data rows
                 foreach ($data as $row) {
+                    $pretVanzare = isset($row['Pret vanzare']) ? floatval($row['Pret vanzare']) : 0;
+                    $cantitate = isset($row['Stoc']) ? floatval($row['Stoc']) : 0;
+                    $totalRand = $pretVanzare * $cantitate;
+                    
+                    $totalToateProdusele += $cantitate;
+                    $sumaValoareTotala += $totalRand;
+                    
                     echo '<tr>';
-                    foreach ($allowedColumns as $col) {
-                        $val = isset($row[$col]) ? $row[$col] : '';
+                    foreach ($exportColumns as $header => $key) {
+                        if ($key === 'Total') {
+                            $val = $totalRand;
+                        } else {
+                            $val = isset($row[$key]) ? $row[$key] : '';
+                        }
                         
                         $class = '';
-                        $style = '';
-                        
-                        // Format specific types if needed
-                        // Force text format for "Cod" columns to prevent scientific notation (EAN13)
-                        // Explicitly checking "Cod produs" and variations
-                        if ($col === 'Cod produs' || stripos($col, 'Cod') !== false || stripos($col, 'code') !== false || stripos($col, 'ean') !== false) {
+                        if ($key === 'Cod produs') {
                             $class = ' class="text"';
                         }
-                        // Format prices
-                        elseif (is_numeric($val) && (strpos($col, 'Pret') !== false || strpos($col, 'Cost') !== false)) {
-                            $val = str_replace('.', ',', $val); 
+                        // Formatare prețuri și totaluri (folosim virgula pentru Excel format RO)
+                        if ($key === 'Pret vanzare' || $key === 'Total' || $key === 'Stoc') {
+                            $val = str_replace('.', ',', (string)$val);
                         }
                         
-                        echo '<td' . $class . $style . '>' . htmlspecialchars(removeDiacritics($val)) . '</td>';
+                        echo '<td' . $class . '>' . htmlspecialchars(removeDiacritics($val)) . '</td>';
                     }
                     echo '</tr>';
                 }
+                
+                // Final Total Row
+                echo '<tr style="background-color: #e8f5e9; font-weight: bold;">';
+                foreach ($exportColumns as $header => $key) {
+                    $val = '';
+                    if ($header === 'Numele') {
+                        $val = 'TOTAL GENERAL';
+                    } elseif ($header === 'Cantitatea') {
+                        $val = str_replace('.', ',', (string)$totalToateProdusele);
+                    } elseif ($header === 'Totalul') {
+                        $val = str_replace('.', ',', (string)$sumaValoareTotala);
+                    }
+                    echo '<td>' . htmlspecialchars($val) . '</td>';
+                }
+                echo '</tr>';
             } else {
                  echo '<tr><td>Nu există date de exportat.</td></tr>';
             }
