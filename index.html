@@ -21,6 +21,58 @@
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
+
+    /* Print styles for label layouts */
+    @media print {
+      @page {
+        size: A4;
+        margin: 0;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        background: white;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-area {
+        display: block !important;
+        width: 210mm;
+        height: auto;
+      }
+      .label-page {
+        page-break-after: always;
+        height: 297mm;
+        width: 210mm;
+        display: grid;
+        grid-template-rows: 1fr 1fr;
+        padding: 10mm;
+        box-sizing: border-box;
+      }
+      .label-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+      }
+      .label-container:nth-child(1) {
+        border-bottom: 1px dashed #ccc;
+      }
+      .label-container:nth-child(2) {
+        border-bottom: none;
+      }
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
+
+    .print-area {
+      display: none;
+    }
   </style>
   <script type="module" crossorigin src="/scan-stoc/assets/index-Crhy0yxJ.js"></script>
   <link rel="modulepreload" crossorigin href="/scan-stoc/assets/react-vendor-DPOtbovq.js">
