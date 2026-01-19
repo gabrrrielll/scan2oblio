@@ -229,8 +229,8 @@ if (exists('index.html.development')) {
 
 log('✅ Deployment completed successfully!', colors.green);
 log('📋 Next steps:', colors.blue);
-log('   1. On server: git clone https://github.com/gabrrrielll/scan2oblio.git scan');
-log('   2. Access: https://ai24stiri.ro/scan (should work immediately!)');
-log('   3. For updates: cd scan && git pull origin master');
+log('   1. On server: git clone https://github.com/gabrrrielll/scan2oblio.git scan-stoc');
+log('   2. Access: https://ai24stiri.ro/scan-stoc (should work immediately!)');
+log('   3. For updates: cd scan-stoc && git pull origin feature/label-printing-integration');
 log('   4. Ensure PHP and required extensions are enabled on server');
 
