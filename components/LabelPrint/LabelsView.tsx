@@ -438,32 +438,37 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
                                     const qty = selectedQuantities[p.id] || 0;
                                     const isSelected = qty > 0;
                                     return (
-                                        <div key={p.id} className={`flex items-center gap-4 p-4 rounded-2xl border transition-all group ${isSelected ? 'bg-indigo-50/30 border-indigo-100 shadow-sm' : 'bg-white border-gray-100 hover:border-indigo-100'}`}>
-                                            <input
-                                                type="checkbox"
-                                                checked={isSelected}
-                                                onChange={() => toggleProductSelection(p.id)}
-                                                className="w-6 h-6 rounded-lg text-indigo-600 focus:ring-indigo-500 cursor-pointer border-gray-300"
-                                            />
-                                            <div className="flex-1 min-w-0" onClick={() => !isSelected && toggleProductSelection(p.id)}>
-                                                <p className="font-black text-gray-900 truncate uppercase tracking-tight leading-none">{p.modelName}</p>
-                                                <div className="flex gap-3 text-[10px] font-bold text-gray-400 uppercase mt-1.5">
-                                                    <span className="text-indigo-500 font-mono tracking-tighter flex items-center gap-1"><Icons.Barcode />{p.code}</span>
-                                                    <span>•</span>
-                                                    <span className="text-emerald-600">{p.price} {p.currency}</span>
-                                                    <span>•</span>
-                                                    <span className="bg-gray-100 px-1.5 rounded text-gray-500">{p.material}</span>
+                                        <div key={p.id} className={`flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 rounded-2xl border transition-all group ${isSelected ? 'bg-indigo-50/30 border-indigo-100 shadow-sm' : 'bg-white border-gray-100 hover:border-indigo-100'}`}>
+                                            <div className="flex items-start gap-4 flex-1 min-w-0">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={isSelected}
+                                                    onChange={() => toggleProductSelection(p.id)}
+                                                    className="w-6 h-6 rounded-lg text-indigo-600 focus:ring-indigo-500 cursor-pointer border-gray-300 mt-0.5"
+                                                />
+                                                <div className="flex-1 min-w-0" onClick={() => !isSelected && toggleProductSelection(p.id)}>
+                                                    <p className="font-black text-gray-900 uppercase tracking-tight leading-snug sm:leading-none break-words sm:truncate text-sm sm:text-base">{p.modelName}</p>
+                                                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-bold text-gray-400 uppercase mt-1.5">
+                                                        <span className="text-indigo-500 font-mono tracking-tighter flex items-center gap-1"><Icons.Barcode />{p.code}</span>
+                                                        <span className="hidden sm:inline">•</span>
+                                                        <span className="text-emerald-600">{p.price} {p.currency}</span>
+                                                        <span className="hidden sm:inline">•</span>
+                                                        <span className="bg-gray-100 px-1.5 rounded text-gray-500">{p.material}</span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div className={`flex items-center gap-2 bg-white border rounded-xl p-1 transition-all ${isSelected ? 'border-indigo-200 opacity-100' : 'border-gray-100 opacity-30 group-hover:opacity-100'}`}>
-                                                <button onClick={() => updateQuantity(p.id, -1)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-50 text-gray-400 hover:text-red-500 transition-colors"><Icons.Minus /></button>
-                                                <span className={`w-8 text-center font-black text-sm ${isSelected ? 'text-indigo-600' : 'text-gray-400'}`}>{qty}</span>
-                                                <button onClick={() => updateQuantity(p.id, 1)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-50 text-gray-400 hover:text-indigo-600 transition-colors"><Icons.Plus /></button>
-                                            </div>
-                                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button onClick={(e) => { e.stopPropagation(); setEditingProduct(p); }} className="w-9 h-9 flex items-center justify-center rounded-xl bg-white text-indigo-500 shadow-sm border border-indigo-50 hover:bg-indigo-500 hover:text-white transition-all"><Icons.Edit /></button>
-                                                <button onClick={(e) => { e.stopPropagation(); cloneProduct(p); }} className="w-9 h-9 flex items-center justify-center rounded-xl bg-white text-emerald-500 shadow-sm border border-emerald-50 hover:bg-emerald-500 hover:text-white transition-all"><Icons.Copy /></button>
-                                                <button onClick={(e) => { e.stopPropagation(); removeProduct(p.id); }} className="w-9 h-9 flex items-center justify-center rounded-xl bg-white text-red-500 shadow-sm border border-red-50 hover:bg-red-500 hover:text-white transition-all"><Icons.Trash /></button>
+
+                                            <div className="flex items-center justify-between sm:justify-end gap-3 mt-1 sm:mt-0">
+                                                <div className={`flex items-center gap-1 bg-white border rounded-xl p-1 transition-all ${isSelected ? 'border-indigo-200 opacity-100' : 'border-gray-100 opacity-30 group-hover:opacity-100'}`}>
+                                                    <button onClick={() => updateQuantity(p.id, -1)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-50 text-gray-400 hover:text-red-500 transition-colors"><Icons.Minus /></button>
+                                                    <span className={`w-8 text-center font-black text-sm ${isSelected ? 'text-indigo-600' : 'text-gray-400'}`}>{qty}</span>
+                                                    <button onClick={() => updateQuantity(p.id, 1)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-50 text-gray-400 hover:text-indigo-600 transition-colors"><Icons.Plus /></button>
+                                                </div>
+                                                <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                                    <button onClick={(e) => { e.stopPropagation(); setEditingProduct(p); }} className="w-9 h-9 flex items-center justify-center rounded-xl bg-white text-indigo-500 shadow-sm border border-indigo-50 hover:bg-indigo-500 hover:text-white transition-all"><Icons.Edit /></button>
+                                                    <button onClick={(e) => { e.stopPropagation(); cloneProduct(p); }} className="w-9 h-9 flex items-center justify-center rounded-xl bg-white text-emerald-500 shadow-sm border border-emerald-50 hover:bg-emerald-500 hover:text-white transition-all"><Icons.Copy /></button>
+                                                    <button onClick={(e) => { e.stopPropagation(); removeProduct(p.id); }} className="w-9 h-9 flex items-center justify-center rounded-xl bg-white text-red-500 shadow-sm border border-red-50 hover:bg-red-500 hover:text-white transition-all"><Icons.Trash /></button>
+                                                </div>
                                             </div>
                                         </div>
                                     );
