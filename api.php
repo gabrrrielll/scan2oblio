@@ -989,8 +989,14 @@ try {
                 
                 // Data rows
                 foreach ($data as $row) {
-                    $pretVanzare = isset($row['Pret vanzare']) ? floatval($row['Pret vanzare']) : 0;
                     $cantitate = isset($row['Stoc']) ? floatval($row['Stoc']) : 0;
+                    
+                    // Exclude products with 0 or negative stock
+                    if ($cantitate <= 0) {
+                        continue;
+                    }
+
+                    $pretVanzare = isset($row['Pret vanzare']) ? floatval($row['Pret vanzare']) : 0;
                     $totalRand = $pretVanzare * $cantitate;
                     
                     $totalToateProdusele += $cantitate;
