@@ -453,7 +453,7 @@ const App: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="p-4 max-w-2xl mx-auto space-y-4">
+      <main className="p-2 sm:p-4 max-w-2xl mx-auto space-y-4">
 
         {/* Settings Modal */}
         {showSettings && (

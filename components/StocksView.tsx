@@ -492,8 +492,8 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
     }, [stocks]);
 
     const inventoryTotals = useMemo(() => {
-        const totalKnown = Object.values(inventoryCounts).reduce((sum, count) => sum + count, 0);
-        const totalUnknown = Object.values(inventoryUnknownCounts).reduce((sum, count) => sum + count, 0);
+        const totalKnown = (Object.values(inventoryCounts) as number[]).reduce((sum, count) => sum + count, 0);
+        const totalUnknown = (Object.values(inventoryUnknownCounts) as number[]).reduce((sum, count) => sum + count, 0);
         const uniqueKnown = Object.keys(inventoryCounts).length;
         const uniqueUnknown = Object.keys(inventoryUnknownCounts).length;
 
@@ -539,7 +539,7 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
     return (
         <div className="flex flex-col h-full space-y-4">
             {/* Toolbar */}
-            <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col gap-4 shadow-lg">
+            <div className="bg-slate-800 p-3 sm:p-4 rounded-xl border border-slate-700 flex flex-col gap-4 shadow-lg">
                 {/* Row 1: Search & Scan */}
                 <div className="flex gap-2 w-full">
                     <div className="relative flex-1">
@@ -795,7 +795,7 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
                         {filteredStocks.map((item, idx) => (
                             <div
                                 key={idx}
-                                className="p-2 hover:bg-slate-700/50 transition-colors flex items-center justify-between group"
+                                className="p-1 sm:p-2 hover:bg-slate-700/50 transition-colors flex items-center justify-between group"
                             >
                                 <div
                                     className="flex-1 min-w-0 cursor-pointer"
