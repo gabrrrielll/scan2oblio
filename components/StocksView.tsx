@@ -5,10 +5,22 @@ import { fetchStocksFromFile, saveStocksToFile, getExportStocksXlsUrl } from '..
 import { generateEAN13 } from '../services/productUtils';
 import Scanner from './Scanner';
 import StockEditModal from './StockEditModal';
-import { Search, Download, Upload, Plus, Edit2, Loader2, Save, Trash2, ScanLine, CheckCircle2, CheckSquare, Square, Filter, Circle } from 'lucide-react';
+import { Search, Download, Upload, Plus, Edit2, Loader2, Trash2, ScanLine, CheckCircle2, CheckSquare, Square, Circle, ClipboardList, StopCircle } from 'lucide-react';
 
 interface StocksViewProps {
     config: OblioConfig;
+}
+
+type InventoryDiffStatus = 'new' | 'more' | 'less' | 'missing' | 'unknown';
+
+interface InventoryDiffItem {
+    key: string;
+    name: string;
+    code: string;
+    expected: number;
+    counted: number;
+    delta: number;
+    status: InventoryDiffStatus;
 }
 
 const StocksView: React.FC<StocksViewProps> = ({ config }) => {
@@ -20,8 +32,17 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
     const [isNewProduct, setIsNewProduct] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
     const [isScanning, setIsScanning] = useState(false);
+    const [isInventoryActive, setIsInventoryActive] = useState(false);
+    const [isInventoryScanning, setIsInventoryScanning] = useState(false);
+    const [isInventoryLoading, setIsInventoryLoading] = useState(false);
     const [filterStatus, setFilterStatus] = useState<'all' | 'in_stock' | 'out_of_stock'>('all');
     const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
+    const [inventorySnapshot, setInventorySnapshot] = useState<OblioProduct[]>([]);
+    const [inventoryCounts, setInventoryCounts] = useState<Record<string, number>>({});
+    const [inventoryUnknownCounts, setInventoryUnknownCounts] = useState<Record<string, number>>({});
+    const [inventoryDiffs, setInventoryDiffs] = useState<InventoryDiffItem[]>([]);
+    const [showInventoryDiffs, setShowInventoryDiffs] = useState(false);
+    const [lastInventoryScan, setLastInventoryScan] = useState<{ name: string; code: string } | null>(null);
 
     const formatDate = () => {
         const now = new Date();
@@ -31,6 +52,103 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
         const HH = String(now.getHours()).padStart(2, '0');
         const min = String(now.getMinutes()).padStart(2, '0');
         return `${dd}:${mm}:${yy} ${HH}:${min}`;
+    };
+
+    const managementLabel = config.workStation?.trim() || 'Sediu';
+
+    const mapOblioToStockItems = (products: OblioProduct[]): StockItem[] => {
+        return products.map(p => ({
+            "Denumire produs": p.name,
+            "Tip": "Marfa",
+            "Cod produs": p.productCode || p.code || "",
+            "Stoc": Number(p.stock) || 0,
+            "U.M.": p.measuringUnit,
+            "Cost achizitie fara TVA": 0,
+            "Moneda achizitie": "RON",
+            "Pret vanzare": Number(p.price) || 0,
+            "Cota TVA": Number(p.vatPercentage) || 0,
+            "TVA inclus": "DA",
+            "Moneda vanzare": p.currency || "RON",
+            "Furnizor": "",
+            "sidesType": "6 LATURI",
+            "woodColor": "RESPETĂ",
+            "material": "BRAD"
+        }));
+    };
+
+    const getProductKey = (product: OblioProduct): string => {
+        const ean = product.productCode?.trim();
+        if (ean) return ean;
+        const cpv = product.code?.trim();
+        if (cpv) return cpv;
+        return product.name;
+    };
+
+    const findProductByCode = (code: string, products: OblioProduct[]) => {
+        const trimmed = code.trim();
+        return products.find(p =>
+            (p.productCode && p.productCode.trim() === trimmed) ||
+            (p.code && p.code.trim() === trimmed)
+        );
+    };
+
+    const buildInventoryDiffs = (
+        snapshot: OblioProduct[],
+        counts: Record<string, number>,
+        unknownCounts: Record<string, number>
+    ): InventoryDiffItem[] => {
+        const diffs: InventoryDiffItem[] = [];
+
+        snapshot.forEach(product => {
+            const key = getProductKey(product);
+            const expected = Number(product.stock) || 0;
+            const counted = counts[key] || 0;
+
+            if (counted !== expected) {
+                let status: InventoryDiffStatus = 'less';
+                if (expected === 0 && counted > 0) {
+                    status = 'new';
+                } else if (counted > expected) {
+                    status = 'more';
+                } else if (counted === 0) {
+                    status = 'missing';
+                }
+
+                diffs.push({
+                    key,
+                    name: product.name,
+                    code: product.productCode?.trim() || product.code?.trim() || '',
+                    expected,
+                    counted,
+                    delta: counted - expected,
+                    status
+                });
+            }
+        });
+
+        Object.entries(unknownCounts).forEach(([code, counted]) => {
+            if (counted > 0) {
+                diffs.push({
+                    key: code,
+                    name: 'Cod necunoscut',
+                    code,
+                    expected: 0,
+                    counted,
+                    delta: counted,
+                    status: 'unknown'
+                });
+            }
+        });
+
+        return diffs.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+    };
+
+    const diffBadgeConfig: Record<InventoryDiffStatus, { label: string; className: string }> = {
+        new: { label: 'Stoc 0 → apare', className: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30' },
+        more: { label: 'Mai multe', className: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30' },
+        less: { label: 'Mai puține', className: 'bg-amber-500/10 text-amber-300 border-amber-500/30' },
+        missing: { label: 'Lipsă', className: 'bg-red-500/10 text-red-300 border-red-500/30' },
+        unknown: { label: 'Cod necunoscut', className: 'bg-slate-500/10 text-slate-300 border-slate-500/30' }
     };
 
     // Initial load
@@ -57,7 +175,7 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
             return;
         }
 
-        if (!confirm("Atenție! Această acțiune va prelua produsele din Oblio și va înițializa/suprascrie baza de date locală de pe server. Doriți să continuați?")) {
+        if (!confirm(`Atenție! Această acțiune va prelua produsele din Oblio pentru gestiunea "${managementLabel}" și va înițializa/suprascrie baza de date locală de pe server. Doriți să continuați?`)) {
             return;
         }
 
@@ -66,25 +184,7 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
         try {
             // Fetch from Oblio
             const obProducts: OblioProduct[] = await getProductsFromOblio(config);
-
-            // Map to StockItem format
-            const mappedStocks: StockItem[] = obProducts.map(p => ({
-                "Denumire produs": p.name,
-                "Tip": "Marfa", // Default assumption
-                "Cod produs": p.productCode || p.code || "",
-                "Stoc": p.stock,
-                "U.M.": p.measuringUnit,
-                "Cost achizitie fara TVA": 0, // Not available in basic API response usually
-                "Moneda achizitie": "RON",
-                "Pret vanzare": p.price,
-                "Cota TVA": p.vatPercentage,
-                "TVA inclus": "DA",
-                "Moneda vanzare": p.currency || "RON",
-                "Furnizor": "",
-                "sidesType": "6 LATURI",
-                "woodColor": "RESPETĂ",
-                "material": "BRAD"
-            }));
+            const mappedStocks = mapOblioToStockItems(obProducts);
 
             // Save to file
             await saveStocksToFile(mappedStocks);
@@ -96,6 +196,71 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
         } finally {
             setIsImporting(false);
         }
+    };
+
+    const handleStartInventory = async () => {
+        if (!config.email || !config.apiSecret || !config.cif) {
+            setError("Configurare Oblio incompletă (Email, Secret, CIF).");
+            return;
+        }
+
+        if (!confirm(`Se va porni inventarul pentru gestiunea "${managementLabel}". Continuați?`)) {
+            return;
+        }
+
+        setIsInventoryLoading(true);
+        setError(null);
+        setInventoryCounts({});
+        setInventoryUnknownCounts({});
+        setInventoryDiffs([]);
+        setShowInventoryDiffs(false);
+        setLastInventoryScan(null);
+
+        try {
+            const obProducts = await getProductsFromOblio(config);
+            setInventorySnapshot(obProducts);
+            setIsInventoryActive(true);
+            setIsInventoryScanning(true);
+        } catch (err: any) {
+            console.error("Inventory start error:", err);
+            setError(`Eroare la pornirea inventarului: ${err.message}`);
+        } finally {
+            setIsInventoryLoading(false);
+        }
+    };
+
+    const handleStopInventory = () => {
+        setIsInventoryActive(false);
+        setIsInventoryScanning(false);
+
+        const diffs = buildInventoryDiffs(inventorySnapshot, inventoryCounts, inventoryUnknownCounts);
+        setInventoryDiffs(diffs);
+        setShowInventoryDiffs(true);
+    };
+
+    const handleInventoryScan = (code: string) => {
+        const trimmedCode = code.trim();
+        if (!trimmedCode) return;
+
+        if (inventorySnapshot.length === 0) {
+            setError("Inventarul Oblio nu este încărcat.");
+            return;
+        }
+
+        const product = findProductByCode(trimmedCode, inventorySnapshot);
+        if (product) {
+            const key = getProductKey(product);
+            setInventoryCounts(prev => ({ ...prev, [key]: (prev[key] || 0) + 1 }));
+            setLastInventoryScan({
+                name: product.name,
+                code: product.productCode?.trim() || product.code?.trim() || trimmedCode
+            });
+        } else {
+            setInventoryUnknownCounts(prev => ({ ...prev, [trimmedCode]: (prev[trimmedCode] || 0) + 1 }));
+            setLastInventoryScan({ name: 'Cod necunoscut', code: trimmedCode });
+        }
+
+        if (navigator.vibrate) navigator.vibrate(50);
     };
 
     const handleExport = () => {
@@ -326,6 +491,28 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
         };
     }, [stocks]);
 
+    const inventoryTotals = useMemo(() => {
+        const totalKnown = Object.values(inventoryCounts).reduce((sum, count) => sum + count, 0);
+        const totalUnknown = Object.values(inventoryUnknownCounts).reduce((sum, count) => sum + count, 0);
+        const uniqueKnown = Object.keys(inventoryCounts).length;
+        const uniqueUnknown = Object.keys(inventoryUnknownCounts).length;
+
+        return {
+            totalScanned: totalKnown + totalUnknown,
+            uniqueScanned: uniqueKnown + uniqueUnknown,
+            totalKnown,
+            totalUnknown
+        };
+    }, [inventoryCounts, inventoryUnknownCounts]);
+
+    const inventoryDiffSummary = useMemo(() => {
+        return inventoryDiffs.reduce((acc, item) => {
+            acc[item.status] = (acc[item.status] || 0) + 1;
+            acc.total += 1;
+            return acc;
+        }, { total: 0, new: 0, more: 0, less: 0, missing: 0, unknown: 0 } as Record<string, number>);
+    }, [inventoryDiffs]);
+
     const filteredStocks = useMemo(() => {
         let result = stocks;
 
@@ -367,8 +554,9 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
                     </div>
                     <button
                         onClick={() => setIsScanning(true)}
-                        className="bg-slate-700 hover:bg-slate-600 text-white p-2 rounded-lg border border-slate-600 transition-colors"
-                        title="Scanează pentru căutare"
+                        disabled={isInventoryActive}
+                        className={`bg-slate-700 text-white p-2 rounded-lg border border-slate-600 transition-colors ${isInventoryActive ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-600'}`}
+                        title={isInventoryActive ? "Inventar activ: scanarea este folosită pentru inventar" : "Scanează pentru căutare"}
                     >
                         <ScanLine className="w-5 h-5" />
                     </button>
@@ -378,11 +566,29 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
                 <div className="flex gap-2 w-full overflow-x-auto pb-1 md:pb-0">
                     <button
                         onClick={handleImportFromOblio}
-                        disabled={isImporting}
+                        disabled={isImporting || isInventoryActive}
                         className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-600/30 transition-colors whitespace-nowrap"
                     >
                         {isImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                         Import Sincronizare
+                    </button>
+
+                    <button
+                        onClick={isInventoryActive ? handleStopInventory : handleStartInventory}
+                        disabled={isInventoryLoading}
+                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors whitespace-nowrap border ${isInventoryActive
+                            ? 'bg-red-600/20 text-red-300 border-red-500/30 hover:bg-red-600/30'
+                            : 'bg-emerald-600/20 text-emerald-300 border-emerald-500/30 hover:bg-emerald-600/30'
+                            }`}
+                    >
+                        {isInventoryLoading ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : isInventoryActive ? (
+                            <StopCircle className="w-4 h-4" />
+                        ) : (
+                            <ClipboardList className="w-4 h-4" />
+                        )}
+                        {isInventoryActive ? 'Stop inventar' : 'Start inventar'}
                     </button>
 
                     {/* Hidden File Input for JSON Upload */}
@@ -472,6 +678,35 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
                     )}
                 </div>
 
+                {/* Row 2.8: Inventory Status */}
+                {isInventoryActive && (
+                    <div className="flex flex-col md:flex-row gap-3 items-start md:items-center bg-amber-900/20 border border-amber-700/30 rounded-lg p-3">
+                        <div className="flex-1">
+                            <div className="text-amber-200 text-sm font-semibold">Inventar activ</div>
+                            <div className="text-xs text-amber-200/80">
+                                Gestiune: {managementLabel} • Scanate: {inventoryTotals.totalScanned} ({inventoryTotals.uniqueScanned} unice)
+                                {inventoryTotals.totalUnknown > 0 && ` • Necunoscute: ${inventoryTotals.totalUnknown}`}
+                            </div>
+                            {lastInventoryScan && (
+                                <div className="text-[11px] text-amber-200/80 mt-1">
+                                    Ultimul: {lastInventoryScan.name} ({lastInventoryScan.code})
+                                </div>
+                            )}
+                        </div>
+                        <button
+                            onClick={() => setIsInventoryScanning(true)}
+                            disabled={isInventoryScanning}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold border transition-colors ${isInventoryScanning
+                                ? 'bg-amber-900/40 text-amber-200 border-amber-700/40 cursor-not-allowed'
+                                : 'bg-amber-600/20 text-amber-200 border-amber-500/30 hover:bg-amber-600/30'
+                                }`}
+                        >
+                            <ScanLine className="w-4 h-4" />
+                            {isInventoryScanning ? 'Scanner activ' : 'Scanează inventar'}
+                        </button>
+                    </div>
+                )}
+
                 {/* Row 3: Add Product (Full Width) */}
                 <button
                     onClick={() => {
@@ -490,6 +725,57 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
             {error && (
                 <div className="bg-red-500/10 border border-red-500/50 p-4 rounded-xl text-red-200 text-sm">
                     {error}
+                </div>
+            )}
+
+            {/* Inventory Differences */}
+            {showInventoryDiffs && (
+                <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                            <ClipboardList className="w-5 h-5 text-emerald-400" />
+                            <div className="text-white font-semibold">Diferențe inventar</div>
+                            <span className="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full border border-slate-600">
+                                {inventoryDiffSummary.total} poziții
+                            </span>
+                        </div>
+                    </div>
+
+                    {inventoryDiffs.length === 0 ? (
+                        <div className="text-sm text-slate-400 mt-3">Nu există diferențe față de stocul din Oblio.</div>
+                    ) : (
+                        <div className="mt-3 space-y-2">
+                            {inventoryDiffs.map(item => {
+                                const badge = diffBadgeConfig[item.status];
+                                const codeLabel = item.code || item.key;
+                                return (
+                                    <div
+                                        key={`${item.key}-${item.status}`}
+                                        className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-slate-900/60 border border-slate-700/50 rounded-lg p-3"
+                                    >
+                                        <div className="min-w-0">
+                                            <div className="text-sm text-white truncate">{item.name}</div>
+                                            <div className="text-xs text-slate-400 font-mono">{codeLabel}</div>
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-3 justify-between md:justify-end">
+                                            <span className={`text-[11px] px-2 py-0.5 rounded-full border ${badge.className}`}>
+                                                {badge.label}
+                                            </span>
+                                            <div className="text-xs text-slate-400">
+                                                Oblio: <span className="text-slate-200 font-semibold">{item.expected}</span>
+                                            </div>
+                                            <div className="text-xs text-slate-400">
+                                                Inventar: <span className="text-slate-200 font-semibold">{item.counted}</span>
+                                            </div>
+                                            <div className={`text-sm font-semibold ${item.delta >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                                {item.delta > 0 ? `+${item.delta}` : item.delta}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -605,10 +891,15 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
             )}
 
             {/* Scanner Overlay */}
-            {isScanning && (
+            {(isScanning || isInventoryScanning) && (
                 <Scanner
-                    onScan={handleScan}
-                    onClose={() => setIsScanning(false)}
+                    onScan={isInventoryScanning ? handleInventoryScan : handleScan}
+                    onClose={() => {
+                        setIsScanning(false);
+                        setIsInventoryScanning(false);
+                    }}
+                    allowDuplicates={isInventoryScanning}
+                    duplicateDelayMs={1200}
                 />
             )}
         </div>

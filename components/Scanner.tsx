@@ -5,12 +5,15 @@ import { Camera, X, Zap, Loader2 } from 'lucide-react';
 interface ScannerProps {
   onScan: (code: string) => void;
   onClose: () => void;
+  allowDuplicates?: boolean;
+  duplicateDelayMs?: number;
 }
 
-const Scanner: React.FC<ScannerProps> = ({ onScan, onClose }) => {
+const Scanner: React.FC<ScannerProps> = ({ onScan, onClose, allowDuplicates = false, duplicateDelayMs = 1200 }) => {
   const [torchOn, setTorchOn] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastScannedCode, setLastScannedCode] = useState<string>('');
+  const [lastScannedAt, setLastScannedAt] = useState<number>(0);
 
   // Zxing hook for barcode scanning
   // Configurează pentru a accepta mai multe formate de coduri de bare, inclusiv EAN-13
@@ -47,14 +50,19 @@ const Scanner: React.FC<ScannerProps> = ({ onScan, onClose }) => {
           format: format
         });
         
-        // Previne scanări duplicate consecutive
+        // Previne scanări duplicate consecutive (cu opțiune de a permite duplicate)
         // Acceptă doar coduri valide și cu format corect
-        if (trimmed !== lastScannedCode && isValidFormat) {
+        const now = Date.now();
+        const isDuplicate = trimmed === lastScannedCode;
+        const isDuplicateTooSoon = isDuplicate && now - lastScannedAt < duplicateDelayMs;
+
+        if (isValidFormat && (!isDuplicate || (allowDuplicates && !isDuplicateTooSoon))) {
           setLastScannedCode(trimmed);
+          setLastScannedAt(now);
           console.log("Calling onScan with:", trimmed);
           onScan(trimmed);
         } else {
-          if (trimmed === lastScannedCode) {
+          if (isDuplicate) {
             console.log("Skipping duplicate scan");
           } else {
             console.log("Skipping invalid code - length:", trimmed.length, "isNumeric:", isNumeric, "format:", format);
