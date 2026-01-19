@@ -662,11 +662,18 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
 
                     {/* Bulk Actions */}
                     {selectedProducts.size > 0 ? (
-                        <div className="flex items-center gap-3 w-full md:w-auto justify-end animate-in fade-in bg-red-900/20 px-3 py-1 rounded-md border border-red-900/30">
-                            <span className="text-xs text-red-200 font-semibold">{selectedProducts.size} selectate</span>
+                        <div className="flex items-center gap-3 w-full md:w-auto justify-end animate-in fade-in bg-blue-900/20 px-3 py-1 rounded-md border border-blue-900/30">
+                            <span className="text-xs text-blue-200 font-semibold">{selectedProducts.size} selectate</span>
+                            <button
+                                onClick={() => setSelectedProducts(new Set())}
+                                className="text-xs text-blue-300 hover:text-white underline decoration-blue-500/50 underline-offset-4 transition-colors px-2 py-1"
+                            >
+                                Resetează
+                            </button>
+                            <div className="w-px h-4 bg-blue-900/40 mx-1"></div>
                             <button
                                 onClick={handleDeleteSelected}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-500 text-sm transition-colors"
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-500 text-sm transition-colors shadow-lg shadow-red-900/20"
                             >
                                 <Trash2 className="w-3.5 h-3.5" />
                                 Șterge Selectate
