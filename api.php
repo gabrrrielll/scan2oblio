@@ -967,8 +967,8 @@ try {
             echo '</x:ExcelWorkbook>';
             echo '</xml>';
             echo '<![endif]-->';
-            echo '<meta http-equiv="content-type" content="text/plain; charset=UTF-8"/>';
-            echo '<style> .text { mso-number-format:"\@"; } </style>';
+            echo '<meta http-equiv="content-type" content="text/html; charset=UTF-8"/>';
+            echo '<style> .text { mso-number-format:"\@"; } table { border-collapse: collapse; } th, td { padding: 5px; } </style>';
             echo '</head>';
             echo '<body>';
             
