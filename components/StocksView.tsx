@@ -594,22 +594,6 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
                         {isInventoryActive ? 'Stop inventar' : 'Start inventar'}
                     </button>
 
-                    {/* Hidden File Input for JSON Upload */}
-                    <input
-                        type="file"
-                        accept=".json"
-                        id="json-upload"
-                        className="hidden"
-                        onChange={handleFileUpload}
-                    />
-                    <label
-                        htmlFor="json-upload"
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-700 text-slate-300 border border-slate-600 rounded-lg hover:bg-slate-600 transition-colors whitespace-nowrap cursor-pointer"
-                    >
-                        <Upload className="w-4 h-4" />
-                        Upload JSON
-                    </label>
-
                     <button
                         onClick={() => {
                             if (selectedProducts.size === 0) {
@@ -625,6 +609,22 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
                         <Download className="w-4 h-4" />
                         Export XLS
                     </button>
+
+                    {/* Hidden File Input for JSON Upload */}
+                    <input
+                        type="file"
+                        accept=".json"
+                        id="json-upload"
+                        className="hidden"
+                        onChange={handleFileUpload}
+                    />
+                    <label
+                        htmlFor="json-upload"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-700 text-slate-300 border border-slate-600 rounded-lg hover:bg-slate-600 transition-colors whitespace-nowrap cursor-pointer"
+                    >
+                        <Upload className="w-4 h-4" />
+                        Upload JSON
+                    </label>
 
                     <button
                         onClick={handleExport}
