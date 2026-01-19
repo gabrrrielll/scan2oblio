@@ -533,7 +533,10 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
             result = result.filter(s => s["Stoc"] <= 0);
         }
 
-        return result;
+        // Sort alphabetically by product name
+        return [...result].sort((a, b) =>
+            a["Denumire produs"].localeCompare(b["Denumire produs"], 'ro', { sensitivity: 'base' })
+        );
     }, [stocks, searchQuery, filterStatus]);
 
     return (
@@ -609,7 +612,12 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
 
                     <button
                         onClick={() => {
-                            window.location.href = getExportStocksXlsUrl();
+                            if (selectedProducts.size === 0) {
+                                alert("Vă rugăm să selectați produsele pe care doriți să le exportați din listă.");
+                                return;
+                            }
+                            const codes = Array.from(selectedProducts).join(',');
+                            window.location.href = `${getExportStocksXlsUrl()}&codes=${encodeURIComponent(codes)}`;
                         }}
                         className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-emerald-700/50 text-emerald-100 border border-emerald-600/50 rounded-lg hover:bg-emerald-600/50 transition-colors whitespace-nowrap"
                         title="Descarcă format Excel"
@@ -722,62 +730,66 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
             </div>
 
             {/* Error Message */}
-            {error && (
-                <div className="bg-red-500/10 border border-red-500/50 p-4 rounded-xl text-red-200 text-sm">
-                    {error}
-                </div>
-            )}
+            {
+                error && (
+                    <div className="bg-red-500/10 border border-red-500/50 p-4 rounded-xl text-red-200 text-sm">
+                        {error}
+                    </div>
+                )
+            }
 
             {/* Inventory Differences */}
-            {showInventoryDiffs && (
-                <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div className="flex items-center gap-2">
-                            <ClipboardList className="w-5 h-5 text-emerald-400" />
-                            <div className="text-white font-semibold">Diferențe inventar</div>
-                            <span className="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full border border-slate-600">
-                                {inventoryDiffSummary.total} poziții
-                            </span>
+            {
+                showInventoryDiffs && (
+                    <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex items-center gap-2">
+                                <ClipboardList className="w-5 h-5 text-emerald-400" />
+                                <div className="text-white font-semibold">Diferențe inventar</div>
+                                <span className="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full border border-slate-600">
+                                    {inventoryDiffSummary.total} poziții
+                                </span>
+                            </div>
                         </div>
-                    </div>
 
-                    {inventoryDiffs.length === 0 ? (
-                        <div className="text-sm text-slate-400 mt-3">Nu există diferențe față de stocul din Oblio.</div>
-                    ) : (
-                        <div className="mt-3 space-y-2">
-                            {inventoryDiffs.map(item => {
-                                const badge = diffBadgeConfig[item.status];
-                                const codeLabel = item.code || item.key;
-                                return (
-                                    <div
-                                        key={`${item.key}-${item.status}`}
-                                        className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-slate-900/60 border border-slate-700/50 rounded-lg p-3"
-                                    >
-                                        <div className="min-w-0">
-                                            <div className="text-sm text-white truncate">{item.name}</div>
-                                            <div className="text-xs text-slate-400 font-mono">{codeLabel}</div>
+                        {inventoryDiffs.length === 0 ? (
+                            <div className="text-sm text-slate-400 mt-3">Nu există diferențe față de stocul din Oblio.</div>
+                        ) : (
+                            <div className="mt-3 space-y-2">
+                                {inventoryDiffs.map(item => {
+                                    const badge = diffBadgeConfig[item.status];
+                                    const codeLabel = item.code || item.key;
+                                    return (
+                                        <div
+                                            key={`${item.key}-${item.status}`}
+                                            className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-slate-900/60 border border-slate-700/50 rounded-lg p-3"
+                                        >
+                                            <div className="min-w-0">
+                                                <div className="text-sm text-white truncate">{item.name}</div>
+                                                <div className="text-xs text-slate-400 font-mono">{codeLabel}</div>
+                                            </div>
+                                            <div className="flex flex-wrap items-center gap-3 justify-between md:justify-end">
+                                                <span className={`text-[11px] px-2 py-0.5 rounded-full border ${badge.className}`}>
+                                                    {badge.label}
+                                                </span>
+                                                <div className="text-xs text-slate-400">
+                                                    Oblio: <span className="text-slate-200 font-semibold">{item.expected}</span>
+                                                </div>
+                                                <div className="text-xs text-slate-400">
+                                                    Inventar: <span className="text-slate-200 font-semibold">{item.counted}</span>
+                                                </div>
+                                                <div className={`text-sm font-semibold ${item.delta >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                                    {item.delta > 0 ? `+${item.delta}` : item.delta}
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="flex flex-wrap items-center gap-3 justify-between md:justify-end">
-                                            <span className={`text-[11px] px-2 py-0.5 rounded-full border ${badge.className}`}>
-                                                {badge.label}
-                                            </span>
-                                            <div className="text-xs text-slate-400">
-                                                Oblio: <span className="text-slate-200 font-semibold">{item.expected}</span>
-                                            </div>
-                                            <div className="text-xs text-slate-400">
-                                                Inventar: <span className="text-slate-200 font-semibold">{item.counted}</span>
-                                            </div>
-                                            <div className={`text-sm font-semibold ${item.delta >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                                                {item.delta > 0 ? `+${item.delta}` : item.delta}
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
-                </div>
-            )}
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                )
+            }
 
             {/* Product List */}
             <div className="flex-1 overflow-y-auto bg-slate-800/50 backdrop-blur rounded-xl border border-slate-700/50">
@@ -872,37 +884,41 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
             </div>
 
             {/* Edit Modal */}
-            {editingProduct && (
-                <StockEditModal
-                    product={editingProduct}
-                    isNew={isNewProduct}
-                    onClose={() => setEditingProduct(null)}
-                    onSave={handleSaveProduct}
-                    onDelete={handleDeleteProduct}
-                    options={{
-                        furnizor: furnizorOptions,
-                        material: materialOptions,
-                        woodColor: woodColorOptions,
-                        sidesType: sidesTypeOptions,
-                        um: umOptions,
-                        vatRate: vatRateOptions
-                    }}
-                />
-            )}
+            {
+                editingProduct && (
+                    <StockEditModal
+                        product={editingProduct}
+                        isNew={isNewProduct}
+                        onClose={() => setEditingProduct(null)}
+                        onSave={handleSaveProduct}
+                        onDelete={handleDeleteProduct}
+                        options={{
+                            furnizor: furnizorOptions,
+                            material: materialOptions,
+                            woodColor: woodColorOptions,
+                            sidesType: sidesTypeOptions,
+                            um: umOptions,
+                            vatRate: vatRateOptions
+                        }}
+                    />
+                )
+            }
 
             {/* Scanner Overlay */}
-            {(isScanning || isInventoryScanning) && (
-                <Scanner
-                    onScan={isInventoryScanning ? handleInventoryScan : handleScan}
-                    onClose={() => {
-                        setIsScanning(false);
-                        setIsInventoryScanning(false);
-                    }}
-                    allowDuplicates={isInventoryScanning}
-                    duplicateDelayMs={1200}
-                />
-            )}
-        </div>
+            {
+                (isScanning || isInventoryScanning) && (
+                    <Scanner
+                        onScan={isInventoryScanning ? handleInventoryScan : handleScan}
+                        onClose={() => {
+                            setIsScanning(false);
+                            setIsInventoryScanning(false);
+                        }}
+                        allowDuplicates={isInventoryScanning}
+                        duplicateDelayMs={1200}
+                    />
+                )
+            }
+        </div >
     );
 };
 

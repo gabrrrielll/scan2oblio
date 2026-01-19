@@ -994,15 +994,21 @@ try {
                 }
                 echo '</tr>';
                 
+                // Filtrare după codurile selectate dacă acestea sunt trimise
+                $selectedCodes = isset($_GET['codes']) ? explode(',', $_GET['codes']) : [];
+                if (!empty($selectedCodes)) {
+                    $filteredData = [];
+                    foreach ($data as $item) {
+                        if (in_array($item['Cod produs'], $selectedCodes)) {
+                            $filteredData[] = $item;
+                        }
+                    }
+                    $data = $filteredData;
+                }
+
                 // Data rows
                 foreach ($data as $row) {
                     $cantitate = isset($row['Stoc']) ? floatval($row['Stoc']) : 0;
-                    
-                    // Exclude products with 0 or negative stock
-                    if ($cantitate <= 0) {
-                        continue;
-                    }
-
                     $pretVanzare = isset($row['Pret vanzare']) ? floatval($row['Pret vanzare']) : 0;
                     $totalRand = $pretVanzare * $cantitate;
                     

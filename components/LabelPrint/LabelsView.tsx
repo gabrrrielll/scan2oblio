@@ -447,7 +447,7 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
                                                     className="w-6 h-6 rounded-lg text-indigo-600 focus:ring-indigo-500 cursor-pointer border-gray-300 mt-0.5"
                                                 />
                                                 <div className="flex-1 min-w-0" onClick={() => !isSelected && toggleProductSelection(p.id)}>
-                                                    <p className="font-black text-gray-900 uppercase tracking-tight leading-snug sm:leading-none break-words sm:truncate text-sm sm:text-base">{p.modelName}</p>
+                                                    <p className="font-black text-gray-900 uppercase tracking-tight leading-snug sm:leading-none break-words text-sm sm:text-base">{p.modelName}</p>
                                                     <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-bold text-gray-400 uppercase mt-1.5">
                                                         <span className="text-indigo-500 font-mono tracking-tighter flex items-center gap-1"><Icons.Barcode />{p.code}</span>
                                                         <span className="hidden sm:inline">•</span>

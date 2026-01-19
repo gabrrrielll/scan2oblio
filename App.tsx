@@ -97,8 +97,11 @@ const App: React.FC = () => {
       setIsInventoryLoading(true);
       try {
         const products = await getProductsFromOblio(config);
-        setInventory(products);
-        console.log("Inventory loaded:", products.length, "items");
+        const sortedProducts = [...products].sort((a, b) =>
+          a.name.localeCompare(b.name, 'ro', { sensitivity: 'base' })
+        );
+        setInventory(sortedProducts);
+        console.log("Inventory loaded and sorted:", sortedProducts.length, "items");
       } catch (error: any) {
         console.error("Failed to load inventory", error);
         setStatus(AppStatus.ERROR);
