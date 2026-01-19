@@ -935,6 +935,13 @@ try {
             // Dacă nu avem date, returnăm eroare sau fișier gol
             if (empty($data)) {
                  $data = [];
+            } else {
+                // Sortare alfabetică după numele produsului
+                usort($data, function($a, $b) {
+                    $nameA = isset($a['Denumire produs']) ? removeDiacritics($a['Denumire produs']) : '';
+                    $nameB = isset($b['Denumire produs']) ? removeDiacritics($b['Denumire produs']) : '';
+                    return strcasecmp($nameA, $nameB);
+                });
             }
             
             // Set headers for download
