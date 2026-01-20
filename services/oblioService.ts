@@ -50,7 +50,7 @@ export const getProductsFromOblio = async (config: OblioConfig): Promise<OblioPr
     // Procesare și filtrare locală a stocului
     const processedProducts = json.data.reduce((acc: any[], p: any) => {
       // Dacă avem opțiunea de workStation setată și avem date brute despre stoc
-      if (config.workStation && config.workStation !== 'Sediu' && p.raw_stock && Array.isArray(p.raw_stock)) {
+      if (config.workStation && p.raw_stock && Array.isArray(p.raw_stock)) {
         // Căutăm stocul specific pentru gestiunea selectată
         // Matching-ul se face pe numele gestiunii (field 'management' in Oblio response)
         const matchedStock = p.raw_stock.find((s: any) =>

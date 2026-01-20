@@ -440,7 +440,7 @@ const App: React.FC = () => {
         </div>
 
         {/* Second Row: WorkStation Selector */}
-        {appMode === 'INVOICE' && !isInventoryLoading && (
+        {(appMode === 'INVOICE' || appMode === 'STOCKS') && !isInventoryLoading && (
           <div className="w-full">
             <WorkStationSelector
               config={config}
