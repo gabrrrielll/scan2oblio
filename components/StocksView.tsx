@@ -5,7 +5,7 @@ import { fetchStocksFromFile, saveStocksToFile, getExportStocksXlsUrl } from '..
 import { generateEAN13 } from '../services/productUtils';
 import Scanner from './Scanner';
 import StockEditModal from './StockEditModal';
-import { Search, Download, Upload, Plus, Edit2, Loader2, Trash2, ScanLine, CheckCircle2, CheckSquare, Square, Circle, ClipboardList, StopCircle } from 'lucide-react';
+import { Search, Download, Upload, Plus, Edit2, Loader2, Trash2, ScanLine, CheckCircle2, CheckSquare, Square, Circle, ClipboardList, StopCircle, X } from 'lucide-react';
 
 interface StocksViewProps {
     config: OblioConfig;
@@ -43,6 +43,16 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
     const [inventoryDiffs, setInventoryDiffs] = useState<InventoryDiffItem[]>([]);
     const [showInventoryDiffs, setShowInventoryDiffs] = useState(false);
     const [lastInventoryScan, setLastInventoryScan] = useState<{ name: string; code: string } | null>(null);
+    const [inventoryEditingProduct, setInventoryEditingProduct] = useState<OblioProduct | null>(null);
+    const [inventorySearchQuery, setInventorySearchQuery] = useState('');
+    const [inventoryTempCount, setInventoryTempCount] = useState<number>(0);
+
+    useEffect(() => {
+        if (inventoryEditingProduct) {
+            const key = getProductKey(inventoryEditingProduct);
+            setInventoryTempCount(inventoryCounts[key] || 0);
+        }
+    }, [inventoryEditingProduct]);
 
     const formatDate = () => {
         const now = new Date();
@@ -142,6 +152,16 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
 
         return diffs.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
     };
+
+    const searchedInventory = useMemo(() => {
+        if (!inventorySearchQuery.trim()) return [];
+        const query = inventorySearchQuery.toLowerCase();
+        return inventorySnapshot.filter(p =>
+            p.name.toLowerCase().includes(query) ||
+            p.code?.toLowerCase().includes(query) ||
+            p.productCode?.toLowerCase().includes(query)
+        ).slice(0, 5); // Limit results for UI clarity
+    }, [inventorySnapshot, inventorySearchQuery]);
 
     const diffBadgeConfig: Record<InventoryDiffStatus, { label: string; className: string }> = {
         new: { label: 'Stoc 0 → apare', className: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30' },
@@ -249,18 +269,27 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
 
         const product = findProductByCode(trimmedCode, inventorySnapshot);
         if (product) {
-            const key = getProductKey(product);
-            setInventoryCounts(prev => ({ ...prev, [key]: (prev[key] || 0) + 1 }));
-            setLastInventoryScan({
-                name: product.name,
-                code: product.productCode?.trim() || product.code?.trim() || trimmedCode
-            });
+            setInventoryEditingProduct(product);
+            setInventorySearchQuery(''); // Clear search if any
         } else {
-            setInventoryUnknownCounts(prev => ({ ...prev, [trimmedCode]: (prev[trimmedCode] || 0) + 1 }));
+            // Treat as unknown and allow adding count?
+            // Actually, for unknown we'll just show the unknown status for now
             setLastInventoryScan({ name: 'Cod necunoscut', code: trimmedCode });
+            // For now, only identified products can be edited this way
         }
 
         if (navigator.vibrate) navigator.vibrate(50);
+    };
+
+    const handleSaveInventoryCount = () => {
+        if (!inventoryEditingProduct) return;
+        const key = getProductKey(inventoryEditingProduct);
+        setInventoryCounts(prev => ({ ...prev, [key]: inventoryTempCount }));
+        setLastInventoryScan({
+            name: inventoryEditingProduct.name,
+            code: inventoryEditingProduct.productCode?.trim() || inventoryEditingProduct.code?.trim() || ''
+        });
+        setInventoryEditingProduct(null);
     };
 
     const handleExport = () => {
@@ -919,10 +948,113 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
                         onClose={() => {
                             setIsScanning(false);
                             setIsInventoryScanning(false);
+                            setInventoryEditingProduct(null);
                         }}
                         allowDuplicates={isInventoryScanning}
-                        duplicateDelayMs={1200}
-                    />
+                        duplicateDelayMs={2000}
+                    >
+                        {isInventoryScanning && (
+                            <div className="w-full flex flex-col gap-3">
+                                {/* Inventory Search / Quick Add */}
+                                {!inventoryEditingProduct && (
+                                    <div className="relative w-full max-w-sm mx-auto">
+                                        <div className="relative">
+                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
+                                            <input
+                                                type="text"
+                                                placeholder="Caută/Adaugă: Nume, Cod, Furnizor..."
+                                                value={inventorySearchQuery}
+                                                onChange={(e) => setInventorySearchQuery(e.target.value)}
+                                                className="w-full bg-slate-900/90 backdrop-blur border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-white focus:ring-2 focus:ring-emerald-500 outline-none text-sm"
+                                            />
+                                            {inventorySearchQuery && (
+                                                <button
+                                                    onClick={() => setInventorySearchQuery('')}
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        {searchedInventory.length > 0 && (
+                                            <div className="absolute bottom-full left-0 right-0 mb-2 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl overflow-hidden max-h-48 overflow-y-auto animate-in slide-in-from-bottom-2 duration-200">
+                                                {searchedInventory.map((p) => (
+                                                    <button
+                                                        key={getProductKey(p)}
+                                                        onClick={() => handleInventoryScan(p.productCode || p.code || p.name)}
+                                                        className="w-full text-left p-3 hover:bg-slate-700 transition-colors border-b border-slate-700 last:border-0 flex flex-col gap-0.5"
+                                                    >
+                                                        <span className="text-xs font-bold text-white truncate">{p.name}</span>
+                                                        <span className="text-[10px] text-slate-400 font-mono italic">{p.productCode || p.code}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Inventory Product Detail / Count Editor */}
+                                {inventoryEditingProduct && (
+                                    <div className="w-full max-w-sm mx-auto bg-slate-800 border border-slate-700 rounded-2xl p-4 shadow-2xl animate-in zoom-in duration-200">
+                                        <div className="flex justify-between items-start mb-3">
+                                            <div className="min-w-0 pr-4">
+                                                <h3 className="text-emerald-400 font-bold text-sm leading-tight truncate">
+                                                    {inventoryEditingProduct.name}
+                                                </h3>
+                                                <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                                    {inventoryEditingProduct.productCode || inventoryEditingProduct.code}
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => setInventoryEditingProduct(null)}
+                                                className="text-slate-500 hover:text-white p-1"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+
+                                        <div className="flex items-center justify-between gap-4">
+                                            <div className="flex items-center gap-2 bg-slate-900 p-1.5 rounded-xl border border-slate-700">
+                                                <button
+                                                    onClick={() => setInventoryTempCount(Math.max(0, inventoryTempCount - 1))}
+                                                    className="w-10 h-10 flex items-center justify-center bg-slate-800 rounded-lg hover:bg-slate-700 text-slate-300"
+                                                >
+                                                    -
+                                                </button>
+                                                <input
+                                                    type="number"
+                                                    value={inventoryTempCount}
+                                                    onChange={(e) => setInventoryTempCount(Number(e.target.value))}
+                                                    className="w-14 bg-transparent text-center font-bold text-white outline-none text-lg"
+                                                    autoFocus
+                                                    onFocus={(e) => e.target.select()}
+                                                />
+                                                <button
+                                                    onClick={() => setInventoryTempCount(inventoryTempCount + 1)}
+                                                    className="w-10 h-10 flex items-center justify-center bg-slate-800 rounded-lg hover:bg-slate-700 text-slate-300"
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
+
+                                            <button
+                                                onClick={handleSaveInventoryCount}
+                                                className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-3 px-4 rounded-xl font-bold transition-all shadow-lg shadow-emerald-900/20"
+                                            >
+                                                SALVEAZĂ
+                                            </button>
+                                        </div>
+
+                                        <div className="mt-3 grid grid-cols-2 gap-2">
+                                            <button onClick={() => setInventoryTempCount(1)} className="text-[10px] bg-slate-700/50 hover:bg-slate-700 py-1.5 rounded text-slate-300 transition-colors uppercase font-bold">1 buc</button>
+                                            <button onClick={() => setInventoryTempCount(5)} className="text-[10px] bg-slate-700/50 hover:bg-slate-700 py-1.5 rounded text-slate-300 transition-colors uppercase font-bold">5 buc</button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </Scanner>
                 )
             }
         </div >

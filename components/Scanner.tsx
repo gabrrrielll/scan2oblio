@@ -7,9 +7,10 @@ interface ScannerProps {
   onClose: () => void;
   allowDuplicates?: boolean;
   duplicateDelayMs?: number;
+  children?: React.ReactNode;
 }
 
-const Scanner: React.FC<ScannerProps> = ({ onScan, onClose, allowDuplicates = false, duplicateDelayMs = 1200 }) => {
+const Scanner: React.FC<ScannerProps> = ({ onScan, onClose, allowDuplicates = false, duplicateDelayMs = 1200, children }) => {
   const [torchOn, setTorchOn] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastScannedCode, setLastScannedCode] = useState<string>('');
@@ -22,23 +23,23 @@ const Scanner: React.FC<ScannerProps> = ({ onScan, onClose, allowDuplicates = fa
       const scannedCode = result.getText();
       const format = result.getBarcodeFormat();
       console.log("Scanner detected code:", scannedCode, "format:", format, "length:", scannedCode?.length);
-      
+
       // Debug: verifică dacă codul este detectat dar nu este procesat
       if (scannedCode && scannedCode.trim()) {
         const trimmed = scannedCode.trim();
         console.log("Trimmed code:", trimmed, "matches last:", trimmed === lastScannedCode);
-        
+
         // Validare: verifică dacă codul detectat este valid
         // EAN-13 are exact 13 cifre, EAN-8 are 8 cifre, UPC-A are 12 cifre
         const isValidLength = trimmed.length >= 8 && trimmed.length <= 18;
         const isNumeric = /^\d+$/.test(trimmed);
-        
+
         // Verifică dacă este EAN-13 (13 cifre) sau alt format valid
         const isEAN13 = trimmed.length === 13 && isNumeric;
         const isEAN8 = trimmed.length === 8 && isNumeric;
         const isUPCA = trimmed.length === 12 && isNumeric;
         const isValidFormat = isEAN13 || isEAN8 || isUPCA || (isValidLength && isNumeric);
-        
+
         console.log("Code validation:", {
           code: trimmed,
           length: trimmed.length,
@@ -49,7 +50,7 @@ const Scanner: React.FC<ScannerProps> = ({ onScan, onClose, allowDuplicates = fa
           isValidFormat,
           format: format
         });
-        
+
         // Previne scanări duplicate consecutive (cu opțiune de a permite duplicate)
         // Acceptă doar coduri valide și cu format corect
         const now = Date.now();
@@ -74,17 +75,17 @@ const Scanner: React.FC<ScannerProps> = ({ onScan, onClose, allowDuplicates = fa
     },
     onError(err) {
       console.error("Scanner error:", err);
-      setError(err.message || "Eroare la scanare");
+      setError((err as any)?.message || "Eroare la scanare");
     },
     constraints: {
-        video: {
-            facingMode: "environment",
-            width: { ideal: 1920, min: 1280 },
-            height: { ideal: 1080, min: 720 },
-            // Îmbunătățește calitatea pentru detectare mai precisă
-            focusMode: "continuous",
-            exposureMode: "continuous"
-        }
+      video: {
+        facingMode: "environment",
+        width: { ideal: 1920, min: 1280 },
+        height: { ideal: 1080, min: 720 },
+        // Îmbunătățește calitatea pentru detectare mai precisă
+        focusMode: "continuous",
+        exposureMode: "continuous"
+      } as any
     },
     // Adaugă delay pentru a permite scannerului să proceseze mai bine
     timeBetweenDecodingAttempts: 300
@@ -95,7 +96,7 @@ const Scanner: React.FC<ScannerProps> = ({ onScan, onClose, allowDuplicates = fa
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center z-10 bg-gradient-to-b from-black/70 to-transparent">
         <h2 className="text-white font-semibold">Scanare Cod de Bare</h2>
-        <button 
+        <button
           onClick={onClose}
           className="bg-white/20 p-2 rounded-full backdrop-blur-sm active:bg-white/30"
         >
@@ -111,34 +112,28 @@ const Scanner: React.FC<ScannerProps> = ({ onScan, onClose, allowDuplicates = fa
             <p className="text-sm text-gray-400">{error}</p>
           </div>
         ) : (
-          <video 
-            ref={ref} 
-            className="w-full h-full object-cover" 
-            autoPlay 
-            playsInline 
+          <video
+            ref={ref}
+            className="w-full h-full object-cover"
+            autoPlay
+            playsInline
             muted
           />
         )}
-        
+
         {/* Scan Frame Overlay */}
         <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
           <div className="w-64 h-48 border-2 border-emerald-500/70 rounded-lg relative bg-transparent shadow-[0_0_0_9999px_rgba(0,0,0,0.5)]">
             <div className="absolute top-2 left-0 right-0 flex justify-center">
-                <span className="text-emerald-400 text-xs bg-black/60 px-2 py-1 rounded">Încadrează codul</span>
+              <span className="text-emerald-400 text-xs bg-black/60 px-2 py-1 rounded">Încadrează codul</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Controls */}
-      <div className="absolute bottom-0 left-0 right-0 p-8 flex justify-around items-center bg-gradient-to-t from-black/90 to-transparent">
-        {/* Toggle Torch (If supported by browser) */}
-        {/* <button 
-          onClick={() => setTorchOn(!torchOn)}
-          className={`p-4 rounded-full ${torchOn ? 'bg-yellow-500/20 text-yellow-400' : 'bg-white/10 text-white'}`}
-        >
-          <Zap className="w-6 h-6" />
-        </button> */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 md:p-8 flex flex-col gap-4 items-center bg-gradient-to-t from-black/90 to-transparent z-20">
+        {children}
       </div>
     </div>
   );
