@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { Product, TemplateStyle } from '../../types/labelTypes';
 import { LabelClassic } from './LabelClassic';
 import { LabelModern } from './LabelModern';
@@ -24,7 +25,7 @@ export const PrintLayout: React.FC<PrintLayoutProps> = ({ products, template, lo
         pages.push(products.slice(i, i + 2));
     }
 
-    return (
+    return createPortal(
         <div className="print-area">
             {pages.map((pageProducts, pageIndex) => (
                 <div key={pageIndex} className="label-page">
@@ -56,6 +57,7 @@ export const PrintLayout: React.FC<PrintLayoutProps> = ({ products, template, lo
                     ))}
                 </div>
             ))}
-        </div>
+        </div>,
+        document.body
     );
 };
