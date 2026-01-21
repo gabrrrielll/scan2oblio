@@ -1,3 +1,16 @@
+# Enable rewrite engine
+RewriteEngine On
+
+# Set proper MIME types (CRITICAL for static assets)
+<IfModule mod_mime.c>
+    AddType application/javascript .js
+    AddType application/javascript .mjs
+    AddType text/css .css
+    AddType application/json .json
+    AddType image/svg+xml .svg
+</IfModule>
+
+# SPA Routing for /scan/
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /scan/
@@ -5,4 +18,14 @@
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule . /scan/index.html [L]
+</IfModule>
+
+# Security and CORS Headers
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    Header set Access-Control-Allow-Headers "Content-Type"
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
 </IfModule>
