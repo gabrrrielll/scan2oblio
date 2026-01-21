@@ -41,18 +41,14 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
     const [inventoryCounts, setInventoryCounts] = useState<Record<string, number>>({});
     const [inventoryUnknownCounts, setInventoryUnknownCounts] = useState<Record<string, number>>({});
     const [inventoryDiffs, setInventoryDiffs] = useState<InventoryDiffItem[]>([]);
+    const [inventoryMatches, setInventoryMatches] = useState<InventoryDiffItem[]>([]);
     const [showInventoryDiffs, setShowInventoryDiffs] = useState(false);
     const [lastInventoryScan, setLastInventoryScan] = useState<{ name: string; code: string } | null>(null);
     const [inventoryEditingProduct, setInventoryEditingProduct] = useState<OblioProduct | null>(null);
     const [inventorySearchQuery, setInventorySearchQuery] = useState('');
     const [inventoryTempCount, setInventoryTempCount] = useState<number>(0);
 
-    useEffect(() => {
-        if (inventoryEditingProduct) {
-            const key = getProductKey(inventoryEditingProduct);
-            setInventoryTempCount(inventoryCounts[key] || 0);
-        }
-    }, [inventoryEditingProduct]);
+    // Temporarily removed useEffect as initialization is handled in handleInventoryScan
 
     const formatDate = () => {
         const now = new Date();
@@ -106,15 +102,28 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
         snapshot: OblioProduct[],
         counts: Record<string, number>,
         unknownCounts: Record<string, number>
-    ): InventoryDiffItem[] => {
+    ): { diffs: InventoryDiffItem[], matches: InventoryDiffItem[] } => {
         const diffs: InventoryDiffItem[] = [];
+        const matches: InventoryDiffItem[] = [];
 
         snapshot.forEach(product => {
             const key = getProductKey(product);
             const expected = Number(product.stock) || 0;
             const counted = counts[key] || 0;
 
-            if (counted !== expected) {
+            const item: InventoryDiffItem = {
+                key,
+                name: product.name,
+                code: product.productCode?.trim() || product.code?.trim() || '',
+                expected,
+                counted,
+                delta: counted - expected,
+                status: 'unknown' // Placeholder
+            };
+
+            if (counted === expected) {
+                matches.push(item);
+            } else {
                 let status: InventoryDiffStatus = 'less';
                 if (expected === 0 && counted > 0) {
                     status = 'new';
@@ -123,16 +132,8 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
                 } else if (counted === 0) {
                     status = 'missing';
                 }
-
-                diffs.push({
-                    key,
-                    name: product.name,
-                    code: product.productCode?.trim() || product.code?.trim() || '',
-                    expected,
-                    counted,
-                    delta: counted - expected,
-                    status
-                });
+                item.status = status;
+                diffs.push(item);
             }
         });
 
@@ -150,7 +151,10 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
             }
         });
 
-        return diffs.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+        return {
+            diffs: diffs.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta)),
+            matches: matches.sort((a, b) => a.name.localeCompare(b.name))
+        };
     };
 
     const searchedInventory = useMemo(() => {
@@ -253,9 +257,11 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
         setIsInventoryActive(false);
         setIsInventoryScanning(false);
 
-        const diffs = buildInventoryDiffs(inventorySnapshot, inventoryCounts, inventoryUnknownCounts);
-        setInventoryDiffs(diffs);
+        const result = buildInventoryDiffs(inventorySnapshot, inventoryCounts, inventoryUnknownCounts);
+        setInventoryDiffs(result.diffs);
+        setInventoryMatches(result.matches);
         setShowInventoryDiffs(true);
+
     };
 
     const handleInventoryScan = (code: string) => {
@@ -269,13 +275,24 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
 
         const product = findProductByCode(trimmedCode, inventorySnapshot);
         if (product) {
+            const key = getProductKey(product);
+
+            // Increment the count immediately using functional update for concurrency safety
+            setInventoryCounts(prev => {
+                const newCount = (prev[key] || 0) + 1;
+                setInventoryTempCount(newCount); // Sync UI temp count
+                return { ...prev, [key]: newCount };
+            });
+
             setInventoryEditingProduct(product);
             setInventorySearchQuery(''); // Clear search if any
         } else {
-            // Treat as unknown and allow adding count?
-            // Actually, for unknown we'll just show the unknown status for now
+            // Increment unknown counts as well
+            setInventoryUnknownCounts(prev => {
+                const currentCount = prev[trimmedCode] || 0;
+                return { ...prev, [trimmedCode]: currentCount + 1 };
+            });
             setLastInventoryScan({ name: 'Cod necunoscut', code: trimmedCode });
-            // For now, only identified products can be edited this way
         }
 
         if (navigator.vibrate) navigator.vibrate(50);
@@ -823,6 +840,40 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
                                 })}
                             </div>
                         )}
+
+                        {/* Inventory Matches */}
+                        {inventoryMatches.length > 0 && (
+                            <div className="mt-8">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                                    <div className="text-white font-semibold">Produse corecte (fără diferențe)</div>
+                                    <span className="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full border border-slate-600">
+                                        {inventoryMatches.length} poziții
+                                    </span>
+                                </div>
+                                <div className="space-y-2 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+                                    {inventoryMatches.map(item => (
+                                        <div
+                                            key={item.key}
+                                            className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-slate-900/40 border border-slate-700/30 rounded-lg p-3 opacity-80 hover:opacity-100 transition-opacity"
+                                        >
+                                            <div className="min-w-0">
+                                                <div className="text-sm text-slate-300 truncate">{item.name}</div>
+                                                <div className="text-xs text-slate-500 font-mono">{item.code || item.key}</div>
+                                            </div>
+                                            <div className="flex items-center gap-4 justify-between md:justify-end">
+                                                <div className="text-xs text-slate-500">
+                                                    Stoc: <span className="text-emerald-500/80 font-semibold">{item.counted}</span>
+                                                </div>
+                                                <div className="text-xs bg-emerald-500/10 text-emerald-500/70 px-2 py-0.5 rounded border border-emerald-500/20">
+                                                    CONFIRMAT
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )
             }
@@ -1027,7 +1078,6 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
                                                     value={inventoryTempCount}
                                                     onChange={(e) => setInventoryTempCount(Number(e.target.value))}
                                                     className="w-14 bg-transparent text-center font-bold text-white outline-none text-lg"
-                                                    autoFocus
                                                     onFocus={(e) => e.target.select()}
                                                 />
                                                 <button
@@ -1047,8 +1097,8 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
                                         </div>
 
                                         <div className="mt-3 grid grid-cols-2 gap-2">
-                                            <button onClick={() => setInventoryTempCount(1)} className="text-[10px] bg-slate-700/50 hover:bg-slate-700 py-1.5 rounded text-slate-300 transition-colors uppercase font-bold">1 buc</button>
-                                            <button onClick={() => setInventoryTempCount(5)} className="text-[10px] bg-slate-700/50 hover:bg-slate-700 py-1.5 rounded text-slate-300 transition-colors uppercase font-bold">5 buc</button>
+                                            <button onClick={() => setInventoryTempCount(prev => prev + 1)} className="text-[10px] bg-slate-700/50 hover:bg-slate-700 py-1.5 rounded text-slate-300 transition-colors uppercase font-bold">+1 buc</button>
+                                            <button onClick={() => setInventoryTempCount(prev => prev + 5)} className="text-[10px] bg-slate-700/50 hover:bg-slate-700 py-1.5 rounded text-slate-300 transition-colors uppercase font-bold">+5 buc</button>
                                         </div>
                                     </div>
                                 )}

@@ -1,7 +1,7 @@
 # Script de deploy pentru Scan2Oblio (PowerShell)
 # Generează build-ul React și trimite doar fișierele necesare în repository
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 
 Write-Host "🚀 Starting deployment process..." -ForegroundColor Blue
 
@@ -21,9 +21,10 @@ Write-Host "📁 Preparing production files in repository root..." -ForegroundCo
 
 # Copy necessary files for production directly to root
 Copy-Item -Recurse -Path "dist\*" -Destination "." -Force
-Copy-Item -Path "api.php" -Destination "api.php" -Force
+# api.php is already in root, no need to copy it to itself
 if (Test-Path ".htaccess") {
-    Copy-Item -Path ".htaccess" -Destination ".htaccess" -Force
+    # .htaccess is already in root or might be in dist, but usually it's in root
+    # If it was in dist, line 23 already copied it.
 }
 else {
     Write-Host "⚠️  .htaccess not found (optional)" -ForegroundColor Yellow
@@ -47,14 +48,16 @@ if (-Not (Test-Path ".git")) {
 # Step 4: Add and commit production files
 Write-Host "📝 Committing production files..." -ForegroundColor Cyan
 
-# Add production files (index.html, assets/, api.php, .htaccess)
-git add index.html assets/ api.php .htaccess 2>$null
-if ($LASTEXITCODE -ne 0) {
-    git add index.html assets/ api.php
+# Use a more robust way to add files
+git add index.html 2>$null
+git add assets/ --all 2>$null
+git add api.php 2>$null
+if (Test-Path ".htaccess") {
+    git add .htaccess 2>$null
 }
 
 # Check if there are changes
-$status = git status --porcelain 2>$null
+$status = git status --porcelain
 if ($status) {
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     git commit -m "Deploy: Update production files $timestamp"

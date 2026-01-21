@@ -384,7 +384,7 @@ const App: React.FC = () => {
 
       {/* Top Bar */}
       {/* Top Bar */}
-      <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3 flex flex-col gap-2 shadow-md">
+      <header className="no-print sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3 flex flex-col gap-2 shadow-md">
         <div className="flex justify-between items-center w-full relative">
           <div className="flex items-center gap-3">
             <div className="bg-emerald-500 p-2 rounded-lg shadow-emerald-500/20 shadow-lg">
@@ -697,7 +697,7 @@ const App: React.FC = () => {
 
       {/* Floating Action Bar - Only in Invoice Mode */}
       {appMode === 'INVOICE' && (
-        <div className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 p-4 safe-area-pb z-30">
+        <div className="no-print fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 p-4 safe-area-pb z-30">
           <div className="max-w-2xl mx-auto flex gap-3">
             <button
               onClick={() => setIsScanning(true)}
@@ -754,7 +754,7 @@ const App: React.FC = () => {
 
       {/* Status Toasts */}
       {(status !== AppStatus.IDLE && status !== AppStatus.SENDING_OBLIO) && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[60] flex justify-center w-full px-4 pointer-events-none">
+        <div className="no-print fixed top-20 left-1/2 -translate-x-1/2 z-[60] flex justify-center w-full px-4 pointer-events-none">
           <div className={`
                 pointer-events-auto max-w-sm w-full p-4 rounded-xl shadow-2xl flex items-center gap-3 backdrop-blur-md border animate-in slide-in-from-top-5 fade-in duration-300
                 ${status === AppStatus.SUCCESS ? 'bg-emerald-900/90 border-emerald-500/50 text-emerald-50' : ''}
