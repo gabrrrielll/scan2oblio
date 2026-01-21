@@ -313,11 +313,11 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
 
     return (
         <div className="flex flex-col font-sans text-gray-900 bg-gray-50/50 min-h-full">
-            <div className="no-print p-3 sm:p-6 max-w-7xl mx-auto w-full space-y-6 sm:space-y-8">
+            <div className="no-print p-3 sm:p-6 max-w-[1600px] mx-auto w-full space-y-6 sm:space-y-8">
 
                 {/* Controls Header */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <aside className="lg:col-span-1 space-y-6">
+                <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
+                    <aside className="xl:col-span-1 space-y-6">
                         <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-200">
                             <h3 className="font-bold text-lg mb-4 text-gray-800 flex items-center gap-2 border-b pb-3 uppercase tracking-tighter">
                                 <Icons.Logo /> Logo Firmă
@@ -390,7 +390,7 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
                         </div>
                     </aside>
 
-                    <main className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 p-4 sm:p-6 flex flex-col shadow-sm min-h-[600px]">
+                    <main className="xl:col-span-3 bg-white rounded-2xl border border-gray-200 p-4 sm:p-6 flex flex-col shadow-sm min-h-[600px]">
                         <div className="flex flex-col gap-6 mb-8 border-b border-gray-100 pb-6">
                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                                 <h2 className="text-xl font-black text-gray-800 tracking-tight uppercase">
