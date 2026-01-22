@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { OblioConfig, OblioProduct, StockItem } from '../types';
 import { getProductsFromOblio } from '../services/oblioService';
 import { fetchStocksFromFile, saveStocksToFile, getExportStocksXlsUrl } from '../services/stockFileService';
 import { generateEAN13 } from '../services/productUtils';
 import Scanner from './Scanner';
 import StockEditModal from './StockEditModal';
-import { Search, Download, Upload, Plus, Edit2, Loader2, Trash2, ScanLine, CheckCircle2, CheckSquare, Square, Circle, ClipboardList, StopCircle, X } from 'lucide-react';
+import { Search, Download, Upload, Plus, Edit2, Loader2, Trash2, ScanLine, CheckCircle2, CheckSquare, Square, Circle, ClipboardList, StopCircle, X, Printer } from 'lucide-react';
 
 interface StocksViewProps {
     config: OblioConfig;
@@ -47,6 +48,8 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
     const [inventoryEditingProduct, setInventoryEditingProduct] = useState<OblioProduct | null>(null);
     const [inventorySearchQuery, setInventorySearchQuery] = useState('');
     const [inventoryTempCount, setInventoryTempCount] = useState<number>(0);
+    const [inventoryFinishedAt, setInventoryFinishedAt] = useState<Date | null>(null);
+    const [inventoryPrintMode, setInventoryPrintMode] = useState<'none' | 'diffs' | 'matches' | 'all'>('none');
 
     // Temporarily removed useEffect as initialization is handled in handleInventoryScan
 
@@ -261,7 +264,16 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
         setInventoryDiffs(result.diffs);
         setInventoryMatches(result.matches);
         setShowInventoryDiffs(true);
+        setInventoryFinishedAt(new Date());
+    };
 
+    const handlePrintInventory = (mode: 'diffs' | 'matches' | 'all') => {
+        setInventoryPrintMode(mode);
+        // Wait for portal to render
+        setTimeout(() => {
+            window.print();
+            setInventoryPrintMode('none');
+        }, 300);
     };
 
     const handleInventoryScan = (code: string) => {
@@ -803,6 +815,32 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
                                     {inventoryDiffSummary.total} poziții
                                 </span>
                             </div>
+
+                            <div className="flex bg-slate-700/50 rounded-lg p-1 border border-slate-600 shadow-inner">
+                                <button
+                                    onClick={() => handlePrintInventory('diffs')}
+                                    className="px-3 py-1 text-[11px] font-bold text-slate-300 hover:text-white flex items-center gap-1.5 transition-all active:scale-95"
+                                    title="Printează doar diferențele"
+                                >
+                                    <Printer className="w-3.5 h-3.5" /> Diferențe
+                                </button>
+                                <div className="w-[1px] bg-slate-600 mx-1"></div>
+                                <button
+                                    onClick={() => handlePrintInventory('matches')}
+                                    className="px-3 py-1 text-[11px] font-bold text-slate-300 hover:text-white flex items-center gap-1.5 transition-all active:scale-95"
+                                    title="Printează doar produsele corecte"
+                                >
+                                    <Printer className="w-3.5 h-3.5" /> Corecte
+                                </button>
+                                <div className="w-[1px] bg-slate-600 mx-1"></div>
+                                <button
+                                    onClick={() => handlePrintInventory('all')}
+                                    className="px-3 py-1 text-[11px] font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5 transition-all active:scale-95"
+                                    title="Printează tot raportul"
+                                >
+                                    <Printer className="w-3.5 h-3.5" /> TOT
+                                </button>
+                            </div>
                         </div>
 
                         {inventoryDiffs.length === 0 ? (
@@ -1107,7 +1145,101 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
                     </Scanner>
                 )
             }
+            {/* Inventory Print Report Portal */}
+            {inventoryPrintMode !== 'none' && (
+                <InventoryPrintReport
+                    diffs={inventoryDiffs}
+                    matches={inventoryMatches}
+                    mode={inventoryPrintMode}
+                    finishedAt={inventoryFinishedAt}
+                />
+            )}
         </div >
+    );
+};
+
+interface InventoryPrintReportProps {
+    diffs: InventoryDiffItem[];
+    matches: InventoryDiffItem[];
+    mode: 'diffs' | 'matches' | 'all';
+    finishedAt: Date | null;
+}
+
+const InventoryPrintReport: React.FC<InventoryPrintReportProps> = ({ diffs, matches, mode, finishedAt }) => {
+    if (mode === 'none') return null;
+
+    const showDiffs = mode === 'diffs' || mode === 'all';
+    const showMatches = mode === 'matches' || mode === 'all';
+    const dateStr = finishedAt ? finishedAt.toLocaleString('ro-RO') : new Date().toLocaleString('ro-RO');
+
+    return createPortal(
+        <div className="print-area inventory-print-report">
+            <div className="report-header">
+                <h1>Raport Inventar</h1>
+                <div className="report-meta">
+                    <div><strong>Data și ora finalizării:</strong> {dateStr}</div>
+                </div>
+            </div>
+
+            {showDiffs && diffs.length > 0 && (
+                <div className="report-section">
+                    <h2>Diferențe detectate</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Produs</th>
+                                <th>Cod</th>
+                                <th>Status</th>
+                                <th>Oblio</th>
+                                <th>Inventar</th>
+                                <th>Dif.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {diffs.map(item => (
+                                <tr key={item.key}>
+                                    <td>{item.name}</td>
+                                    <td>{item.code || item.key}</td>
+                                    <td className="font-bold">{item.status.toUpperCase()}</td>
+                                    <td>{item.expected}</td>
+                                    <td className="font-bold">{item.counted}</td>
+                                    <td className={`font-bold ${item.delta > 0 ? 'text-green' : 'text-red'}`}>
+                                        {item.delta > 0 ? `+${item.delta}` : item.delta}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            {showMatches && matches.length > 0 && (
+                <div className="report-section">
+                    <h2>Produse conforme (stoc corect)</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Produs</th>
+                                <th>Cod</th>
+                                <th>Cantitate</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {matches.map(item => (
+                                <tr key={item.key}>
+                                    <td>{item.name}</td>
+                                    <td>{item.code || item.key}</td>
+                                    <td className="font-bold">{item.counted}</td>
+                                    <td className="text-green font-bold">OK</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </div>,
+        document.body
     );
 };
 
