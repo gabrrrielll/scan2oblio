@@ -49,12 +49,7 @@ if (-Not (Test-Path ".git")) {
 Write-Host "📝 Committing production files..." -ForegroundColor Cyan
 
 # Use a more robust way to add files
-git add index.html 2>$null
-git add assets/ --all 2>$null
-git add api.php 2>$null
-if (Test-Path ".htaccess") {
-    git add .htaccess 2>$null
-}
+git add . 2>$null
 
 # Check if there are changes
 $status = git status --porcelain

@@ -32,3 +32,26 @@ export const generateEAN13 = (): string => {
 
     return code + checkDigit;
 };
+
+/**
+ * Maps Oblio products to the local stock file format
+ */
+export const mapOblioToStockItems = (products: any[]): any[] => {
+    return products.map(p => ({
+        "Denumire produs": p.name,
+        "Tip": "Marfa",
+        "Cod produs": p.productCode || p.code || "",
+        "Stoc": Number(p.stock) || 0,
+        "U.M.": p.measuringUnit,
+        "Cost achizitie fara TVA": 0,
+        "Moneda achizitie": "RON",
+        "Pret vanzare": Number(p.price) || 0,
+        "Cota TVA": Number(p.vatPercentage) || 0,
+        "TVA inclus": "DA",
+        "Moneda vanzare": p.currency || "RON",
+        "Furnizor": "",
+        "sidesType": "6 LATURI",
+        "woodColor": "RESPETĂ",
+        "material": "BRAD"
+    }));
+};

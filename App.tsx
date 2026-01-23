@@ -23,6 +23,7 @@ import Settings from './components/Settings';
 import InventoryModal from './components/InventoryModal';
 import InvoiceEditor from './components/InvoiceEditor';
 import WorkStationSelector from './components/WorkStationSelector';
+import SyncButton from './components/SyncButton';
 import StocksView from './components/StocksView';
 import { createInvoiceInOblio, getProductsFromOblio } from './services/oblioService';
 import { LabelsView } from './components/LabelPrint/LabelsView';
@@ -71,6 +72,7 @@ const App: React.FC = () => {
 
   // App Mode State
   const [appMode, setAppMode] = useState<'INVOICE' | 'STOCKS' | 'LABELS'>('INVOICE');
+  const [lastSync, setLastSync] = useState<number>(0);
 
   // Persist config to localStorage whenever it changes
   useEffect(() => {
@@ -439,18 +441,30 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Second Row: WorkStation Selector */}
-        {(appMode === 'INVOICE' || appMode === 'STOCKS') && !isInventoryLoading && (
-          <div className="w-full">
-            <WorkStationSelector
-              config={config}
-              selectedStation={config.workStation || ''}
-              onSelect={(val) => {
-                const newConfig = { ...config, workStation: val };
-                setConfig(newConfig);
-                localStorage.setItem('oblio_config', JSON.stringify(newConfig));
-              }}
-            />
+        {/* Second Row: WorkStation Selector & Sync */}
+        {(appMode === 'INVOICE' || appMode === 'STOCKS' || appMode === 'LABELS') && !isInventoryLoading && (
+          <div className="flex gap-2 px-4 pb-2">
+            <div className="flex-1">
+              <WorkStationSelector
+                config={config}
+                selectedStation={config.workStation || ''}
+                onSelect={(val) => {
+                  const newConfig = { ...config, workStation: val };
+                  setConfig(newConfig);
+                  localStorage.setItem('oblio_config', JSON.stringify(newConfig));
+                }}
+              />
+            </div>
+            <div className="flex-1 md:flex-initial md:min-w-[200px]">
+              <SyncButton
+                config={config}
+                onSuccess={(products) => {
+                  setInventory(products);
+                  setLastSync(Date.now());
+                }}
+                onError={(err) => setConnectionError(err)}
+              />
+            </div>
           </div>
         )}
       </header>
@@ -473,7 +487,7 @@ const App: React.FC = () => {
         )}
 
         {appMode === 'STOCKS' ? (
-          <StocksView config={config} />
+          <StocksView key={lastSync} config={config} />
         ) : appMode === 'LABELS' ? (
           <LabelsView inventory={inventory} />
         ) : (

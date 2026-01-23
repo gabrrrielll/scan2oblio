@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { OblioConfig, OblioProduct, StockItem } from '../types';
 import { getProductsFromOblio } from '../services/oblioService';
 import { fetchStocksFromFile, saveStocksToFile, getExportStocksXlsUrl } from '../services/stockFileService';
-import { generateEAN13 } from '../services/productUtils';
+import { generateEAN13, mapOblioToStockItems } from '../services/productUtils';
 import Scanner from './Scanner';
 import StockEditModal from './StockEditModal';
 import { Search, Download, Upload, Plus, Edit2, Loader2, Trash2, ScanLine, CheckCircle2, CheckSquare, Square, Circle, ClipboardList, StopCircle, X, Printer } from 'lucide-react';
@@ -31,7 +31,6 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [editingProduct, setEditingProduct] = useState<StockItem | null>(null);
     const [isNewProduct, setIsNewProduct] = useState(false);
-    const [isImporting, setIsImporting] = useState(false);
     const [isScanning, setIsScanning] = useState(false);
     const [isInventoryActive, setIsInventoryActive] = useState(false);
     const [isInventoryScanning, setIsInventoryScanning] = useState(false);
@@ -65,25 +64,6 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
 
     const managementLabel = config.workStation?.trim() || 'Sediu';
 
-    const mapOblioToStockItems = (products: OblioProduct[]): StockItem[] => {
-        return products.map(p => ({
-            "Denumire produs": p.name,
-            "Tip": "Marfa",
-            "Cod produs": p.productCode || p.code || "",
-            "Stoc": Number(p.stock) || 0,
-            "U.M.": p.measuringUnit,
-            "Cost achizitie fara TVA": 0,
-            "Moneda achizitie": "RON",
-            "Pret vanzare": Number(p.price) || 0,
-            "Cota TVA": Number(p.vatPercentage) || 0,
-            "TVA inclus": "DA",
-            "Moneda vanzare": p.currency || "RON",
-            "Furnizor": "",
-            "sidesType": "6 LATURI",
-            "woodColor": "RESPETĂ",
-            "material": "BRAD"
-        }));
-    };
 
     const getProductKey = (product: OblioProduct): string => {
         const ean = product.productCode?.trim();
@@ -196,34 +176,6 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
         }
     };
 
-    const handleImportFromOblio = async () => {
-        if (!config.email || !config.apiSecret || !config.cif) {
-            setError("Configurare Oblio incompletă (Email, Secret, CIF).");
-            return;
-        }
-
-        if (!confirm(`Atenție! Această acțiune va prelua produsele din Oblio pentru gestiunea "${managementLabel}" și va înițializa/suprascrie baza de date locală de pe server. Doriți să continuați?`)) {
-            return;
-        }
-
-        setIsImporting(true);
-        setError(null);
-        try {
-            // Fetch from Oblio
-            const obProducts: OblioProduct[] = await getProductsFromOblio(config);
-            const mappedStocks = mapOblioToStockItems(obProducts);
-
-            // Save to file
-            await saveStocksToFile(mappedStocks);
-            setStocks(mappedStocks);
-            alert(`Import efectuat cu succes! ${mappedStocks.length} produse importate.`);
-        } catch (err: any) {
-            console.error("Import error:", err);
-            setError(`Eroare la import: ${err.message}`);
-        } finally {
-            setIsImporting(false);
-        }
-    };
 
     const handleStartInventory = async () => {
         if (!config.email || !config.apiSecret || !config.cif) {
@@ -625,14 +577,6 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
 
                 {/* Row 2: Import/Export Actions */}
                 <div className="flex gap-2 w-full overflow-x-auto pb-1 md:pb-0">
-                    <button
-                        onClick={handleImportFromOblio}
-                        disabled={isImporting || isInventoryActive}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-600/30 transition-colors whitespace-nowrap"
-                    >
-                        {isImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                        Import Sincronizare
-                    </button>
 
                     <button
                         onClick={isInventoryActive ? handleStopInventory : handleStartInventory}
