@@ -1,7 +1,7 @@
 # Script de deploy pentru Scan2Oblio (PowerShell)
 # Generează build-ul React și trimite doar fișierele necesare în repository
 
-$ErrorActionPreference = "Continue"
+$ErrorActionPreference = "Stop"
 
 Write-Host "🚀 Starting deployment process..." -ForegroundColor Blue
 
@@ -18,6 +18,18 @@ Write-Host "✅ Build completed successfully" -ForegroundColor Green
 
 # Step 2: Prepare production files in root (for direct server deployment)
 Write-Host "📁 Preparing production files in repository root..." -ForegroundColor Cyan
+
+# Clean up old assets folder to prevent stale files
+if (Test-Path "assets") {
+    Write-Host "🧹 Cleaning up old assets folder..." -ForegroundColor Yellow
+    Remove-Item -Recurse -Path "assets" -Force
+}
+
+# Backup index.html before overwriting
+Write-Host "💾 Backing up development index.html..." -ForegroundColor Cyan
+if (Test-Path "index.html") {
+    Copy-Item -Path "index.html" -Destination "index.html.development" -Force
+}
 
 # Copy necessary files for production directly to root
 Copy-Item -Recurse -Path "dist\*" -Destination "." -Force
@@ -48,8 +60,12 @@ if (-Not (Test-Path ".git")) {
 # Step 4: Add and commit production files
 Write-Host "📝 Committing production files..." -ForegroundColor Cyan
 
+# Temporarily allow stderr output for git commands to prevent warnings from stopping the script
+$currentEAP = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
+
 # Use a more robust way to add files
-git add . 2>$null
+git add .
 
 # Check if there are changes
 $status = git status --porcelain
@@ -62,8 +78,12 @@ else {
     Write-Host "⚠️  No changes to commit" -ForegroundColor Yellow
 }
 
+$ErrorActionPreference = $currentEAP
+
 # Step 5: Push to repository
 Write-Host "⬆️  Pushing to repository..." -ForegroundColor Cyan
+
+$ErrorActionPreference = "Continue"
 
 # Get current branch name
 try {
@@ -82,6 +102,16 @@ catch {
     $branch = git branch --show-current 2>$null
     if (-Not $branch) { $branch = "master" }
     Write-Host "   git push -u origin $branch" -ForegroundColor Yellow
+}
+
+$ErrorActionPreference = $currentEAP
+
+# Step 6: Restore development index.html
+Write-Host "🔄 Restoring development index.html..." -ForegroundColor Cyan
+if (Test-Path "index.html.development") {
+    Copy-Item -Path "index.html.development" -Destination "index.html" -Force
+    Remove-Item -Path "index.html.development" -Force
+    Write-Host "✅ Development index.html restored" -ForegroundColor Green
 }
 
 Write-Host "✅ Deployment completed successfully!" -ForegroundColor Green
