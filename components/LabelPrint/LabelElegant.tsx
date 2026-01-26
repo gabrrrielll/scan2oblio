@@ -140,7 +140,7 @@ export const LabelElegant: React.FC<LabelProps> = ({ product, logoUrl, showImage
                                 <h2 className="font-serif italic text-xl text-[#8B5A2B] mb-2 text-center">CRUCE INSCRIPTIONATA</h2>
 
                                 {/* MODIFIED: Width limited to 74% and centered via mx-auto to match first printscreen */}
-                                <div className={`space-y-1 ${showImages ? 'text-[10px]' : 'text-lg font-bold'} w-[80%] mx-auto`}>
+                                <div className={`space-y-1 ${showImages ? 'text-xs' : 'text-lg font-bold'} w-[80%] mx-auto`}>
                                     {product.crossOptions.filter(opt => opt.price > 0).map((opt, i) => (
                                         <div key={i} className="flex justify-between items-end">
                                             <span className="font-bold uppercase text-[#5D4037]">{opt.type}</span>
@@ -178,7 +178,7 @@ export const LabelElegant: React.FC<LabelProps> = ({ product, logoUrl, showImage
                                     marginBottom: '2px'
                                 }}>
                                     <span style={{
-                                        fontFamily: "'Libre Barcode EAN13'",
+                                        fontFamily: "'Libre Barcode EAN13 Text'",
                                         textRendering: 'optimizeLegibility',
                                         WebkitFontSmoothing: 'none'
                                     }} className="text-6xl leading-none block">{encodedCode}</span>
