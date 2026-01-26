@@ -487,7 +487,7 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
             if (s["material"]) m.add(String(s["material"]));
             if (s["woodColor"]) wc.add(String(s["woodColor"]));
             if (s["sidesType"]) st.add(String(s["sidesType"]));
-            if (s["U.M."]) u.add(String(s["U.M."]));
+            if (s["Unitate masura"]) u.add(String(s["Unitate masura"]));
             if (s["Cota TVA"] !== undefined) v.add(String(s["Cota TVA"]));
         });
 
@@ -532,7 +532,7 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
             result = result.filter(s =>
                 s["Denumire produs"].toLowerCase().includes(lowerQ) ||
                 s["Cod produs"].toLowerCase().includes(lowerQ) ||
-                (s["Furnizor"] && s["Furnizor"].toLowerCase().includes(lowerQ))
+                (s["Descriere"] && s["Descriere"].toLowerCase().includes(lowerQ))
             );
         }
 

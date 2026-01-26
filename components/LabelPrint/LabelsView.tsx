@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Product, TemplateStyle } from '../../types/labelTypes';
 import { EditProductModal } from './EditProductModal';
@@ -16,7 +15,7 @@ interface LabelsViewProps {
 const KNOWN_MATERIALS = ['BRAD', 'FAG', 'STEJAR', 'FRASIN', 'PIN', 'TEI', 'CIRES', 'WENGE', 'ALB', 'NEGRU'];
 const KNOWN_SIDES = ['4 LATURI', '6 LATURI', '8 LATURI', 'PATRU LATURI', 'SASE LATURI'];
 
-// Icons from FontAwesome (which we'll include via CDN in index.html)
+// Icons from FontAwesome
 const Icons = {
     Print: () => <i className="fa-solid fa-print text-lg"></i>,
     Pdf: () => <i className="fa-solid fa-file-pdf"></i>,
@@ -43,7 +42,6 @@ const Icons = {
     ChevronUp: () => <i className="fa-solid fa-chevron-up"></i>
 };
 
-
 export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
     const [products, setProducts] = useState<Product[]>([]);
     const [selectedQuantities, setSelectedQuantities] = useState<Record<string, number>>({});
@@ -53,14 +51,12 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-
     const [remoteLogoUrl, setRemoteLogoUrl] = useState('https://ai24stiri.ro/scan/public/logo-transparent.png');
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const recoveryInputRef = useRef<HTMLInputElement>(null);
     const logoInputRef = useRef<HTMLInputElement>(null);
 
-    // Adapter: Convert OblioProduct to Label Product
     const processImportedProducts = useCallback((incomingProducts: any[], currentProducts: Product[]): { processed: Product[], duplicatesSkipped: number } => {
         if (!Array.isArray(incomingProducts)) return { processed: [], duplicatesSkipped: 0 };
         const existingCodes = new Set(currentProducts.map(p => p.code));
@@ -70,36 +66,30 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
 
         incomingProducts.forEach((p, index) => {
             let foundCode = p.productCode || p.code || p["Cod produs"];
-            // Handle numeric codes from JSON/Excel sometimes being generic "code" field
-
             const finalCode = foundCode ? String(foundCode).replace(/\s/g, '') : generateEAN13();
 
-            // Note: In scan2oblio we reload inventory often, so checking duplicates against existing might block updates if we are not careful.
-            // However, for this View, we treat `products` as a local workspace that we populate from `inventory`.
             if (existingCodes.has(finalCode) || newlyAddedCodes.has(finalCode)) {
                 duplicatesSkipped++;
                 return;
             }
             newlyAddedCodes.add(finalCode);
 
-            // Mapping Logic
             const modelName = p.name || p["Denumire produs"] || p.modelName || "";
-            const price = Number(p.price || p["Pret vanzare"] || 0);
-            const currency = p.currency || p["Moneda vanzare"] || "RON";
+            const price = Number(p.Pret || p.price || p["Pret vanzare"] || 0);
+            const currency = p.Moneda || p.currency || p["Moneda vanzare"] || "RON";
 
-            // Simple Heuristic Extraction from Name
             const upperName = modelName.toUpperCase();
-            let material = p.material || p["material"] || KNOWN_MATERIALS.find(m => upperName.includes(m)) || "BRAD";
-            let sidesType = p.sidesType || p["sidesType"] || KNOWN_SIDES.find(s => upperName.includes(s)) || "4 LATURI";
-            let woodColor = p.woodColor || p["woodColor"] || (upperName.includes("MAHON") ? "MAHON" : "NUC");
-            let furnizor = p.brand || p.furnizor || p["Furnizor"] || "Diverse";
+            let material = p.material || KNOWN_MATERIALS.find(m => upperName.includes(m)) || "BRAD";
+            let sidesType = p.sidesType || KNOWN_SIDES.find(s => upperName.includes(s)) || "4 LATURI";
+            let woodColor = p.woodColor || (upperName.includes("MAHON") ? "MAHON" : "NUC");
+            let furnizor = p.furnizor || "Diverse";
             let sizeClass = p.sizeClass || "L";
             let weightCapacityMax = Number(p.weightCapacityMax || 0);
             let dimensions = { ...EMPTY_PRODUCT.dimensions };
 
-            // Parse Description if available (Format: Furnizor \n Material \n WoodColor \n Size \n Weight)
-            if (p.description) {
-                const lines = p.description.split('\n').map((l: string) => l.trim()).filter((l: string) => l !== "");
+            const descriptionField = p.Descriere || p.description;
+            if (descriptionField) {
+                const lines = descriptionField.split('\n').map((l: string) => l.trim()).filter((l: string) => l !== "");
                 if (lines.length >= 1) furnizor = lines[0];
                 if (lines.length >= 2) material = lines[1];
                 if (lines.length >= 3) woodColor = lines[2];
@@ -113,7 +103,7 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
                             width: parseInt(dimMatch[2]),
                             height: parseInt(dimMatch[3])
                         };
-                        sizeClass = ""; // Clear preset class since we have custom dimensions
+                        sizeClass = "";
                     } else {
                         const parsedSize = sizeStr.toUpperCase();
                         const matchedSize = SIZE_CLASSES.find(sc => sc.id === parsedSize);
@@ -135,7 +125,7 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
             const finalId = `id-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 5)}`;
             processed.push({
                 ...EMPTY_PRODUCT,
-                ...p, // Spread original props to keep any matching fields
+                ...p,
                 modelName,
                 price,
                 furnizor,
@@ -148,13 +138,12 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
                 sizeClass,
                 weightCapacityMax,
                 dimensions,
-                rawStockData: p // Preserve the original object (StockItem or OblioProduct)
+                rawStockData: p
             });
         });
         return { processed, duplicatesSkipped };
     }, []);
 
-    // Sync with Inventory Prop and Server File on Mount or Change
     useEffect(() => {
         const initializeWorkspace = async () => {
             let serverStocks: StockItem[] = [];
@@ -163,76 +152,57 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
             } catch (err) {
                 console.error("Could not fetch server stocks:", err);
             }
-
-            // Convert server stocks to Label Products
             const serverLabelProducts = processImportedProducts(serverStocks, []).processed;
-
             if (inventory.length > 0) {
-                // If we have fresh Oblio inventory, merge it with server data.
-                // Priority: Workspace (edited by user) > Server File > Fresh Oblio (heuristics)
                 const { processed: freshOblioProducts } = processImportedProducts(inventory, serverLabelProducts);
                 setProducts([...serverLabelProducts, ...freshOblioProducts]);
             } else if (serverLabelProducts.length > 0) {
                 setProducts(serverLabelProducts);
             }
         };
-
         initializeWorkspace();
     }, [inventory, processImportedProducts]);
 
     const handleSyncToServer = async () => {
         if (products.length === 0) return;
-        if (!confirm("Sigur doriți să actualizați descrierile de pe server cu datele din acest Workspace? (Stocurile și restul datelor vor fi păstrate)")) return;
-
+        if (!confirm("Sigur doriți să actualizați descrierile de pe server cu datele din acest Workspace?")) return;
         try {
             const serverStocks = await fetchStocksFromFile();
             const updatedStocks = [...serverStocks];
-
             products.forEach(p => {
                 const updatedStockItem = mapProductToStockItem(p);
                 const index = updatedStocks.findIndex(s => s["Cod produs"] === p.code);
-
                 if (index !== -1) {
-                    // Smart merge: Keep existing server fields, update only label metadata
                     updatedStocks[index] = {
                         ...updatedStocks[index],
                         ...updatedStockItem,
-                        // Explicitly preserve stock in case it changed on server
                         "Stoc": updatedStocks[index]["Stoc"]
                     };
                 } else {
                     updatedStocks.push(updatedStockItem);
                 }
             });
-
             await saveStocksToFile(updatedStocks);
-            alert("Descrierile au fost actualizate pe server în stocuri.json!");
+            alert("Datele au fost salvate pe server!");
         } catch (err: any) {
-            alert("Eroare la salvarea pe server: " + err.message);
+            alert("Eroare la salvare: " + err.message);
         }
     };
 
     const handleImportFromOblioToServer = async () => {
-        if (inventory.length === 0) {
-            alert("Nu există produse încărcate din Oblio. Vă rugăm să faceți refresh la pagină sau să verificați conexiunea.");
-            return;
-        }
-
-        if (!confirm(`Sigur doriți să actualizați datele de pe server cu cele ${inventory.length} produse din Oblio? (Se vor sincroniza stocurile și prețurile, dar se vor păstra restul detaliilor editate)`)) return;
-
+        if (inventory.length === 0) return;
+        if (!confirm(`Importați ${inventory.length} produse din Oblio?`)) return;
         try {
             const serverStocks = await fetchStocksFromFile();
             const freshOblioStocks = mapOblioToStockItems(inventory);
             const updatedStocks = [...serverStocks];
-
             freshOblioStocks.forEach(freshItem => {
                 const index = updatedStocks.findIndex(s => s["Cod produs"] === freshItem["Cod produs"]);
                 if (index !== -1) {
-                    // Update only dynamic fields from Oblio, keep our local edits (sidesType, material, description etc.)
                     updatedStocks[index] = {
                         ...updatedStocks[index],
                         "Stoc": freshItem["Stoc"],
-                        "Pret vanzare": freshItem["Pret vanzare"],
+                        "Pret": freshItem["Pret"],
                         "Denumire produs": freshItem["Denumire produs"],
                         "Cota TVA": freshItem["Cota TVA"]
                     };
@@ -240,28 +210,20 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
                     updatedStocks.push(freshItem);
                 }
             });
-
             await saveStocksToFile(updatedStocks);
-
-            // Also update local workspace to reflect merged state
             const { processed } = processImportedProducts(updatedStocks, []);
             setProducts(processed);
-
-            alert("Sincronizarea cu Oblio a fost finalizată pe server!");
+            alert("Sincronizare finalizată!");
         } catch (err: any) {
             alert("Eroare: " + err.message);
         }
     };
 
-
     const toggleProductSelection = (id: string) => {
         setSelectedQuantities(prev => {
             const next = { ...prev };
-            if (next[id] !== undefined) {
-                delete next[id];
-            } else {
-                next[id] = 1;
-            }
+            if (next[id] !== undefined) delete next[id];
+            else next[id] = 1;
             return next;
         });
     };
@@ -271,11 +233,8 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
             const current = prev[id] || 0;
             const nextQty = Math.max(0, current + delta);
             const next = { ...prev };
-            if (nextQty === 0) {
-                delete next[id];
-            } else {
-                next[id] = nextQty;
-            }
+            if (nextQty === 0) delete next[id];
+            else next[id] = nextQty;
             return next;
         });
     };
@@ -292,7 +251,6 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
     const handleLoadRemoteLogo = () => {
         if (!remoteLogoUrl) return;
         setLogoUrl(remoteLogoUrl);
-        alert("Logo-ul a fost actualizat.");
     };
 
     const handleHtmlRecovery = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -308,14 +266,11 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
                 try {
                     const data = JSON.parse(metadataScript.textContent || '[]');
                     recoveredRaw = [...recoveredRaw, ...data];
-                    continue;
                 } catch (err) { }
             }
-            // Fallback scraping logic omitted for brevity in this integration, usually metadata script is enough
         }
         const { processed } = processImportedProducts(recoveredRaw, products);
         if (processed.length > 0) setProducts(prev => [...prev, ...processed]);
-        if (recoveryInputRef.current) recoveryInputRef.current.value = '';
     };
 
     const handleExportWorkspace = () => {
@@ -323,11 +278,9 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
         const mappedProducts = products.map(p => ({
             "Denumire produs": p.modelName,
             "Cod produs": p.code,
-            "Pret vanzare": p.price,
-            "Furnizor": p.furnizor,
-            "sidesType": p.sidesType,
-            "woodColor": p.woodColor,
-            "material": p.material
+            "Pret": p.price,
+            "Moneda": p.currency,
+            "Descriere": p.rawStockData?.Descriere || ""
         }));
         const blob = new Blob([JSON.stringify(mappedProducts, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -340,40 +293,15 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
 
     const handleExportHtml = () => {
         const printArea = document.querySelector('.print-area');
-        if (!printArea) { alert("Niciun conținut pentru export."); return; }
+        if (!printArea) return;
         const selectedForMeta = products.filter(p => (selectedQuantities[p.id] || 0) > 0);
         const metadata = JSON.stringify(selectedForMeta);
-
-        const htmlContent = `
-<!DOCTYPE html>
-<html lang="ro">
-<head>
-    <meta charset="UTF-8">
-    <title>Export Etichete Funerare - ${new Date().toLocaleDateString()}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&family=Libre+Barcode+EAN13&family=Libre+Barcode+EAN13+Text&display=swap" rel="stylesheet">
-    <style>
-      @media print { @page { size: A4; margin: 0; } body { margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
-      body { background: white; font-family: 'Roboto', sans-serif; }
-      .label-page { page-break-after: always; height: 297mm; width: 210mm; display: grid; grid-template-rows: 1fr 1fr; padding: 10mm; box-sizing: border-box; }
-      .label-container { display: flex; align-items: center; justify-content: center; overflow: hidden; width: 100%; height: 100%; }
-      .label-container:nth-child(1) { border-bottom: 1px dashed #ccc; }
-      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-    </style>
-</head>
-<body>
-    <script id="label-metadata" type="application/json">${metadata}</script>
-    <div class="print-area">${printArea.innerHTML}</div>
-    <script>window.onload = function() { setTimeout(function() { window.print(); }, 1000); };</script>
-</body>
-</html>`;
-
+        const htmlContent = `<!DOCTYPE html><html lang="ro"><head><meta charset="UTF-8"><title>Export Etichete</title><script src="https://cdn.tailwindcss.com"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" /><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&family=Libre+Barcode+EAN13&family=Libre+Barcode+EAN13+Text&display=swap" rel="stylesheet"><style>@media print {@page {size: A4; margin: 0; } body {margin: 0; padding: 0; -webkit-print-color-adjust: exact; } } body {background: white; font-family: 'Roboto', sans-serif; } .label-page {page-break-after: always; height: 297mm; width: 210mm; display: grid; grid-template-rows: 1fr 1fr; padding: 10mm; box-sizing: border-box; } .label-container {display: flex; align-items: center; justify-content: center; overflow: hidden; width: 100%; height: 100%; } .label-container:nth-child(1) {border-bottom: 1px dashed #ccc; } * {-webkit-print-color-adjust: exact !important; }</style></head><body><script id="label-metadata" type="application/json">${metadata}</script><div class="print-area">${printArea.innerHTML}</div><script>window.onload = function() {setTimeout(function () { window.print(); }, 1000); };</script></body></html>`;
         const blob = new Blob([htmlContent], { type: 'text/html' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `etichete_print_${new Date().toISOString().slice(0, 10)}.html`;
+        a.download = `etichete_${new Date().toISOString().slice(0, 10)}.html`;
         a.click();
         URL.revokeObjectURL(url);
     };
@@ -387,10 +315,9 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
                 const json = JSON.parse(event.target?.result as string);
                 const { processed } = processImportedProducts(json, products);
                 if (processed.length > 0) setProducts(prev => [...prev, ...processed]);
-            } catch (err) { alert('Eroare JSON.'); }
+            } catch (err) { }
         };
         reader.readAsText(file);
-        if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
     const selectAll = () => {
@@ -401,33 +328,21 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
     const deselectAll = () => setSelectedQuantities({});
 
     const handlePrint = () => {
-        const totalCount = (Object.values(selectedQuantities) as number[]).reduce((a, b) => a + b, 0);
-        if (totalCount === 0) { alert("Selectează cel puțin o etichetă!"); return; }
+        if (Object.keys(selectedQuantities).length === 0) return;
         window.print();
     };
 
     const handleSaveProduct = async (updated: Product) => {
-        const newProducts = products.map(p => p.id === updated.id ? updated : p);
-        setProducts(newProducts);
+        setProducts(prev => prev.map(p => p.id === updated.id ? updated : p));
         setEditingProduct(null);
-
-        // Also update server file automatically for this product
         try {
             const serverStocks = await fetchStocksFromFile();
             const updatedStockItem = mapProductToStockItem(updated);
             const index = serverStocks.findIndex(s => s["Cod produs"] === updated.code);
-
-            if (index !== -1) {
-                serverStocks[index] = { ...serverStocks[index], ...updatedStockItem };
-            } else {
-                serverStocks.push(updatedStockItem);
-            }
-
+            if (index !== -1) serverStocks[index] = { ...serverStocks[index], ...updatedStockItem };
+            else serverStocks.push(updatedStockItem);
             await saveStocksToFile(serverStocks);
-            console.log("Product updated on server successfully");
-        } catch (err) {
-            console.error("Could not auto-update server stock:", err);
-        }
+        } catch (err) { }
     };
 
     const cloneProduct = (product: Product) => {
@@ -449,97 +364,69 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
     const filteredProducts = products.filter(p => {
         const q = searchQuery.toLowerCase();
         return p.modelName.toLowerCase().includes(q) || p.code.toLowerCase().includes(q) || (p.furnizor?.toLowerCase().includes(q));
-    }).sort((a, b) => ((selectedQuantities[b.id] ? 1 : 0) - (selectedQuantities[a.id] ? 1 : 0)));
+    });
 
     const selectedProductsForPrint: Product[] = [];
     products.forEach(p => {
         const qty = selectedQuantities[p.id] || 0;
-        for (let i = 0; i < qty; i++) {
-            selectedProductsForPrint.push(p);
-        }
+        for (let i = 0; i < qty; i++) selectedProductsForPrint.push(p);
     });
 
-    const totalSelectedLabels = (Object.values(selectedQuantities) as number[]).reduce((a, b) => a + b, 0);
+    const totalSelectedLabels = Object.values(selectedQuantities).reduce((a, b) => a + b, 0);
 
     return (
         <div className="flex flex-col font-sans text-gray-900 bg-gray-50/50 min-h-full">
             <div className="no-print p-3 sm:p-6 max-w-[1920px] mx-auto w-full space-y-6 sm:space-y-8">
-
-                {/* Controls Header */}
-                {/* Controls Header */}
                 <div className={`${isSettingsOpen ? 'grid' : 'flex flex-col'} grid-cols-1 xl:grid-cols-12 gap-8`}>
-
-                    {/* Settings Sidebar - Toggleable */}
                     <aside className={`${isSettingsOpen ? 'xl:col-span-3 min-w-[320px]' : 'hidden'} space-y-6 transition-all duration-300`}>
                         <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-200">
                             <div className="flex items-center justify-between mb-4 border-b pb-3">
                                 <h3 className="font-bold text-lg text-gray-800 flex items-center gap-2 uppercase tracking-tighter">
                                     <Icons.Settings /> Setări
                                 </h3>
-                                <button
-                                    onClick={() => setIsSettingsOpen(false)}
-                                    className="text-gray-400 hover:text-gray-600 xl:hidden"
-                                >
-                                    <Icons.Close />
-                                </button>
+                                <button onClick={() => setIsSettingsOpen(false)} className="text-gray-400 hover:text-gray-600 xl:hidden"><Icons.Close /></button>
                             </div>
-
                             <div className="space-y-8">
-                                {/* Section: Logo */}
                                 <section>
-                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                        <Icons.Logo /> Logo Firmă
-                                    </h4>
+                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Icons.Logo /> Logo Firmă</h4>
                                     <div className="space-y-4">
                                         {logoUrl && (
                                             <div className="w-full h-24 bg-gray-50 rounded-xl border border-gray-100 p-2 flex items-center justify-center mb-4 relative group">
-                                                <img src={logoUrl} alt="Preview Logo" className="max-h-full max-w-full object-contain" />
+                                                <img src={logoUrl} alt="Logo" className="max-h-full max-w-full object-contain" />
                                                 <button onClick={() => setLogoUrl(null)} className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full text-[10px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><Icons.Close /></button>
                                             </div>
                                         )}
                                         <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 space-y-3">
                                             <label className="text-[10px] font-black text-blue-700 uppercase tracking-widest block">URL Logo Server</label>
                                             <div className="flex gap-1">
-                                                <input type="text" value={remoteLogoUrl} onChange={(e) => setRemoteLogoUrl(e.target.value)} placeholder="URL Logo..." className="flex-1 px-3 py-2 text-xs border border-blue-200 rounded-lg outline-none bg-white" />
+                                                <input type="text" value={remoteLogoUrl} onChange={(e) => setRemoteLogoUrl(e.target.value)} className="flex-1 px-3 py-2 text-xs border border-blue-200 rounded-lg outline-none bg-white" />
                                                 <button onClick={handleLoadRemoteLogo} className="w-10 h-10 flex items-center justify-center rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all shadow-sm"><Icons.Cloud /></button>
                                             </div>
                                         </div>
                                         <input type="file" ref={logoInputRef} onChange={handleLogoUpload} accept="image/*" className="hidden" />
                                         <button onClick={() => logoInputRef.current?.click()} className="w-full py-3 px-4 bg-gray-50 text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-100 transition font-black flex justify-between items-center text-xs uppercase tracking-widest">
-                                            <span>Încarcă Logo Local</span>
-                                            <Icons.Upload />
+                                            <span>Încarcă Logo Local</span> <Icons.Upload />
                                         </button>
                                     </div>
                                 </section>
-
-                                {/* Section: Data Tools */}
                                 <section>
-                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                        <Icons.Database /> Scule Date
-                                    </h4>
+                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Icons.Database /> Scule Date</h4>
                                     <div className="space-y-3">
                                         <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".json" className="hidden" />
                                         <button onClick={() => fileInputRef.current?.click()} className="w-full py-3 px-4 bg-gray-50 text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-100 transition font-bold flex justify-between items-center text-xs uppercase tracking-widest">
-                                            <span>Import Fișier JSON</span>
-                                            <Icons.Import />
+                                            <span>Import Fișier JSON</span> <Icons.Import />
                                         </button>
                                         <button onClick={() => recoveryInputRef.current?.click()} className="w-full py-3 px-4 bg-red-50 text-red-700 border border-red-100 rounded-xl hover:bg-red-100 transition font-black flex justify-between items-center text-xs uppercase tracking-widest">
-                                            <span>Recuperează din HTML</span>
-                                            <Icons.Recovery />
+                                            <span>Recuperează din HTML</span> <Icons.Recovery />
                                         </button>
                                         <input type="file" ref={recoveryInputRef} onChange={handleHtmlRecovery} accept=".html" multiple className="hidden" />
-                                        <button onClick={handleExportWorkspace} className={`w-full py-3 px-4 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-xl hover:bg-indigo-100 transition font-black flex justify-between items-center text-xs uppercase tracking-widest`}>
-                                            <span>Export Workspace JSON</span>
-                                            <Icons.Download />
+                                        <button onClick={handleExportWorkspace} className="w-full py-3 px-4 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-xl hover:bg-indigo-100 transition font-black flex justify-between items-center text-xs uppercase tracking-widest">
+                                            <span>Export Workspace JSON</span> <Icons.Download />
                                         </button>
                                     </div>
                                 </section>
-
-                                {/* Section: Visual Style */}
                                 <section>
-                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                        <Icons.Palette /> Stil Vizual
-                                    </h4>
+                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Icons.Palette /> Stil Vizual</h4>
                                     <div className="space-y-4">
                                         <div className="flex items-center justify-between bg-gray-50 p-3 rounded-xl border border-gray-200">
                                             <span className="text-sm font-bold text-gray-700">Afișează Imagine</span>
@@ -549,7 +436,7 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
                                         </div>
                                         <div className="grid grid-cols-2 gap-3">
                                             {Object.values(TemplateStyle).map((style) => (
-                                                <button key={style} onClick={() => setTemplate(style)} className={`py-2 px-1 text-[10px] font-black uppercase rounded-lg border-2 transition-all ${template === style ? 'bg-indigo-600 text-white border-indigo-600 shadow-md scale-105' : 'bg-white text-gray-400 border-gray-100 hover:border-indigo-200'}`}>
+                                                <button key={style} onClick={() => setTemplate(style)} className={`py-2 px-1 text-[10px] font-black uppercase rounded-lg border-2 transition-all ${template === style ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-400 border-gray-100'}`}>
                                                     {style}
                                                 </button>
                                             ))}
@@ -564,124 +451,63 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
                         <div className="flex flex-col gap-6 mb-8 border-b border-gray-100 pb-6">
                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                                 <div className="flex items-center gap-4">
-                                    <button
-                                        onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-                                        className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all ${isSettingsOpen ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50'}`}
-                                        title="Toggle Setări"
-                                    >
-                                        <Icons.Settings />
-                                    </button>
-                                    <h2 className="text-xl font-black text-gray-800 tracking-tight uppercase">
-                                        Workspace
-                                        <span className="text-indigo-500 ml-2 font-normal text-sm lowercase italic">({products.length} modele)</span>
-                                        {inventory.length > 0 && <span className="text-emerald-500 ml-2 font-bold text-[10px] uppercase tracking-wide border border-emerald-200 bg-emerald-50 px-2 py-0.5 rounded-full">Sync Active</span>}
-                                    </h2>
+                                    <button onClick={() => setIsSettingsOpen(!isSettingsOpen)} className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all ${isSettingsOpen ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50'}`}><Icons.Settings /></button>
+                                    <h2 className="text-xl font-black text-gray-800 tracking-tight uppercase">Workspace <span className="text-indigo-500 ml-2 font-normal text-sm lowercase italic">({products.length} modele)</span></h2>
                                 </div>
-
                                 <div className="flex flex-wrap gap-2">
-                                    <button
-                                        onClick={handleImportFromOblioToServer}
-                                        className="px-4 py-2 rounded-lg font-bold text-emerald-600 border border-emerald-100 hover:bg-emerald-50 transition-colors flex items-center gap-2 text-xs"
-                                        title="Importă produsele din Oblio în baza de date locală (stocuri.json)"
-                                    >
-                                        <i className="fa-solid fa-cloud-arrow-down"></i> Importă Oblio pe Server
-                                    </button>
-                                    <button
-                                        onClick={handleSyncToServer}
-                                        className="px-4 py-2 rounded-lg font-bold text-amber-600 border border-amber-100 hover:bg-amber-50 transition-colors flex items-center gap-2 text-xs"
-                                        title="Salvează modificările curente în baza de date locală"
-                                    >
-                                        <i className="fa-solid fa-floppy-disk"></i> Salvează Workspace pe Server
-                                    </button>
-                                    <button
-                                        onClick={() => window.location.href = getExportStocksXlsUrl()}
-                                        className="px-4 py-2 rounded-lg font-bold text-blue-600 border border-blue-100 hover:bg-blue-50 transition-colors flex items-center gap-2 text-xs"
-                                        title="Exportă baza de date locală în format Excel (cu descrieri pentru Oblio)"
-                                    >
-                                        <i className="fa-solid fa-file-excel"></i> Export XLS (Oblio)
-                                    </button>
+                                    <button onClick={handleImportFromOblioToServer} className="px-4 py-2 rounded-lg font-bold text-emerald-600 border border-emerald-100 hover:bg-emerald-50 transition-colors flex items-center gap-2 text-xs"><i className="fa-solid fa-cloud-arrow-down"></i> Importă Oblio pe Server</button>
+                                    <button onClick={handleSyncToServer} className="px-4 py-2 rounded-lg font-bold text-amber-600 border border-amber-100 hover:bg-amber-50 transition-colors flex items-center gap-2 text-xs"><i className="fa-solid fa-floppy-disk"></i> Salvează Workspace pe Server</button>
+                                    <button onClick={() => window.location.href = getExportStocksXlsUrl()} className="px-4 py-2 rounded-lg font-bold text-blue-600 border border-blue-100 hover:bg-blue-50 transition-colors flex items-center gap-2 text-xs"><i className="fa-solid fa-file-excel"></i> Export XLS (Oblio)</button>
                                     <div className="w-px h-8 bg-gray-200 mx-2 hidden md:block"></div>
-                                    <button onClick={handleExportHtml} className={`px-4 py-2 rounded-lg font-bold text-indigo-600 border border-indigo-100 hover:bg-indigo-50 transition-colors flex items-center gap-2 text-xs ${totalSelectedLabels === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                                        <Icons.Pdf /> Export PDF
-                                    </button>
-                                    <button onClick={handlePrint} className={`px-6 py-2 rounded-xl font-black shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3 text-sm uppercase tracking-widest ${totalSelectedLabels === 0 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200'}`}>
-                                        <Icons.Print /> IMPRIMĂ ({totalSelectedLabels})
-                                    </button>
+                                    <button onClick={handleExportHtml} className={`px-4 py-2 rounded-lg font-bold text-indigo-600 border border-indigo-100 hover:bg-indigo-50 flex items-center gap-2 text-xs ${totalSelectedLabels === 0 ? 'opacity-50' : ''}`}><Icons.Pdf /> Export HTML</button>
+                                    <button onClick={handlePrint} className={`px-6 py-2 rounded-xl font-black shadow-xl transition-all flex items-center justify-center gap-3 text-sm uppercase tracking-widest ${totalSelectedLabels === 0 ? 'bg-gray-200 text-gray-400' : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200'}`}><Icons.Print /> IMPRIMĂ ({totalSelectedLabels})</button>
                                 </div>
                             </div>
-
-                            <div className="flex justify-between items-center gap-4">
-                                <div className="relative flex-1">
-                                    <Icons.Search />
-                                    <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Caută model, cod sau furnizor..." className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all font-medium text-gray-700" />
-                                </div>
-                                <div className="flex gap-2 shrink-0">
-                                    <button onClick={selectAll} className="px-3 py-1.5 bg-indigo-50 text-indigo-700 text-[10px] font-black uppercase rounded-lg hover:bg-indigo-100 transition-colors">Selectează Tot</button>
-                                    <button onClick={deselectAll} className="px-3 py-1.5 bg-gray-50 text-gray-600 text-[10px] font-black uppercase rounded-lg hover:bg-gray-100 transition-colors">Resetează</button>
-                                </div>
+                            <div className="relative flex-1">
+                                <Icons.Search />
+                                <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Caută model, cod..." className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all font-medium text-gray-700" />
                             </div>
                         </div>
 
                         <div className="flex-1 overflow-y-auto space-y-4 max-h-[800px] pr-2 custom-scrollbar">
                             {products.length === 0 ? (
-                                <div className="h-full flex flex-col items-center justify-center text-indigo-500 py-20">
-                                    <Icons.Spinner />
-                                    <p className="font-bold mt-4">Nu există produse în workspace.</p>
-                                    {inventory.length === 0 && <p className="text-sm text-gray-400">Verificați conexiunea la Oblio în modul Facturare.</p>}
-                                </div>
-                            ) : filteredProducts.length === 0 ? (
-                                <div className="h-full flex flex-col items-center justify-center text-gray-300 italic py-20">
-                                    <Icons.LayerGroup />
-                                    <p>Niciun rezultat găsit</p>
-                                </div>
-                            ) : (
-                                filteredProducts.map((p) => {
-                                    const qty = selectedQuantities[p.id] || 0;
-                                    const isSelected = qty > 0;
-                                    return (
-                                        <div key={p.id} className={`flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-4 p-4 rounded-2xl border transition-all group ${isSelected ? 'bg-indigo-50/30 border-indigo-100 shadow-sm' : 'bg-white border-gray-100 hover:border-indigo-100'}`}>
-                                            <div className="flex items-start gap-4 flex-1">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={isSelected}
-                                                    onChange={() => toggleProductSelection(p.id)}
-                                                    className="w-6 h-6 rounded-lg text-indigo-600 focus:ring-indigo-500 cursor-pointer border-gray-300 mt-0.5"
-                                                />
-                                                <div className="flex-1" onClick={() => !isSelected && toggleProductSelection(p.id)}>
-                                                    <p className="font-black text-gray-900 uppercase tracking-tight leading-snug break-words text-sm sm:text-base">{p.modelName}</p>
-                                                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-bold text-gray-400 uppercase mt-1.5">
-                                                        <span className="text-indigo-500 font-mono tracking-tighter flex items-center gap-1"><Icons.Barcode />{p.code}</span>
-                                                        <span className="hidden sm:inline">•</span>
-                                                        <span className="text-emerald-600">{p.price} {p.currency}</span>
-                                                        <span className="hidden sm:inline">•</span>
-                                                        <span className="bg-gray-100 px-1.5 rounded text-gray-500">{p.material}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="flex items-center justify-between lg:justify-end gap-3 mt-1 lg:mt-0">
-                                                <div className={`flex items-center gap-1 bg-white border rounded-xl p-1 transition-all ${isSelected ? 'border-indigo-200 opacity-100' : 'border-gray-100 opacity-30 group-hover:opacity-100'}`}>
-                                                    <button onClick={() => updateQuantity(p.id, -1)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-50 text-gray-400 hover:text-red-500 transition-colors"><Icons.Minus /></button>
-                                                    <span className={`w-8 text-center font-black text-sm ${isSelected ? 'text-indigo-600' : 'text-gray-400'}`}>{qty}</span>
-                                                    <button onClick={() => updateQuantity(p.id, 1)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-50 text-gray-400 hover:text-indigo-600 transition-colors"><Icons.Plus /></button>
-                                                </div>
-                                                <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                                                    <button onClick={(e) => { e.stopPropagation(); setEditingProduct(p); }} className="w-9 h-9 flex items-center justify-center rounded-xl bg-white text-indigo-500 shadow-sm border border-indigo-50 hover:bg-indigo-500 hover:text-white transition-all"><Icons.Edit /></button>
-                                                    <button onClick={(e) => { e.stopPropagation(); cloneProduct(p); }} className="w-9 h-9 flex items-center justify-center rounded-xl bg-white text-emerald-500 shadow-sm border border-emerald-50 hover:bg-emerald-500 hover:text-white transition-all"><Icons.Copy /></button>
-                                                    <button onClick={(e) => { e.stopPropagation(); removeProduct(p.id); }} className="w-9 h-9 flex items-center justify-center rounded-xl bg-white text-red-500 shadow-sm border border-red-50 hover:bg-red-500 hover:text-white transition-all"><Icons.Trash /></button>
+                                <div className="h-full flex flex-col items-center justify-center text-indigo-500 py-20"><Icons.Spinner /><p className="font-bold mt-4">Nu există produse.</p></div>
+                            ) : filteredProducts.map((p) => {
+                                const qty = selectedQuantities[p.id] || 0;
+                                const isSelected = qty > 0;
+                                return (
+                                    <div key={p.id} className={`flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-4 p-4 rounded-2xl border transition-all ${isSelected ? 'bg-indigo-50/30 border-indigo-100' : 'bg-white border-gray-100 hover:border-indigo-100'}`}>
+                                        <div className="flex items-start gap-4 flex-1">
+                                            <input type="checkbox" checked={isSelected} onChange={() => toggleProductSelection(p.id)} className="w-6 h-6 rounded-lg text-indigo-600 cursor-pointer border-gray-300 mt-0.5" />
+                                            <div className="flex-1" onClick={() => !isSelected && toggleProductSelection(p.id)}>
+                                                <p className="font-black text-gray-900 uppercase tracking-tight text-sm sm:text-base">{p.modelName}</p>
+                                                <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-bold text-gray-400 uppercase mt-1.5">
+                                                    <span className="text-indigo-500 font-mono"><Icons.Barcode /> {p.code}</span>
+                                                    <span className="text-emerald-600">{p.price} {p.currency}</span>
+                                                    <span className="bg-gray-100 px-1.5 rounded text-gray-500">{p.material}</span>
                                                 </div>
                                             </div>
                                         </div>
-                                    );
-                                })
-                            )}
+                                        <div className="flex items-center justify-between lg:justify-end gap-3 mt-1 lg:mt-0">
+                                            <div className="flex items-center gap-1 bg-white border rounded-xl p-1 border-gray-100">
+                                                <button onClick={() => updateQuantity(p.id, -1)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-50 text-gray-400 hover:text-red-500"><Icons.Minus /></button>
+                                                <span className={`w-8 text-center font-black text-sm ${isSelected ? 'text-indigo-600' : 'text-gray-400'}`}>{qty}</span>
+                                                <button onClick={() => updateQuantity(p.id, 1)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-50 text-gray-400 hover:text-indigo-600"><Icons.Plus /></button>
+                                            </div>
+                                            <div className="flex gap-1">
+                                                <button onClick={() => setEditingProduct(p)} className="w-9 h-9 flex items-center justify-center rounded-xl bg-white text-indigo-500 border border-indigo-50 hover:bg-indigo-500 hover:text-white transition-all"><Icons.Edit /></button>
+                                                <button onClick={() => cloneProduct(p)} className="w-9 h-9 flex items-center justify-center rounded-xl bg-white text-emerald-500 border border-emerald-50 hover:bg-emerald-500 hover:text-white transition-all"><Icons.Copy /></button>
+                                                <button onClick={() => removeProduct(p.id)} className="w-9 h-9 flex items-center justify-center rounded-xl bg-white text-red-500 border border-red-50 hover:bg-red-500 hover:text-white transition-all"><Icons.Trash /></button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </main>
                 </div>
             </div>
-
             <PrintLayout products={selectedProductsForPrint} template={template} logoUrl={logoUrl} showImages={showImages} />
-
             {editingProduct && (
                 <EditProductModal
                     product={editingProduct}

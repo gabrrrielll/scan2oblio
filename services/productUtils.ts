@@ -34,26 +34,25 @@ export const generateEAN13 = (): string => {
 };
 
 /**
- * Maps Oblio products to the local stock file format
+ * Maps Oblio products to the local stock file format (Excel alignment)
  */
 export const mapOblioToStockItems = (products: any[]): any[] => {
     return products.map(p => ({
+        "ID": "", // Oblio internal ID, usually empty for fresh export
         "Denumire produs": p.name,
-        "Tip": "Marfa",
         "Cod produs": p.productCode || p.code || "",
-        "Stoc": Number(p.stock) || 0,
-        "U.M.": p.measuringUnit,
-        "Cost achizitie fara TVA": 0,
-        "Moneda achizitie": "RON",
-        "Pret vanzare": Number(p.price) || 0,
-        "Cota TVA": Number(p.vatPercentage) || 0,
-        "TVA inclus": "DA",
-        "Moneda vanzare": p.currency || "RON",
-        "Furnizor": p.furnizor || "",
-        "sidesType": p.sidesType || "6 LATURI",
-        "woodColor": p.woodColor || "NUC",
-        "material": p.material || "BRAD",
-        "description": p.description || ""
+        "Pret": Number(p.price) || 0,
+        "Pretul contine TVA (DA/NU)": "DA",
+        "Unitate masura": p.measuringUnit || "BUC",
+        "UM in SPV": p.measuringUnit?.toUpperCase() === "BUC" ? "H87" : "",
+        "Moneda": p.currency || "RON",
+        "Cota TVA": Number(p.vatPercentage) || 19,
+        "Descriere": p.description || "",
+        "Cod NC": "",
+        "Cod CPV": p.code || "",
+        "Garantie SGR (DA/NU)": "NU",
+        "Grup produse": "",
+        "Stoc": Number(p.stock) || 0
     }));
 };
 
@@ -71,27 +70,20 @@ export const mapProductToStockItem = (p: any): any => {
         p.weightCapacityMax ? `${p.weightCapacityMax} kg` : ""
     ].join('\n');
 
-    // Start with original data to preserve fields we don't handle in Labels (like Stock)
     const base = p.rawStockData || {};
 
     return {
         ...base,
         "Denumire produs": p.modelName,
-        "Tip": base["Tip"] || "Marfa",
         "Cod produs": p.code,
-        "Stoc": base["Stoc"] !== undefined ? base["Stoc"] : (Number(p.stock) || 0),
-        "U.M.": base["U.M."] || p.measuringUnit || "buc",
-        "Cost achizitie fara TVA": base["Cost achizitie fara TVA"] || 0,
-        "Moneda achizitie": base["Moneda achizitie"] || "RON",
-        "Pret vanzare": Number(p.price) || 0,
+        "Pret": Number(p.price) || 0,
+        "Pretul contine TVA (DA/NU)": base["Pretul contine TVA (DA/NU)"] || "DA",
+        "Unitate masura": base["Unitate masura"] || p.measuringUnit || "BUC",
+        "UM in SPV": base["UM in SPV"] || (p.measuringUnit?.toUpperCase() === "BUC" ? "H87" : "H87"),
+        "Moneda": p.currency || "RON",
         "Cota TVA": base["Cota TVA"] !== undefined ? base["Cota TVA"] : (Number(p.vatPercentage) || 19),
-        "TVA inclus": base["TVA inclus"] || "DA",
-        "Moneda vanzare": p.currency || "RON",
-        "Furnizor": p.furnizor || "",
-        "sidesType": p.sidesType || "",
-        "woodColor": p.woodColor || "",
-        "material": p.material || "",
-        "description": desc,
+        "Descriere": desc,
+        "Stoc": base["Stoc"] !== undefined ? base["Stoc"] : (Number(p.stock) || 0),
         "lastEdit": new Date().toLocaleString('ro-RO').replace(',', '')
     };
 };

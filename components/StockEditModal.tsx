@@ -21,33 +21,51 @@ interface StockEditModalProps {
 }
 
 const StockEditModal: React.FC<StockEditModalProps> = ({ product, isNew, onClose, onSave, onDelete, options }) => {
-    // Default empty product
+    // Default empty product matching the new StockItem structure
     const defaultProduct: StockItem = {
         "Denumire produs": "",
-        "Tip": "Marfa",
         "Cod produs": "",
-        "Stoc": 0,
-        "U.M.": "BUC",
-        "Cost achizitie fara TVA": 0,
-        "Moneda achizitie": "RON",
-        "Pret vanzare": 0,
+        "Pret": 0,
+        "Pretul contine TVA (DA/NU)": "DA",
+        "Unitate masura": "BUC",
+        "UM in SPV": "H87",
+        "Moneda": "RON",
         "Cota TVA": 19,
-        "TVA inclus": "DA",
-        "Moneda vanzare": "RON",
-        "Furnizor": "",
-        "sidesType": "6 LATURI",
-        "woodColor": "RESPETĂ",
-        "material": "BRAD"
+        "Descriere": "",
+        "ID": "",
+        "Cod NC": "",
+        "Cod CPV": "",
+        "Garantie SGR (DA/NU)": "NU",
+        "Grup produse": "",
+        "Stoc": 0
     };
 
-    // We use a local state that allows strings for numbers to handle empty inputs gracefully
     const [formData, setFormData] = useState<any>(defaultProduct);
     const [originalCode, setOriginalCode] = useState("");
+
+    // UI Helpers for parsed description
+    const [uiFields, setUiFields] = useState({
+        furnizor: "",
+        material: "BRAD",
+        woodColor: "NUC",
+        size: "L",
+        weight: ""
+    });
 
     useEffect(() => {
         if (product) {
             setFormData(product);
             setOriginalCode(product["Cod produs"]);
+
+            // Try to parse description if exists
+            const lines = (product["Descriere"] || "").split('\n').map(l => l.trim());
+            setUiFields({
+                furnizor: lines[0] || "",
+                material: lines[1] || "BRAD",
+                woodColor: lines[2] || "NUC",
+                size: lines[3] || "L",
+                weight: lines[4] || ""
+            });
         } else {
             setFormData(defaultProduct);
             setOriginalCode("");
@@ -56,6 +74,10 @@ const StockEditModal: React.FC<StockEditModalProps> = ({ product, isNew, onClose
 
     const handleChange = (field: keyof StockItem, value: any) => {
         setFormData((prev: any) => ({ ...prev, [field]: value }));
+    };
+
+    const handleUiChange = (field: keyof typeof uiFields, value: string) => {
+        setUiFields(prev => ({ ...prev, [field]: value }));
     };
 
     const handleNumberChange = (field: keyof StockItem, value: string) => {
@@ -74,9 +96,23 @@ const StockEditModal: React.FC<StockEditModalProps> = ({ product, isNew, onClose
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        // Ensure numbers are numbers before saving
-        const finalData = { ...formData };
-        ["Stoc", "Cost achizitie fara TVA", "Pret vanzare", "Cota TVA"].forEach(field => {
+
+        // Construct the 5-line description from UI fields
+        const desc = [
+            uiFields.furnizor,
+            uiFields.material,
+            uiFields.woodColor,
+            uiFields.size,
+            uiFields.weight
+        ].join('\n');
+
+        const finalData = {
+            ...formData,
+            "Descriere": desc
+        };
+
+        // Ensure numbers are numbers
+        ["Stoc", "Pret", "Cota TVA"].forEach(field => {
             if (typeof finalData[field] === 'string') {
                 finalData[field] = parseFloat(finalData[field]) || 0;
             }
@@ -91,7 +127,7 @@ const StockEditModal: React.FC<StockEditModalProps> = ({ product, isNew, onClose
                 <div className="sticky top-0 bg-slate-900 border-b border-slate-800 p-4 flex justify-between items-center z-10">
                     <div className="flex flex-col">
                         <h2 className="text-xl font-bold text-white">
-                            {isNew ? 'Adaugă Produs Nou' : 'Editare Produs'}
+                            {isNew ? 'Adaugă Produs Nou (Format Oblio)' : 'Editare Produs (Format Oblio)'}
                         </h2>
                         {product?.lastEdit && (
                             <span className="text-xs text-slate-500 italic">
@@ -108,7 +144,7 @@ const StockEditModal: React.FC<StockEditModalProps> = ({ product, isNew, onClose
                     {/* Basic Info */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="md:col-span-2">
-                            <label className="block text-xs font-medium text-slate-400 mb-1">Denumire Produs</label>
+                            <label className="block text-xs font-medium text-slate-400 mb-1 uppercase tracking-wider">Denumire Produs (sau Model)</label>
                             <input
                                 type="text"
                                 value={formData["Denumire produs"]}
@@ -119,161 +155,163 @@ const StockEditModal: React.FC<StockEditModalProps> = ({ product, isNew, onClose
                         </div>
 
                         <div>
-                            <label className="block text-xs font-medium text-slate-400 mb-1">Cod Produs</label>
+                            <label className="block text-xs font-medium text-slate-400 mb-1 uppercase tracking-wider">Cod Produs (EAN13)</label>
                             <div className="flex gap-2">
                                 <input
                                     type="text"
                                     value={formData["Cod produs"]}
                                     onChange={e => handleChange("Cod produs", e.target.value)}
-                                    className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                                    className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-emerald-500 outline-none font-mono"
                                     required
                                 />
-                                <button
-                                    type="button"
-                                    onClick={handleGenerateEAN13}
-                                    title="Generează cod EAN13"
-                                    className="px-3 py-2 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 hover:text-white transition-colors text-xs font-bold"
-                                >
-                                    GEN
-                                </button>
+                                <button type="button" onClick={handleGenerateEAN13} className="px-3 py-2 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 transition-colors text-xs font-bold">GEN</button>
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-xs font-medium text-slate-400 mb-1">Tip</label>
-                            <select
-                                value={formData["Tip"]}
-                                onChange={e => handleChange("Tip", e.target.value)}
-                                className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-emerald-500 outline-none"
-                            >
-                                <option value="Marfa">Marfă</option>
-                                <option value="Serviciu">Serviciu</option>
-                                <option value="Materie Prima">Materie Primă</option>
-                            </select>
+                            <label className="block text-xs font-medium text-slate-400 mb-1 uppercase tracking-wider">Grup Produse / ID Oblio</label>
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    placeholder="Grup (ex: CRUCI)"
+                                    value={formData["Grup produse"] || ""}
+                                    onChange={e => handleChange("Grup produse", e.target.value)}
+                                    className="w-1/2 bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white outline-none"
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="ID"
+                                    value={formData["ID"] || ""}
+                                    onChange={e => handleChange("ID", e.target.value)}
+                                    className="w-1/2 bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white outline-none"
+                                />
+                            </div>
                         </div>
                     </div>
 
-                    {/* Stock & Price Info */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 border-t border-slate-800 pt-4">
+                    {/* Financial Info */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 border-t border-slate-800 pt-4">
                         <div>
-                            <label className="block text-xs font-medium text-slate-400 mb-1">Stoc</label>
+                            <label className="block text-xs font-medium text-amber-400 mb-1 uppercase tracking-widest">Preț Vânzare</label>
                             <input
                                 type="number"
-                                value={formData["Stoc"]}
-                                onChange={e => handleNumberChange("Stoc", e.target.value)}
-                                className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                                value={formData["Pret"]}
+                                onChange={e => handleNumberChange("Pret", e.target.value)}
+                                className="w-full bg-amber-900/10 border border-amber-900/30 rounded-lg p-2.5 text-amber-200 focus:ring-2 focus:ring-amber-500 outline-none font-bold"
                             />
                         </div>
                         <div>
-                            <CreatableSelect
-                                label="U.M."
-                                value={formData["U.M."] || ""}
-                                onChange={(val) => handleChange("U.M.", val)}
-                                options={options?.um || ["BUC", "KG", "M", "L"]}
-                            />
-                        </div>
-                        <div>
-                            <CreatableSelect
-                                label="Furnizor"
-                                value={formData["Furnizor"] || ""}
-                                onChange={(val) => handleChange("Furnizor", val)}
-                                options={options?.furnizor || []}
-                            />
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div>
-                            <label className="block text-xs font-medium text-slate-400 mb-1">Preț Vânzare</label>
-                            <input
-                                type="number"
-                                value={formData["Pret vanzare"]}
-                                onChange={e => handleNumberChange("Pret vanzare", e.target.value)}
-                                className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-emerald-500 outline-none bg-emerald-900/10 border-emerald-900/30"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-medium text-slate-400 mb-1">Monedă Vânzare</label>
+                            <label className="block text-xs font-medium text-slate-400 mb-1 uppercase tracking-wider">Monedă</label>
                             <select
-                                value={formData["Moneda vanzare"]}
-                                onChange={e => handleChange("Moneda vanzare", e.target.value)}
-                                className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                                value={formData["Moneda"]}
+                                onChange={e => handleChange("Moneda", e.target.value)}
+                                className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white outline-none"
                             >
                                 <option value="RON">RON</option>
                                 <option value="EUR">EUR</option>
-                                <option value="USD">USD</option>
                             </select>
                         </div>
                         <div>
-                            <CreatableSelect
-                                label="Cota TVA (%)"
-                                value={String(formData["Cota TVA"])}
-                                onChange={(val) => handleNumberChange("Cota TVA", val)}
-                                options={options?.vatRate || ["19", "9", "5", "0"]}
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-medium text-slate-400 mb-1">TVA Inclus</label>
+                            <label className="block text-xs font-medium text-slate-400 mb-1 uppercase tracking-wider">TVA Inclus</label>
                             <select
-                                value={formData["TVA inclus"]}
-                                onChange={e => handleChange("TVA inclus", e.target.value)}
-                                className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                                value={formData["Pretul contine TVA (DA/NU)"]}
+                                onChange={e => handleChange("Pretul contine TVA (DA/NU)", e.target.value)}
+                                className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white outline-none"
                             >
                                 <option value="DA">DA</option>
                                 <option value="NU">NU</option>
                             </select>
                         </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 border-t border-slate-800 pt-4">
                         <div>
-                            <label className="block text-xs font-medium text-slate-400 mb-1">Cost Achiziție (fără TVA)</label>
+                            <label className="block text-xs font-medium text-slate-400 mb-1 uppercase tracking-wider">Cota TVA (%)</label>
                             <input
                                 type="number"
-                                value={formData["Cost achizitie fara TVA"]}
-                                onChange={e => handleNumberChange("Cost achizitie fara TVA", e.target.value)}
-                                className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                                value={formData["Cota TVA"]}
+                                onChange={e => handleNumberChange("Cota TVA", e.target.value)}
+                                className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white outline-none"
                             />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-medium text-slate-400 mb-1">Monedă Achiziție</label>
-                            <select
-                                value={formData["Moneda achizitie"]}
-                                onChange={e => handleChange("Moneda achizitie", e.target.value)}
-                                className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-emerald-500 outline-none"
-                            >
-                                <option value="RON">RON</option>
-                                <option value="EUR">EUR</option>
-                                <option value="USD">USD</option>
-                            </select>
                         </div>
                     </div>
 
-                    {/* Specific Props */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-slate-800 pt-4">
+                    {/* Stock & Unit Info */}
+                    <div className="grid grid-cols-3 gap-4 border-t border-slate-800 pt-4 text-emerald-400">
                         <div>
-                            <CreatableSelect
-                                label="Sides Type"
-                                value={formData["sidesType"] || ""}
-                                onChange={(val) => handleChange("sidesType", val)}
-                                options={options?.sidesType || []}
+                            <label className="block text-xs font-medium text-emerald-500/80 mb-1 uppercase tracking-wider">Stoc Real</label>
+                            <input
+                                type="number"
+                                value={formData["Stoc"]}
+                                onChange={e => handleNumberChange("Stoc", e.target.value)}
+                                className="w-full bg-emerald-900/10 border border-emerald-900/30 rounded-lg p-2.5 text-emerald-200 outline-none font-black"
                             />
                         </div>
                         <div>
                             <CreatableSelect
-                                label="Wood Color"
-                                value={formData["woodColor"] || ""}
-                                onChange={(val) => handleChange("woodColor", val)}
-                                options={options?.woodColor || []}
+                                label="Unitate Măsură"
+                                value={formData["Unitate masura"] || "BUC"}
+                                onChange={(val) => handleChange("Unitate masura", val)}
+                                options={["BUC", "KG", "SET"]}
                             />
                         </div>
                         <div>
-                            <CreatableSelect
-                                label="Material"
-                                value={formData["material"] || ""}
-                                onChange={(val) => handleChange("material", val)}
-                                options={options?.material || []}
+                            <label className="block text-xs font-medium text-slate-500 mb-1 uppercase tracking-wider">UM in SPV</label>
+                            <input
+                                type="text"
+                                value={formData["UM in SPV"] || "H87"}
+                                onChange={e => handleChange("UM in SPV", e.target.value)}
+                                className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-slate-300 outline-none text-center font-mono"
                             />
+                        </div>
+                    </div>
+
+                    {/* DESCRIPTION SPECIFIC FIELDS (Mapped to the 5-line Descriere) */}
+                    <div className="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50 space-y-4">
+                        <label className="block text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-2">Configurație Etichetă (Descriere Oblio)</label>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            <div>
+                                <CreatableSelect
+                                    label="Furnizor (Linia 1)"
+                                    value={uiFields.furnizor}
+                                    onChange={(val) => handleUiChange("furnizor", val)}
+                                    options={options?.furnizor || []}
+                                />
+                            </div>
+                            <div>
+                                <CreatableSelect
+                                    label="Material (Linia 2)"
+                                    value={uiFields.material}
+                                    onChange={(val) => handleUiChange("material", val)}
+                                    options={options?.material || ["BRAD", "STEJAR", "FAG"]}
+                                />
+                            </div>
+                            <div>
+                                <CreatableSelect
+                                    label="Culoare (Linia 3)"
+                                    value={uiFields.woodColor}
+                                    onChange={(val) => handleUiChange("woodColor", val)}
+                                    options={options?.woodColor || ["NUC", "MAHON", "CIREȘ"]}
+                                />
+                            </div>
+                            <div>
+                                <CreatableSelect
+                                    label="Mărime / Dim. (Linia 4)"
+                                    value={uiFields.size}
+                                    onChange={(val) => handleUiChange("size", val)}
+                                    options={["XL", "L", "M", "S"]}
+                                />
+                            </div>
+                            <div className="md:col-span-2">
+                                <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase">Sarcina Max (Linia 5)</label>
+                                <input
+                                    type="text"
+                                    placeholder="ex: 150 kg"
+                                    value={uiFields.weight}
+                                    onChange={e => handleUiChange("weight", e.target.value)}
+                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white outline-none text-xs"
+                                />
+                            </div>
+                        </div>
+                        <div className="mt-2 text-[10px] text-slate-500 italic">
+                            Previzualizare descriere: {uiFields.furnizor} | {uiFields.material} | {uiFields.woodColor} | {uiFields.size} | {uiFields.weight}
                         </div>
                     </div>
 
@@ -283,24 +321,20 @@ const StockEditModal: React.FC<StockEditModalProps> = ({ product, isNew, onClose
                             <button
                                 type="button"
                                 onClick={() => {
-                                    if (confirm('Sigur doriți să ștergeți acest produs dis listă?')) {
+                                    if (confirm('Sigur doriți să ștergeți acest produs din listă?')) {
                                         onDelete(formData["Cod produs"]);
                                     }
                                 }}
                                 className="flex items-center justify-center p-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors"
-                                title="Șterge produsul"
                             >
                                 <Trash2 className="w-5 h-5" />
                             </button>
                         ) : <div></div>}
 
                         <div className="flex gap-3">
-                            <button
-                                type="submit"
-                                className="flex items-center gap-2 px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors font-medium shadow-lg shadow-emerald-500/20"
-                            >
-                                <Save className="w-4 h-4" />
-                                Salvează
+                            <button type="button" onClick={onClose} className="px-6 py-2 bg-slate-800 text-slate-300 rounded-lg hover:bg-slate-700 transition-colors font-medium">Anulează</button>
+                            <button type="submit" className="flex items-center gap-2 px-8 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors font-bold shadow-lg shadow-emerald-500/20">
+                                <Save className="w-4 h-4" /> Salvează în JSON
                             </button>
                         </div>
                     </div>

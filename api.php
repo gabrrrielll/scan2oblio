@@ -977,14 +977,22 @@ try {
             
             // Header row
             if (!empty($data)) {
-                // Definire coloane export conform cerinței
+                // Definire coloane export conform cerinței (Screenshot import Oblio)
                 $exportColumns = [
-                    'Numele' => 'Denumire produs',
-                    'Codul' => 'Cod produs',
-                    'Pretul vanzare' => 'Pret vanzare',
-                    'Cantitatea' => 'Stoc',
-                    'Totalul' => 'Total',
-                    'Descriere' => 'description'
+                    'ID' => 'ID',
+                    'Denumire produs' => 'Denumire produs',
+                    'Cod produs' => 'Cod produs',
+                    'Pret' => 'Pret',
+                    'Pretul contine TVA (DA/NU)' => 'Pretul contine TVA (DA/NU)',
+                    'Unitate masura' => 'Unitate masura',
+                    'UM in SPV' => 'UM in SPV',
+                    'Moneda' => 'Moneda',
+                    'Cota TVA' => 'Cota TVA',
+                    'Descriere' => 'Descriere',
+                    'Cod NC' => 'Cod NC',
+                    'Cod CPV' => 'Cod CPV',
+                    'Garantie SGR (DA/NU)' => 'Garantie SGR (DA/NU)',
+                    'Grup produse' => 'Grup produse'
                 ];
                 
                 $totalToateProdusele = 0;
@@ -1011,7 +1019,7 @@ try {
                 // Data rows
                 foreach ($data as $row) {
                     $cantitate = isset($row['Stoc']) ? floatval($row['Stoc']) : 0;
-                    $pretVanzare = isset($row['Pret vanzare']) ? floatval($row['Pret vanzare']) : 0;
+                    $pretVanzare = isset($row['Pret']) ? floatval($row['Pret']) : 0;
                     $totalRand = $pretVanzare * $cantitate;
                     
                     $totalToateProdusele += $cantitate;
@@ -1019,18 +1027,14 @@ try {
                     
                     echo '<tr>';
                     foreach ($exportColumns as $header => $key) {
-                        if ($key === 'Total') {
-                            $val = $totalRand;
-                        } else {
-                            $val = isset($row[$key]) ? $row[$key] : '';
-                        }
+                        $val = isset($row[$key]) ? $row[$key] : '';
                         
                         $class = '';
                         if ($key === 'Cod produs') {
                             $class = ' class="text"';
                         }
-                        // Formatare prețuri și totaluri (folosim virgula pentru Excel format RO)
-                        if ($key === 'Pret vanzare' || $key === 'Total' || $key === 'Stoc') {
+                        // Formatare numerică pentru Excel (folosim virgula pentru RO)
+                        if ($key === 'Pret' || $key === 'Cota TVA') {
                             $val = str_replace('.', ',', (string)$val);
                         }
                         
@@ -1039,15 +1043,13 @@ try {
                     echo '</tr>';
                 }
                 
-                // Final Total Row
+                // Final Total Row (Optional for Import, but kept for summary)
                 echo '<tr style="background-color: #e8f5e9; font-weight: bold;">';
                 foreach ($exportColumns as $header => $key) {
                     $val = '';
-                    if ($header === 'Numele') {
+                    if ($header === 'Denumire produs') {
                         $val = 'TOTAL GENERAL';
-                    } elseif ($header === 'Cantitatea') {
-                        $val = str_replace('.', ',', (string)$totalToateProdusele);
-                    } elseif ($header === 'Totalul') {
+                    } elseif ($header === 'Pret') {
                         $val = str_replace('.', ',', (string)$sumaValoareTotala);
                     }
                     echo '<td>' . htmlspecialchars($val) . '</td>';

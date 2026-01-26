@@ -115,22 +115,22 @@ export interface StoredPersons {
 }
 
 export interface StockItem {
+  "ID"?: string;
   "Denumire produs": string;
-  "Tip": string;
   "Cod produs": string;
-  "Stoc": number;
-  "U.M.": string;
-  "Cost achizitie fara TVA": number;
-  "Moneda achizitie": string;
-  "Pret vanzare": number;
+  "Pret": number;
+  "Pretul contine TVA (DA/NU)": string;
+  "Unitate masura": string;
+  "UM in SPV"?: string;
+  "Moneda": string;
   "Cota TVA": number;
-  "TVA inclus": string;
-  "Moneda vanzare": string;
-  "Furnizor": string;
-  "sidesType": string;
-  "woodColor": string;
-  "material": string;
-  "description"?: string;
+  "Descriere": string;
+  "Cod NC"?: string;
+  "Cod CPV"?: string;
+  "Garantie SGR (DA/NU)"?: string;
+  "Grup produse"?: string;
+  // Internal app fields
+  "Stoc": number;
   "lastEdit"?: string; // dd:MM:yy HH:mm
   "verified"?: boolean;
 }
