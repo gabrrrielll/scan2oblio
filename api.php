@@ -467,6 +467,7 @@ function getProducts($email, $apiSecret, $cif, $management = null)
 
         $products[] = [
             'name' => $p['name'] ?? 'Produs fără nume',
+            'description' => $p['description'] ?? '',
             'code' => $code, // Cod CPV (dacă există) sau cod produs pentru compatibilitate
             'productCode' => $productCode, // Cod produs (EAN) - din câmpul 'code' al API-ului
             'price' => $price,

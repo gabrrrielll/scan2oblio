@@ -133,8 +133,12 @@ export const LabelClassic: React.FC<LabelClassicProps> = ({ product, logoUrl, sh
                 <div className="h-1/4 border-t-2 border-gray-800 flex mt-1 pt-1">
                     <div className="w-1/2 flex flex-col items-center justify-center border-r border-gray-400">
                         <h5 className={`${showImages ? 'text-sm' : 'text-xl'} font-bold uppercase mb-1 text-gray-600`}>Dimensiuni:</h5>
-                        <p className={`${showImages ? 'text-2xl' : 'text-4xl'} font-black`}>
-                            L-{product.dimensions.length}, l-{product.dimensions.width}, H-{product.dimensions.height} CM
+                        <p className={`${showImages ? 'text-2xl' : 'text-4xl'} font-black uppercase`}>
+                            {[
+                                product.dimensions.length > 0 ? `L-${product.dimensions.length}` : null,
+                                product.dimensions.width > 0 ? `l-${product.dimensions.width}` : null,
+                                product.dimensions.height > 0 ? `H-${product.dimensions.height}` : null
+                            ].filter(Boolean).join(', ')} CM
                         </p>
                     </div>
                     <div className="w-1/2 flex flex-col items-center justify-center">

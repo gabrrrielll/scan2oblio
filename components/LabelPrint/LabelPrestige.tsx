@@ -111,7 +111,11 @@ export const LabelPrestige: React.FC<LabelProps> = ({ product, logoUrl, showImag
 
             {/* Footer */}
             <div className={`mt-2 flex justify-between ${showImages ? 'text-lg' : 'text-2xl'} font-bold uppercase tracking-wider text-gray-700`}>
-                <span>Dimensiuni: {product.dimensions.length} x {product.dimensions.width} x {product.dimensions.height} cm</span>
+                <span>Dimensiuni: {[
+                    product.dimensions.length > 0 ? product.dimensions.length : null,
+                    product.dimensions.width > 0 ? product.dimensions.width : null,
+                    product.dimensions.height > 0 ? product.dimensions.height : null
+                ].filter(Boolean).join(' x ')} cm</span>
                 <span>Sarcină Maximă: {product.weightCapacityMax} kg</span>
             </div>
         </div>

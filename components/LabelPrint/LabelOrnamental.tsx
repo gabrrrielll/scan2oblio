@@ -89,7 +89,11 @@ export const LabelOrnamental: React.FC<LabelProps> = ({ product, logoUrl, showIm
                     {/* Footer */}
                     <div className="absolute bottom-1 left-0 w-full flex justify-between px-4 items-end">
                         <div className={`text-left bg-white px-2 ${showImages ? 'text-lg' : 'text-2xl'} font-bold uppercase tracking-widest text-slate-600`}>
-                            {product.dimensions.length} x {product.dimensions.width} x {product.dimensions.height} cm<br /> Max {product.weightCapacityMax} kg
+                            {[
+                                product.dimensions.length > 0 ? product.dimensions.length : null,
+                                product.dimensions.width > 0 ? product.dimensions.width : null,
+                                product.dimensions.height > 0 ? product.dimensions.height : null
+                            ].filter(Boolean).join(' x ')} cm<br /> Max {product.weightCapacityMax} kg
                         </div>
                         <div className="text-right flex flex-col items-end">
                             {/* EAN-13 Barcode */}

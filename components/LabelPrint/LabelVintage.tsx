@@ -100,7 +100,13 @@ export const LabelVintage: React.FC<LabelProps> = ({ product, logoUrl, showImage
 
                             <div className="mt-4 border border-[#d7ccc8] p-2 bg-[#efebe9] text-center shadow-sm relative">
                                 <p className="text-[10px] uppercase text-[#8d6e63]">Dimensiuni & Greutate</p>
-                                <p className={`font-black ${showImages ? 'text-lg' : 'text-2xl'} text-[#3e2723] leading-none mb-1`}>{product.dimensions.length} x {product.dimensions.width} x {product.dimensions.height} cm</p>
+                                <p className={`font-black ${showImages ? 'text-lg' : 'text-2xl'} text-[#3e2723] leading-none mb-1`}>
+                                    {[
+                                        product.dimensions.length > 0 ? product.dimensions.length : null,
+                                        product.dimensions.width > 0 ? product.dimensions.width : null,
+                                        product.dimensions.height > 0 ? product.dimensions.height : null
+                                    ].filter(Boolean).join(' x ')} cm
+                                </p>
                                 <p className={`font-black ${showImages ? 'text-lg' : 'text-2xl'} text-[#3e2723] leading-none`}>{product.weightCapacityMin}-{product.weightCapacityMax} kg</p>
                             </div>
 

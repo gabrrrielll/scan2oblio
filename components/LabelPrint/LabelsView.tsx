@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Product, TemplateStyle } from '../../types/labelTypes';
 import { EditProductModal } from './EditProductModal';
 import { PrintLayout } from './PrintLayout';
-import { EMPTY_PRODUCT } from '../../services/labelConstants';
+import { EMPTY_PRODUCT, SIZE_CLASSES } from '../../services/labelConstants';
 import { generateEAN13 } from '../../utils/labelUtils';
 import { OblioProduct } from '../../types';
 
@@ -83,18 +83,52 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
             // Mapping Logic
             const modelName = p.name || p["Denumire produs"] || p.modelName || "";
             const price = Number(p.price || p["Pret vanzare"] || 0);
-            const furnizor = p.brand || p.furnizor || p["Furnizor"] || "Diverse"; // Oblio might not have brand directly on product always, adjust if needed
             const currency = p.currency || p["Moneda vanzare"] || "RON";
-
-            // Use extended properties if they exist (e.g. if loaded from our specific JSON format), otherwise default
-            // OblioProduct doesn't have sidesType, woodColor etc. so we use defaults or try to extract from name/notes if possible.
-            // For now, we use defaults or simple extraction.
 
             // Simple Heuristic Extraction from Name
             const upperName = modelName.toUpperCase();
-            const material = p.material || p["material"] || KNOWN_MATERIALS.find(m => upperName.includes(m)) || "BRAD";
-            const sidesType = p.sidesType || p["sidesType"] || KNOWN_SIDES.find(s => upperName.includes(s)) || "4 LATURI";
-            const woodColor = p.woodColor || p["woodColor"] || (upperName.includes("MAHON") ? "MAHON" : "NUC");
+            let material = p.material || p["material"] || KNOWN_MATERIALS.find(m => upperName.includes(m)) || "BRAD";
+            let sidesType = p.sidesType || p["sidesType"] || KNOWN_SIDES.find(s => upperName.includes(s)) || "4 LATURI";
+            let woodColor = p.woodColor || p["woodColor"] || (upperName.includes("MAHON") ? "MAHON" : "NUC");
+            let furnizor = p.brand || p.furnizor || p["Furnizor"] || "Diverse";
+            let sizeClass = p.sizeClass || "L";
+            let weightCapacityMax = Number(p.weightCapacityMax || 0);
+            let dimensions = { ...EMPTY_PRODUCT.dimensions };
+
+            // Parse Description if available (Format: Furnizor \n Material \n WoodColor \n Size \n Weight)
+            if (p.description) {
+                const lines = p.description.split('\n').map((l: string) => l.trim()).filter((l: string) => l !== "");
+                if (lines.length >= 1) furnizor = lines[0];
+                if (lines.length >= 2) material = lines[1];
+                if (lines.length >= 3) woodColor = lines[2];
+                if (lines.length >= 4) {
+                    const sizeStr = lines[3].trim();
+                    const dimMatch = sizeStr.match(/^(\d+)\s*[xX]\s*(\d+)\s*[xX]\s*(\d+)$/);
+
+                    if (dimMatch) {
+                        dimensions = {
+                            length: parseInt(dimMatch[1]),
+                            width: parseInt(dimMatch[2]),
+                            height: parseInt(dimMatch[3])
+                        };
+                        sizeClass = ""; // Clear preset class since we have custom dimensions
+                    } else {
+                        const parsedSize = sizeStr.toUpperCase();
+                        const matchedSize = SIZE_CLASSES.find(sc => sc.id === parsedSize);
+                        if (matchedSize) {
+                            sizeClass = matchedSize.id;
+                            dimensions = { ...matchedSize.dims };
+                            weightCapacityMax = matchedSize.weight;
+                        } else {
+                            sizeClass = sizeStr;
+                        }
+                    }
+                }
+                if (lines.length >= 5) {
+                    const weightVal = parseFloat(lines[4].replace(/[^\d.]/g, ''));
+                    if (!isNaN(weightVal)) weightCapacityMax = weightVal;
+                }
+            }
 
             const finalId = `id-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 5)}`;
             processed.push({
@@ -108,7 +142,10 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
                 id: finalId,
                 sidesType,
                 woodColor,
-                material
+                material,
+                sizeClass,
+                weightCapacityMax,
+                dimensions
             });
         });
         return { processed, duplicatesSkipped };

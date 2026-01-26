@@ -22,6 +22,7 @@ export interface OblioProduct {
   vatPercentage: number;
   currency?: string;
   stock: number; // Current inventory quantity
+  description?: string;
 }
 
 export interface OblioClient {

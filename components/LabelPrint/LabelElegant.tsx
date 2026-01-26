@@ -86,11 +86,20 @@ export const LabelElegant: React.FC<LabelProps> = ({ product, logoUrl, showImage
 
                     <div className="pt-2 shrink-0 w-full mb-2">
                         {/* MOVED DIMENSIONS HERE for No-Image Layout */}
-                        {!showImages && dimText && (
+                        {!showImages && (dimText || product.sizeClass) && (
                             <div className="mb-4 border-t border-b border-[#8B5A2B]/30 py-2 bg-[#8B5A2B]/5">
-                                <p className="text-2xl uppercase text-[#3e2723] font-black tracking-widest leading-none">
-                                    {dimText}
-                                </p>
+                                <div className="flex items-center justify-center gap-4">
+                                    {dimText && (
+                                        <p className="text-2xl uppercase text-[#3e2723] font-black tracking-widest leading-none">
+                                            {dimText}
+                                        </p>
+                                    )}
+                                    {product.sizeClass && (
+                                        <div className="flex items-center justify-center bg-[#8B5A2B] text-white px-3 py-1 rounded-md">
+                                            <span className="text-2xl font-black">{product.sizeClass}</span>
+                                        </div>
+                                    )}
+                                </div>
                                 {product.weightCapacityMax > 0 && (
                                     <p className="text-xl uppercase text-[#8B5A2B] font-bold tracking-widest mt-1">
                                         Max {product.weightCapacityMax} kg
@@ -117,9 +126,16 @@ export const LabelElegant: React.FC<LabelProps> = ({ product, logoUrl, showImage
                         )}
                         {dimText && (
                             <div className="bg-[#8B5A2B]/5 p-2 w-full text-center">
-                                <p className="text-xl uppercase text-[#8B5A2B] font-black tracking-widest text-center leading-tight">
-                                    {dimText}
-                                </p>
+                                <div className="flex items-center justify-center gap-2">
+                                    <p className="text-xl uppercase text-[#8B5A2B] font-black tracking-widest text-center leading-tight">
+                                        {dimText}
+                                    </p>
+                                    {product.sizeClass && (
+                                        <div className="bg-[#8B5A2B] text-white px-2 py-0.5 rounded text-sm font-bold">
+                                            {product.sizeClass}
+                                        </div>
+                                    )}
+                                </div>
                                 {product.weightCapacityMax > 0 && (
                                     <p className="text-xl uppercase text-[#8B5A2B] font-black tracking-widest text-center leading-tight mt-1">
                                         Max {product.weightCapacityMax} kg

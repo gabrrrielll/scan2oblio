@@ -95,7 +95,11 @@ export const LabelRoyal: React.FC<LabelProps> = ({ product, logoUrl, showImages 
                 <div className="mt-2 bg-[#1a237e] text-white p-2 flex justify-between items-center -mx-4 -mb-4">
                     <div className="text-center w-1/2">
                         <span className={`block ${showImages ? 'text-xl' : 'text-3xl'} font-bold uppercase tracking-wider`}>
-                            {product.dimensions.length} x {product.dimensions.width} x {product.dimensions.height} cm
+                            {[
+                                product.dimensions.length > 0 ? product.dimensions.length : null,
+                                product.dimensions.width > 0 ? product.dimensions.width : null,
+                                product.dimensions.height > 0 ? product.dimensions.height : null
+                            ].filter(Boolean).join(' x ')} cm
                         </span>
                         <span className={`block ${showImages ? 'text-xl' : 'text-3xl'} font-bold uppercase tracking-wider text-[#ffd700]`}>
                             Cap: {product.weightCapacityMax} KG

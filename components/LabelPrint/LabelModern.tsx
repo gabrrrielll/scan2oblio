@@ -110,7 +110,13 @@ export const LabelModern: React.FC<LabelModernProps> = ({ product, logoUrl, show
                         <div className="grid grid-cols-1 gap-2 text-center">
                             <div className="bg-slate-100 p-2 rounded">
                                 <p className="text-[10px] text-slate-500 uppercase">Dimensiuni (cm)</p>
-                                <p className={`${showImages ? 'text-xl' : 'text-2xl'} font-bold leading-tight`}>{product.dimensions.length} x {product.dimensions.width} x {product.dimensions.height}</p>
+                                <p className={`${showImages ? 'text-xl' : 'text-2xl'} font-bold leading-tight`}>
+                                    {[
+                                        product.dimensions.length > 0 ? product.dimensions.length : null,
+                                        product.dimensions.width > 0 ? product.dimensions.width : null,
+                                        product.dimensions.height > 0 ? product.dimensions.height : null
+                                    ].filter(Boolean).join(' x ')}
+                                </p>
                             </div>
                             <div className="bg-slate-100 p-2 rounded">
                                 <p className="text-[10px] text-slate-500 uppercase">Greutate (kg)</p>

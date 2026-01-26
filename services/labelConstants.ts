@@ -20,6 +20,14 @@ export const GLOBAL_PRODUCT_DEFAULTS = {
     showDetaliiInterior: true
 };
 
+export const SIZE_CLASSES = [
+    { id: 'S', label: 'SOCIAL (S)', dims: { length: 180, width: 55, height: 45 }, weight: 100 },
+    { id: 'M', label: 'STANDARD (M)', dims: { length: 190, width: 60, height: 45 }, weight: 100 },
+    { id: 'L', label: 'LARGE (L)', dims: { length: 195, width: 60, height: 50 }, weight: 120 },
+    { id: 'XL', label: 'EXTRA LARGE (XL)', dims: { length: 200, width: 65, height: 50 }, weight: 130 },
+    { id: 'XXL', label: 'GIANT (XXL)', dims: { length: 210, width: 75, height: 55 }, weight: 150 },
+];
+
 export const EMPTY_PRODUCT: Product = {
     id: 'new',
     code: '',
@@ -29,5 +37,6 @@ export const EMPTY_PRODUCT: Product = {
     material: '',
     furnizor: '',
     price: 0,
-    ...GLOBAL_PRODUCT_DEFAULTS
+    ...GLOBAL_PRODUCT_DEFAULTS,
+    sizeClass: 'L'
 };

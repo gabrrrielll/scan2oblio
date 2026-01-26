@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Product, CrossOption } from '../../types/labelTypes';
+import { SIZE_CLASSES } from '../../services/labelConstants';
 
 interface EditProductModalProps {
     product: Product;
@@ -8,13 +9,7 @@ interface EditProductModalProps {
     onClose: () => void;
 }
 
-const SIZE_CLASSES = [
-    { id: 'S', label: 'SOCIAL (S)', dims: { length: 180, width: 55, height: 45 }, weight: 100 },
-    { id: 'M', label: 'STANDARD (M)', dims: { length: 190, width: 60, height: 45 }, weight: 100 },
-    { id: 'L', label: 'LARGE (L)', dims: { length: 195, width: 60, height: 50 }, weight: 120 },
-    { id: 'XL', label: 'EXTRA LARGE (XL)', dims: { length: 200, width: 65, height: 50 }, weight: 130 },
-    { id: 'XXL', label: 'GIANT (XXL)', dims: { length: 210, width: 75, height: 55 }, weight: 150 },
-];
+
 
 export const EditProductModal: React.FC<EditProductModalProps> = ({ product, onSave, onClose }) => {
     const [formData, setFormData] = useState<Product>({ ...product });

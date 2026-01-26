@@ -90,8 +90,12 @@ export const LabelMinimal: React.FC<LabelProps> = ({ product, logoUrl, showImage
 
             {/* Footer */}
             <div className="border-t-2 border-gray-900 pt-2 flex justify-between items-center bg-gray-50 p-3 -mx-6 -mb-6 mt-2">
-                <div className={`${showImages ? 'text-xl' : 'text-3xl'} font-black uppercase`}>
-                    {product.dimensions.length}x{product.dimensions.width}x{product.dimensions.height} CM
+                <div className={`${showImages ? 'text-xl' : 'text-3xl'} font-black uppercase text-center`}>
+                    {[
+                        product.dimensions.length > 0 ? product.dimensions.length : null,
+                        product.dimensions.width > 0 ? product.dimensions.width : null,
+                        product.dimensions.height > 0 ? product.dimensions.height : null
+                    ].filter(Boolean).join('x')} CM
                 </div>
                 <div className="text-right flex flex-col items-center">
                     {/* Barcode - Massive Scale if no images */}
