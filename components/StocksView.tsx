@@ -1152,7 +1152,14 @@ const InventoryPrintReport: React.FC<InventoryPrintReportProps> = ({ diffs, matc
                                 <tr key={item.key}>
                                     <td>{item.name}</td>
                                     <td>{item.code || item.key}</td>
-                                    <td className="font-bold">{item.status.toUpperCase()}</td>
+                                    <td className="font-bold">
+                                        {item.status === 'new' ? 'STOC 0 → APARE' :
+                                            item.status === 'more' ? 'MAI MULTE' :
+                                                item.status === 'less' ? 'MAI PUȚINE' :
+                                                    item.status === 'missing' ? 'LIPSĂ' :
+                                                        item.status === 'unknown' ? 'COD NECUNOSCUT' :
+                                                            item.status.toUpperCase()}
+                                    </td>
                                     <td>{item.expected}</td>
                                     <td className="font-bold">{item.counted}</td>
                                     <td className={`font-bold ${item.delta > 0 ? 'text-green' : 'text-red'}`}>

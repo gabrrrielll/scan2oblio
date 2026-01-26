@@ -35,7 +35,10 @@ const Icons = {
     Edit: () => <i className="fa-solid fa-pen-to-square"></i>,
     Copy: () => <i className="fa-solid fa-copy"></i>,
     Trash: () => <i className="fa-solid fa-trash"></i>,
-    Close: () => <i className="fa-solid fa-x"></i>
+    Close: () => <i className="fa-solid fa-x"></i>,
+    Settings: () => <i className="fa-solid fa-cog"></i>,
+    ChevronDown: () => <i className="fa-solid fa-chevron-down"></i>,
+    ChevronUp: () => <i className="fa-solid fa-chevron-up"></i>
 };
 
 
@@ -47,6 +50,7 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
     const [showImages, setShowImages] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     const [remoteLogoUrl, setRemoteLogoUrl] = useState('https://ai24stiri.ro/scan/public/logo-transparent.png');
 
@@ -316,88 +320,117 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
             <div className="no-print p-3 sm:p-6 max-w-[1600px] mx-auto w-full space-y-6 sm:space-y-8">
 
                 {/* Controls Header */}
-                <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-                    <aside className="xl:col-span-1 space-y-6">
+                {/* Controls Header */}
+                <div className={`${isSettingsOpen ? 'grid' : 'flex flex-col'} grid-cols-1 xl:grid-cols-4 gap-8`}>
+
+                    {/* Settings Sidebar - Toggleable */}
+                    <aside className={`${isSettingsOpen ? 'xl:col-span-1' : 'hidden'} space-y-6 transition-all duration-300`}>
                         <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-200">
-                            <h3 className="font-bold text-lg mb-4 text-gray-800 flex items-center gap-2 border-b pb-3 uppercase tracking-tighter">
-                                <Icons.Logo /> Logo Firmă
-                            </h3>
-                            <div className="space-y-4">
-                                {logoUrl && (
-                                    <div className="w-full h-24 bg-gray-50 rounded-xl border border-gray-100 p-2 flex items-center justify-center mb-4 relative group">
-                                        <img src={logoUrl} alt="Preview Logo" className="max-h-full max-w-full object-contain" />
-                                        <button onClick={() => setLogoUrl(null)} className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full text-[10px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><Icons.Close /></button>
-                                    </div>
-                                )}
-                                <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 space-y-3">
-                                    <label className="text-[10px] font-black text-blue-700 uppercase tracking-widest block">URL Logo Server</label>
-                                    <div className="flex gap-1">
-                                        <input type="text" value={remoteLogoUrl} onChange={(e) => setRemoteLogoUrl(e.target.value)} placeholder="URL Logo..." className="flex-1 px-3 py-2 text-xs border border-blue-200 rounded-lg outline-none bg-white" />
-                                        <button onClick={handleLoadRemoteLogo} className="w-10 h-10 flex items-center justify-center rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all shadow-sm"><Icons.Cloud /></button>
-                                    </div>
-                                </div>
-                                <input type="file" ref={logoInputRef} onChange={handleLogoUpload} accept="image/*" className="hidden" />
-                                <button onClick={() => logoInputRef.current?.click()} className="w-full py-3 px-4 bg-gray-50 text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-100 transition font-black flex justify-between items-center text-xs uppercase tracking-widest">
-                                    <span>Încarcă Logo Local</span>
-                                    <Icons.Upload />
+                            <div className="flex items-center justify-between mb-4 border-b pb-3">
+                                <h3 className="font-bold text-lg text-gray-800 flex items-center gap-2 uppercase tracking-tighter">
+                                    <Icons.Settings /> Setări
+                                </h3>
+                                <button
+                                    onClick={() => setIsSettingsOpen(false)}
+                                    className="text-gray-400 hover:text-gray-600 xl:hidden"
+                                >
+                                    <Icons.Close />
                                 </button>
                             </div>
-                        </div>
 
-                        <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-200">
-                            <h3 className="font-bold text-lg mb-4 text-gray-800 flex items-center gap-2 border-b pb-3 uppercase tracking-tighter">
-                                <Icons.Database /> Scule Date
-                            </h3>
-                            <div className="space-y-4">
-                                <div className="flex flex-col gap-3">
-                                    <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".json" className="hidden" />
-                                    <button onClick={() => fileInputRef.current?.click()} className="w-full py-3 px-4 bg-gray-50 text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-100 transition font-bold flex justify-between items-center text-xs uppercase tracking-widest">
-                                        <span>Import Fișier JSON</span>
-                                        <Icons.Import />
-                                    </button>
-                                    <button onClick={() => recoveryInputRef.current?.click()} className="w-full py-3 px-4 bg-red-50 text-red-700 border border-red-100 rounded-xl hover:bg-red-100 transition font-black flex justify-between items-center text-xs uppercase tracking-widest">
-                                        <span>Recuperează din HTML</span>
-                                        <Icons.Recovery />
-                                    </button>
-                                    <input type="file" ref={recoveryInputRef} onChange={handleHtmlRecovery} accept=".html" multiple className="hidden" />
-                                    <button onClick={handleExportWorkspace} className={`w-full py-3 px-4 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-xl hover:bg-indigo-100 transition font-black flex justify-between items-center text-xs uppercase tracking-widest`}>
-                                        <span>Export Workspace JSON</span>
-                                        <Icons.Download />
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-200">
-                            <h3 className="font-bold text-lg mb-4 text-gray-800 flex items-center gap-2 border-b pb-3 uppercase tracking-tighter">
-                                <Icons.Palette /> Stil Vizual
-                            </h3>
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between bg-gray-50 p-3 rounded-xl border border-gray-200">
-                                    <span className="text-sm font-bold text-gray-700">Afișează Imagine</span>
-                                    <button onClick={() => setShowImages(!showImages)} className={`relative w-12 h-6 rounded-full transition-colors duration-300 ${showImages ? 'bg-indigo-600' : 'bg-gray-300'}`}>
-                                        <span className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full shadow transition-transform duration-300 ${showImages ? 'translate-x-6' : 'translate-x-0'}`}></span>
-                                    </button>
-                                </div>
-                                <div className="grid grid-cols-2 gap-3">
-                                    {Object.values(TemplateStyle).map((style) => (
-                                        <button key={style} onClick={() => setTemplate(style)} className={`py-2 px-1 text-[10px] font-black uppercase rounded-lg border-2 transition-all ${template === style ? 'bg-indigo-600 text-white border-indigo-600 shadow-md scale-105' : 'bg-white text-gray-400 border-gray-100 hover:border-indigo-200'}`}>
-                                            {style}
+                            <div className="space-y-8">
+                                {/* Section: Logo */}
+                                <section>
+                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                        <Icons.Logo /> Logo Firmă
+                                    </h4>
+                                    <div className="space-y-4">
+                                        {logoUrl && (
+                                            <div className="w-full h-24 bg-gray-50 rounded-xl border border-gray-100 p-2 flex items-center justify-center mb-4 relative group">
+                                                <img src={logoUrl} alt="Preview Logo" className="max-h-full max-w-full object-contain" />
+                                                <button onClick={() => setLogoUrl(null)} className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full text-[10px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><Icons.Close /></button>
+                                            </div>
+                                        )}
+                                        <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 space-y-3">
+                                            <label className="text-[10px] font-black text-blue-700 uppercase tracking-widest block">URL Logo Server</label>
+                                            <div className="flex gap-1">
+                                                <input type="text" value={remoteLogoUrl} onChange={(e) => setRemoteLogoUrl(e.target.value)} placeholder="URL Logo..." className="flex-1 px-3 py-2 text-xs border border-blue-200 rounded-lg outline-none bg-white" />
+                                                <button onClick={handleLoadRemoteLogo} className="w-10 h-10 flex items-center justify-center rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all shadow-sm"><Icons.Cloud /></button>
+                                            </div>
+                                        </div>
+                                        <input type="file" ref={logoInputRef} onChange={handleLogoUpload} accept="image/*" className="hidden" />
+                                        <button onClick={() => logoInputRef.current?.click()} className="w-full py-3 px-4 bg-gray-50 text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-100 transition font-black flex justify-between items-center text-xs uppercase tracking-widest">
+                                            <span>Încarcă Logo Local</span>
+                                            <Icons.Upload />
                                         </button>
-                                    ))}
-                                </div>
+                                    </div>
+                                </section>
+
+                                {/* Section: Data Tools */}
+                                <section>
+                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                        <Icons.Database /> Scule Date
+                                    </h4>
+                                    <div className="space-y-3">
+                                        <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".json" className="hidden" />
+                                        <button onClick={() => fileInputRef.current?.click()} className="w-full py-3 px-4 bg-gray-50 text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-100 transition font-bold flex justify-between items-center text-xs uppercase tracking-widest">
+                                            <span>Import Fișier JSON</span>
+                                            <Icons.Import />
+                                        </button>
+                                        <button onClick={() => recoveryInputRef.current?.click()} className="w-full py-3 px-4 bg-red-50 text-red-700 border border-red-100 rounded-xl hover:bg-red-100 transition font-black flex justify-between items-center text-xs uppercase tracking-widest">
+                                            <span>Recuperează din HTML</span>
+                                            <Icons.Recovery />
+                                        </button>
+                                        <input type="file" ref={recoveryInputRef} onChange={handleHtmlRecovery} accept=".html" multiple className="hidden" />
+                                        <button onClick={handleExportWorkspace} className={`w-full py-3 px-4 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-xl hover:bg-indigo-100 transition font-black flex justify-between items-center text-xs uppercase tracking-widest`}>
+                                            <span>Export Workspace JSON</span>
+                                            <Icons.Download />
+                                        </button>
+                                    </div>
+                                </section>
+
+                                {/* Section: Visual Style */}
+                                <section>
+                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                        <Icons.Palette /> Stil Vizual
+                                    </h4>
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between bg-gray-50 p-3 rounded-xl border border-gray-200">
+                                            <span className="text-sm font-bold text-gray-700">Afișează Imagine</span>
+                                            <button onClick={() => setShowImages(!showImages)} className={`relative w-12 h-6 rounded-full transition-colors duration-300 ${showImages ? 'bg-indigo-600' : 'bg-gray-300'}`}>
+                                                <span className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full shadow transition-transform duration-300 ${showImages ? 'translate-x-6' : 'translate-x-0'}`}></span>
+                                            </button>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {Object.values(TemplateStyle).map((style) => (
+                                                <button key={style} onClick={() => setTemplate(style)} className={`py-2 px-1 text-[10px] font-black uppercase rounded-lg border-2 transition-all ${template === style ? 'bg-indigo-600 text-white border-indigo-600 shadow-md scale-105' : 'bg-white text-gray-400 border-gray-100 hover:border-indigo-200'}`}>
+                                                    {style}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </section>
                             </div>
                         </div>
                     </aside>
 
-                    <main className="xl:col-span-3 bg-white rounded-2xl border border-gray-200 p-4 sm:p-6 flex flex-col shadow-sm min-h-[600px]">
+                    <main className={`${isSettingsOpen ? 'xl:col-span-3' : 'xl:col-span-4'} bg-white rounded-2xl border border-gray-200 p-4 sm:p-6 flex flex-col shadow-sm min-h-[600px] transition-all duration-300`}>
                         <div className="flex flex-col gap-6 mb-8 border-b border-gray-100 pb-6">
                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                                <h2 className="text-xl font-black text-gray-800 tracking-tight uppercase">
-                                    Workspace
-                                    <span className="text-indigo-500 ml-2 font-normal text-sm lowercase italic">({products.length} modele)</span>
-                                    {inventory.length > 0 && <span className="text-emerald-500 ml-2 font-bold text-[10px] uppercase tracking-wide border border-emerald-200 bg-emerald-50 px-2 py-0.5 rounded-full">Sync Active</span>}
-                                </h2>
+                                <div className="flex items-center gap-4">
+                                    <button
+                                        onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                                        className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all ${isSettingsOpen ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50'}`}
+                                        title="Toggle Setări"
+                                    >
+                                        <Icons.Settings />
+                                    </button>
+                                    <h2 className="text-xl font-black text-gray-800 tracking-tight uppercase">
+                                        Workspace
+                                        <span className="text-indigo-500 ml-2 font-normal text-sm lowercase italic">({products.length} modele)</span>
+                                        {inventory.length > 0 && <span className="text-emerald-500 ml-2 font-bold text-[10px] uppercase tracking-wide border border-emerald-200 bg-emerald-50 px-2 py-0.5 rounded-full">Sync Active</span>}
+                                    </h2>
+                                </div>
 
                                 <div className="flex gap-2">
                                     <button onClick={handleExportHtml} className={`px-4 py-2 rounded-lg font-bold text-indigo-600 border border-indigo-100 hover:bg-indigo-50 transition-colors flex items-center gap-2 text-xs ${totalSelectedLabels === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
