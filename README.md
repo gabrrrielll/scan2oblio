@@ -156,6 +156,16 @@ server {
 }
 ```
 
+### 5. Deployment in Subfolder (e.g., `/scan`)
+
+If the application is deployed in a subfolder (like `https://domain.com/scan/`):
+1.  **Vite Config**: Ensure `base: '/scan/'` is set in `vite.config.ts`.
+2.  **HTML Entry**: The script entry in `index.html` should use a relative path: `<script type="module" src="./index.tsx"></script>`.
+3.  **Pathing**: Assets in `index.html` (like favicon or fonts) should be prefixed with `/scan/` if using absolute paths, or be relative.
+4.  **.htaccess**: Ensure the `RewriteRule` targets `index.html` correctly within the subfolder.
+
+---
+
 ## Dezvoltare Locală
 
 Pentru dezvoltare locală:
