@@ -317,14 +317,14 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
 
     return (
         <div className="flex flex-col font-sans text-gray-900 bg-gray-50/50 min-h-full">
-            <div className="no-print p-3 sm:p-6 max-w-[1600px] mx-auto w-full space-y-6 sm:space-y-8">
+            <div className="no-print p-3 sm:p-6 max-w-[1920px] mx-auto w-full space-y-6 sm:space-y-8">
 
                 {/* Controls Header */}
                 {/* Controls Header */}
-                <div className={`${isSettingsOpen ? 'grid' : 'flex flex-col'} grid-cols-1 xl:grid-cols-4 gap-8`}>
+                <div className={`${isSettingsOpen ? 'grid' : 'flex flex-col'} grid-cols-1 xl:grid-cols-12 gap-8`}>
 
                     {/* Settings Sidebar - Toggleable */}
-                    <aside className={`${isSettingsOpen ? 'xl:col-span-1' : 'hidden'} space-y-6 transition-all duration-300`}>
+                    <aside className={`${isSettingsOpen ? 'xl:col-span-3 min-w-[320px]' : 'hidden'} space-y-6 transition-all duration-300`}>
                         <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-200">
                             <div className="flex items-center justify-between mb-4 border-b pb-3">
                                 <h3 className="font-bold text-lg text-gray-800 flex items-center gap-2 uppercase tracking-tighter">
@@ -414,7 +414,7 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
                         </div>
                     </aside>
 
-                    <main className={`${isSettingsOpen ? 'xl:col-span-3' : 'xl:col-span-4'} bg-white rounded-2xl border border-gray-200 p-4 sm:p-6 flex flex-col shadow-sm min-h-[600px] transition-all duration-300`}>
+                    <main className={`${isSettingsOpen ? 'xl:col-span-9' : 'xl:col-span-12'} bg-white rounded-2xl border border-gray-200 p-4 sm:p-6 flex flex-col shadow-sm min-h-[600px] transition-all duration-300`}>
                         <div className="flex flex-col gap-6 mb-8 border-b border-gray-100 pb-6">
                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                                 <div className="flex items-center gap-4">
