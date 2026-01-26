@@ -172,7 +172,7 @@ export const LabelElegant: React.FC<LabelProps> = ({ product, logoUrl, showImage
                         <div className="text-center pt-2 flex flex-col items-center justify-end relative min-h-[100px]">
                             {/* The Barcode itself */}
                             <div className="flex flex-col items-center justify-center">
-                                <div style={{ transform: showImages ? 'scale(1.8, 1)' : 'scale(1.9, 1)', transformOrigin: 'bottom center' }}>
+                                <div style={{ transform: showImages ? 'scale(2.2, 1)' : 'scale(2.1, 1)', transformOrigin: 'bottom center' }}>
                                     <span style={{ fontFamily: "'Libre Barcode EAN13 Text'" }} className="text-6xl leading-none block">{encodedCode}</span>
                                 </div>
                                 {/* Numerical code below - simplified tracking */}
