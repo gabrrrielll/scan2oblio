@@ -67,19 +67,24 @@ export const LabelElegant: React.FC<LabelProps> = ({ product, logoUrl, showImage
 
                     <div className="pt-2 shrink-0 w-full mb-2">
                         {/* MOVED DIMENSIONS HERE for No-Image Layout */}
-                        {!showImages && (
+                        {!showImages && (product.dimensions.length > 0 || product.dimensions.width > 0 || product.dimensions.height > 0) && (
                             <div className="mb-4 border-t border-b border-[#8B5A2B]/30 py-2 bg-[#8B5A2B]/5">
                                 <p className="text-2xl uppercase text-[#3e2723] font-black tracking-widest leading-none">
                                     {product.dimensions.length}x{product.dimensions.width}x{product.dimensions.height} CM
                                 </p>
-                                <p className="text-xl uppercase text-[#8B5A2B] font-bold tracking-widest mt-1">
-                                    Max {product.weightCapacityMax} kg
-                                </p>
+                                {product.weightCapacityMax > 0 && (
+                                    <p className="text-xl uppercase text-[#8B5A2B] font-bold tracking-widest mt-1">
+                                        Max {product.weightCapacityMax} kg
+                                    </p>
+                                )}
                             </div>
                         )}
 
                         <p className="text-xs font-bold text-[#8B5A2B] uppercase mb-1">Fz: {product.furnizor}</p>
-                        <p className={`${showImages ? 'text-3xl' : 'text-6xl'} font-serif font-bold text-[#8B5A2B] leading-none`}>{product.price} {product.currency}</p>
+                        <div className="flex items-baseline justify-center gap-2">
+                            <p className={`${showImages ? 'text-3xl' : 'text-5xl'} font-serif font-bold text-[#8B5A2B] leading-none`}>{product.price}</p>
+                            <span className={`${showImages ? 'text-xl' : 'text-3xl'} font-serif font-bold text-[#8B5A2B]`}>{product.currency}</span>
+                        </div>
                     </div>
                 </div>
 
@@ -91,14 +96,18 @@ export const LabelElegant: React.FC<LabelProps> = ({ product, logoUrl, showImage
                                 <img src={product.imageUrl} alt={product.modelName} className="w-full h-full object-contain" />
                             </div>
                         )}
-                        <div className="bg-[#8B5A2B]/5 p-2 w-full text-center">
-                            <p className="text-xl uppercase text-[#8B5A2B] font-black tracking-widest text-center leading-tight">
-                                {product.dimensions.length}x{product.dimensions.width}x{product.dimensions.height} cm
-                            </p>
-                            <p className="text-xl uppercase text-[#8B5A2B] font-black tracking-widest text-center leading-tight mt-1">
-                                Max {product.weightCapacityMax} kg
-                            </p>
-                        </div>
+                        {(product.dimensions.length > 0 || product.dimensions.width > 0 || product.dimensions.height > 0) && (
+                            <div className="bg-[#8B5A2B]/5 p-2 w-full text-center">
+                                <p className="text-xl uppercase text-[#8B5A2B] font-black tracking-widest text-center leading-tight">
+                                    {product.dimensions.length}x{product.dimensions.width}x{product.dimensions.height} cm
+                                </p>
+                                {product.weightCapacityMax > 0 && (
+                                    <p className="text-xl uppercase text-[#8B5A2B] font-black tracking-widest text-center leading-tight mt-1">
+                                        Max {product.weightCapacityMax} kg
+                                    </p>
+                                )}
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -107,39 +116,47 @@ export const LabelElegant: React.FC<LabelProps> = ({ product, logoUrl, showImage
 
                     {/* WRAPPER CENTRAT VERTICAL PENTRU CRUCE SI LISTA */}
                     <div className="flex-grow flex flex-col justify-center w-full">
-                        <h2 className="font-serif italic text-2xl text-[#8B5A2B] mb-3 text-center">CRUCE INSCRIPTIONATA</h2>
+                        {product.crossOptions.some(opt => opt.price > 0) && (
+                            <>
+                                <h2 className="font-serif italic text-2xl text-[#8B5A2B] mb-3 text-center">CRUCE INSCRIPTIONATA</h2>
 
-                        {/* MODIFIED: Width limited to 74% and centered via mx-auto to match first printscreen */}
-                        <div className={`space-y-1.5 ${showImages ? 'text-sm' : 'text-xl font-bold'} w-[80%] mx-auto`}>
-                            {product.crossOptions.map((opt, i) => (
-                                <div key={i} className="flex justify-between items-end">
-                                    <span className="font-bold uppercase text-[#5D4037]">{opt.type}</span>
-                                    <span className="border-b border-dotted border-[#8B5A2B] flex-grow mx-1 mb-1.5"></span>
-                                    <span className="font-bold">{opt.price} Lei</span>
+                                {/* MODIFIED: Width limited to 74% and centered via mx-auto to match first printscreen */}
+                                <div className={`space-y-1.5 ${showImages ? 'text-sm' : 'text-xl font-bold'} w-[80%] mx-auto`}>
+                                    {product.crossOptions.filter(opt => opt.price > 0).map((opt, i) => (
+                                        <div key={i} className="flex justify-between items-end">
+                                            <span className="font-bold uppercase text-[#5D4037]">{opt.type}</span>
+                                            <span className="border-b border-dotted border-[#8B5A2B] flex-grow mx-1 mb-1.5"></span>
+                                            <span className="font-bold">{opt.price} Lei</span>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
+                            </>
+                        )}
                     </div>
 
                     {/* MODIFIED: Width limited to 70% and centered via mx-auto to match first printscreen */}
                     <div className={`pt-2 border-t border-[#8B5A2B]/20 space-y-1.5 ${showImages ? 'text-sm' : 'text-xl'} shrink-0 mt-2 w-[80%] mx-auto`}>
-                        <div className="flex justify-between">
-                            <span className="text-[#8B5A2B] italic">Accesorii:</span>
-                            <span className="font-bold">{product.accessoriesPrice} Lei</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-[#8B5A2B] italic">Crucifix:</span>
-                            <span className="font-bold">{product.crucifixPrice} Lei</span>
-                        </div>
+                        {product.accessoriesPrice > 0 && (
+                            <div className="flex justify-between">
+                                <span className="text-[#8B5A2B] italic">Accesorii:</span>
+                                <span className="font-bold">{product.accessoriesPrice} Lei</span>
+                            </div>
+                        )}
+                        {product.crucifixPrice > 0 && (
+                            <div className="flex justify-between">
+                                <span className="text-[#8B5A2B] italic">Crucifix:</span>
+                                <span className="font-bold">{product.crucifixPrice} Lei</span>
+                            </div>
+                        )}
 
                         {/* BARCODE SECTION - SCALED UP AND IMPROVED */}
                         <div className="text-center pt-2 flex flex-col items-center justify-end relative">
                             {/* The Barcode itself */}
                             <div className="flex flex-col items-center">
                                 <div style={{
-                                    transform: showImages ? 'scale(1.8, 1.1)' : 'scale(2.2, 1.2)',
+                                    transform: showImages ? 'scale(1.4, 1.0)' : 'scale(1.8, 1.0)',
                                     transformOrigin: 'bottom center',
-                                    marginBottom: '2px'
+                                    marginBottom: '1px'
                                 }}>
                                     <span style={{
                                         fontFamily: "'Libre Barcode EAN13'",
