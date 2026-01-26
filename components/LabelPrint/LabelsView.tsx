@@ -372,7 +372,7 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
         for (let i = 0; i < qty; i++) selectedProductsForPrint.push(p);
     });
 
-    const totalSelectedLabels = Object.values(selectedQuantities).reduce((a, b) => a + b, 0);
+    const totalSelectedLabels = (Object.values(selectedQuantities) as number[]).reduce((a, b) => a + b, 0);
 
     return (
         <div className="flex flex-col font-sans text-gray-900 bg-gray-50/50 min-h-full">
