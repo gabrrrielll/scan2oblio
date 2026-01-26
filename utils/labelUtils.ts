@@ -40,7 +40,34 @@ export const generateEAN13 = (): string => {
  * 
  * Structure: [1st Digit] ( [6 Left Digits] * [6 Right Digits] +
  */
+
+// copiat din versiunea originala
 export const encodeEAN13 = (code: string): string => {
+    if (!code) return '';
+
+    // Clean the code: remove whitespace
+    const cleanCode = String(code).trim();
+
+    // If it's not a numeric string at all, return as is
+    if (!/^\d+$/.test(cleanCode)) {
+        return cleanCode;
+    }
+
+    // FIX: Always return the full 13 digits if provided.
+    if (cleanCode.length === 13) {
+        return cleanCode;
+    }
+
+    // Case 2: 12-digit (UPC or EAN without checksum stored)
+    if (cleanCode.length === 12) {
+        return cleanCode;
+    }
+
+    // Fallback: Return whatever was passed
+    return cleanCode;
+};
+
+export const original_encodeEAN13 = (code: string): string => {
     if (!code || code.length !== 13) return code;
 
     const parityPatterns = [
