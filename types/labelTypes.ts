@@ -35,6 +35,8 @@ export interface Product {
     weightCapacityMax: number;
 
     imageUrl?: string;
+    showCompleteEchipat?: boolean;
+    showDetaliiInterior?: boolean;
 }
 
 export enum TemplateStyle {

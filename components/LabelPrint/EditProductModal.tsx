@@ -31,6 +31,12 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({ product, onS
                     [child]: (name.startsWith('dimensions.') || name.startsWith('weight')) ? Number(value) : value
                 }
             }));
+        } else if (e.target.type === 'checkbox') {
+            const { checked } = e.target as HTMLInputElement;
+            setFormData(prev => ({
+                ...prev,
+                [name]: checked
+            }));
         } else {
             setFormData(prev => ({
                 ...prev,
@@ -128,6 +134,38 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({ product, onS
                                 <input type="text" name="furnizor" value={formData.furnizor} onChange={handleChange} className={inputClasses} />
                             </div>
                         </div>
+
+                        <div className="mt-6 flex flex-wrap gap-6 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+                            <label className="flex items-center gap-3 cursor-pointer group">
+                                <div className="relative">
+                                    <input
+                                        type="checkbox"
+                                        name="showCompleteEchipat"
+                                        checked={formData.showCompleteEchipat}
+                                        onChange={handleChange}
+                                        className="sr-only"
+                                    />
+                                    <div className={`w-10 h-6 rounded-full transition-colors ${formData.showCompleteEchipat ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
+                                    <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${formData.showCompleteEchipat ? 'translate-x-4' : ''}`}></div>
+                                </div>
+                                <span className="text-xs font-bold text-gray-700 uppercase tracking-tight">SICRIU COMPLET ECHIPAT</span>
+                            </label>
+
+                            <label className="flex items-center gap-3 cursor-pointer group">
+                                <div className="relative">
+                                    <input
+                                        type="checkbox"
+                                        name="showDetaliiInterior"
+                                        checked={formData.showDetaliiInterior}
+                                        onChange={handleChange}
+                                        className="sr-only"
+                                    />
+                                    <div className={`w-10 h-6 rounded-full transition-colors ${formData.showDetaliiInterior ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
+                                    <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${formData.showDetaliiInterior ? 'translate-x-4' : ''}`}></div>
+                                </div>
+                                <span className="text-xs font-bold text-gray-700 uppercase tracking-tight">DETALII INTERIOR</span>
+                            </label>
+                        </div>
                     </section>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -190,8 +228,8 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({ product, onS
                                             onClick={() => handleSizeClassSelect(c.id)}
                                             title={c.label}
                                             className={`px-2.5 py-1 text-[11px] font-black rounded-lg transition-all ${formData.sizeClass === c.id
-                                                    ? 'bg-blue-600 text-white shadow-md scale-105'
-                                                    : 'text-gray-500 hover:text-blue-600 hover:bg-white'
+                                                ? 'bg-blue-600 text-white shadow-md scale-105'
+                                                : 'text-gray-500 hover:text-blue-600 hover:bg-white'
                                                 }`}
                                         >
                                             {c.id}

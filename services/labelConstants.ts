@@ -15,7 +15,9 @@ export const GLOBAL_PRODUCT_DEFAULTS = {
     weightCapacityMin: 100,
     weightCapacityMax: 120,
     currency: 'RON',
-    imageUrl: 'https://funerare24.ro/wp-content/smush-webp/s03-f24-1500-lei.jpg.webp'
+    imageUrl: 'https://funerare24.ro/wp-content/smush-webp/s03-f24-1500-lei.jpg.webp',
+    showCompleteEchipat: true,
+    showDetaliiInterior: true
 };
 
 export const EMPTY_PRODUCT: Product = {
