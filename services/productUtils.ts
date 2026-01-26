@@ -71,17 +71,21 @@ export const mapProductToStockItem = (p: any): any => {
         p.weightCapacityMax ? `${p.weightCapacityMax} kg` : ""
     ].join('\n');
 
+    // Start with original data to preserve fields we don't handle in Labels (like Stock)
+    const base = p.rawStockData || {};
+
     return {
+        ...base,
         "Denumire produs": p.modelName,
-        "Tip": "Marfa",
+        "Tip": base["Tip"] || "Marfa",
         "Cod produs": p.code,
-        "Stoc": Number(p.stock) || 0,
-        "U.M.": p.measuringUnit || "buc",
-        "Cost achizitie fara TVA": 0,
-        "Moneda achizitie": "RON",
+        "Stoc": base["Stoc"] !== undefined ? base["Stoc"] : (Number(p.stock) || 0),
+        "U.M.": base["U.M."] || p.measuringUnit || "buc",
+        "Cost achizitie fara TVA": base["Cost achizitie fara TVA"] || 0,
+        "Moneda achizitie": base["Moneda achizitie"] || "RON",
         "Pret vanzare": Number(p.price) || 0,
-        "Cota TVA": Number(p.vatPercentage) || 19,
-        "TVA inclus": "DA",
+        "Cota TVA": base["Cota TVA"] !== undefined ? base["Cota TVA"] : (Number(p.vatPercentage) || 19),
+        "TVA inclus": base["TVA inclus"] || "DA",
         "Moneda vanzare": p.currency || "RON",
         "Furnizor": p.furnizor || "",
         "sidesType": p.sidesType || "",

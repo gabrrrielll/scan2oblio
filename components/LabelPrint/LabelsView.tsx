@@ -147,7 +147,8 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
                 material,
                 sizeClass,
                 weightCapacityMax,
-                dimensions
+                dimensions,
+                rawStockData: p // Preserve the original object (StockItem or OblioProduct)
             });
         });
         return { processed, duplicatesSkipped };
@@ -181,12 +182,31 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
 
     const handleSyncToServer = async () => {
         if (products.length === 0) return;
-        if (!confirm("Sigur doriți să actualizați fișierul de stocuri de pe server cu datele din acest Workspace? (Aceasta va popula Descrierile pentru export XLS)")) return;
+        if (!confirm("Sigur doriți să actualizați descrierile de pe server cu datele din acest Workspace? (Stocurile și restul datelor vor fi păstrate)")) return;
 
         try {
-            const stocksToSave = products.map(p => mapProductToStockItem(p));
-            await saveStocksToFile(stocksToSave);
-            alert("Datele au fost salvate pe server în stocuri.json!");
+            const serverStocks = await fetchStocksFromFile();
+            const updatedStocks = [...serverStocks];
+
+            products.forEach(p => {
+                const updatedStockItem = mapProductToStockItem(p);
+                const index = updatedStocks.findIndex(s => s["Cod produs"] === p.code);
+
+                if (index !== -1) {
+                    // Smart merge: Keep existing server fields, update only label metadata
+                    updatedStocks[index] = {
+                        ...updatedStocks[index],
+                        ...updatedStockItem,
+                        // Explicitly preserve stock in case it changed on server
+                        "Stoc": updatedStocks[index]["Stoc"]
+                    };
+                } else {
+                    updatedStocks.push(updatedStockItem);
+                }
+            });
+
+            await saveStocksToFile(updatedStocks);
+            alert("Descrierile au fost actualizate pe server în stocuri.json!");
         } catch (err: any) {
             alert("Eroare la salvarea pe server: " + err.message);
         }
@@ -198,21 +218,36 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
             return;
         }
 
-        if (!confirm(`Sigur doriți să populați serverul cu cele ${inventory.length} produse din Oblio?`)) return;
+        if (!confirm(`Sigur doriți să actualizați datele de pe server cu cele ${inventory.length} produse din Oblio? (Se vor sincroniza stocurile și prețurile, dar se vor păstra restul detaliilor editate)`)) return;
 
         try {
-            const stocksToSave = mapOblioToStockItems(inventory);
-            // Before saving, we might want to preserve existing edited data if any?
-            // User said "importa produsele din Oblio pe server", so let's do a fresh map but maybe merge?
-            // Actually, the handleSyncToServer is better for preserving edits.
-            // This button is for a fresh start.
-            await saveStocksToFile(stocksToSave);
+            const serverStocks = await fetchStocksFromFile();
+            const freshOblioStocks = mapOblioToStockItems(inventory);
+            const updatedStocks = [...serverStocks];
 
-            // Also update local workspace
-            const { processed } = processImportedProducts(inventory, []);
+            freshOblioStocks.forEach(freshItem => {
+                const index = updatedStocks.findIndex(s => s["Cod produs"] === freshItem["Cod produs"]);
+                if (index !== -1) {
+                    // Update only dynamic fields from Oblio, keep our local edits (sidesType, material, description etc.)
+                    updatedStocks[index] = {
+                        ...updatedStocks[index],
+                        "Stoc": freshItem["Stoc"],
+                        "Pret vanzare": freshItem["Pret vanzare"],
+                        "Denumire produs": freshItem["Denumire produs"],
+                        "Cota TVA": freshItem["Cota TVA"]
+                    };
+                } else {
+                    updatedStocks.push(freshItem);
+                }
+            });
+
+            await saveStocksToFile(updatedStocks);
+
+            // Also update local workspace to reflect merged state
+            const { processed } = processImportedProducts(updatedStocks, []);
             setProducts(processed);
 
-            alert("Produsele din Oblio au fost salvate pe server!");
+            alert("Sincronizarea cu Oblio a fost finalizată pe server!");
         } catch (err: any) {
             alert("Eroare: " + err.message);
         }
