@@ -5,7 +5,9 @@ import { EditProductModal } from './EditProductModal';
 import { PrintLayout } from './PrintLayout';
 import { EMPTY_PRODUCT, SIZE_CLASSES } from '../../services/labelConstants';
 import { generateEAN13 } from '../../utils/labelUtils';
-import { OblioProduct } from '../../types';
+import { OblioProduct, StockItem } from '../../types';
+import { fetchStocksFromFile, saveStocksToFile, getExportStocksXlsUrl } from '../../services/stockFileService';
+import { mapOblioToStockItems, mapProductToStockItem } from '../../services/productUtils';
 
 interface LabelsViewProps {
     inventory: OblioProduct[];
@@ -151,17 +153,70 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
         return { processed, duplicatesSkipped };
     }, []);
 
-    // Sync with Inventory Prop on Mount or Change
+    // Sync with Inventory Prop and Server File on Mount or Change
     useEffect(() => {
-        if (inventory.length > 0) {
-            // We only want to add NEW items from inventory that aren't already in our workspace
-            // To avoid overwriting user edits in the workspace, we only add missing codes.
-            const { processed } = processImportedProducts(inventory, products);
-            if (processed.length > 0) {
-                setProducts(prev => [...prev, ...processed]);
+        const initializeWorkspace = async () => {
+            let serverStocks: StockItem[] = [];
+            try {
+                serverStocks = await fetchStocksFromFile();
+            } catch (err) {
+                console.error("Could not fetch server stocks:", err);
             }
-        }
+
+            // Convert server stocks to Label Products
+            const serverLabelProducts = processImportedProducts(serverStocks, []).processed;
+
+            if (inventory.length > 0) {
+                // If we have fresh Oblio inventory, merge it with server data.
+                // Priority: Workspace (edited by user) > Server File > Fresh Oblio (heuristics)
+                const { processed: freshOblioProducts } = processImportedProducts(inventory, serverLabelProducts);
+                setProducts([...serverLabelProducts, ...freshOblioProducts]);
+            } else if (serverLabelProducts.length > 0) {
+                setProducts(serverLabelProducts);
+            }
+        };
+
+        initializeWorkspace();
     }, [inventory, processImportedProducts]);
+
+    const handleSyncToServer = async () => {
+        if (products.length === 0) return;
+        if (!confirm("Sigur doriți să actualizați fișierul de stocuri de pe server cu datele din acest Workspace? (Aceasta va popula Descrierile pentru export XLS)")) return;
+
+        try {
+            const stocksToSave = products.map(p => mapProductToStockItem(p));
+            await saveStocksToFile(stocksToSave);
+            alert("Datele au fost salvate pe server în stocuri.json!");
+        } catch (err: any) {
+            alert("Eroare la salvarea pe server: " + err.message);
+        }
+    };
+
+    const handleImportFromOblioToServer = async () => {
+        if (inventory.length === 0) {
+            alert("Nu există produse încărcate din Oblio. Vă rugăm să faceți refresh la pagină sau să verificați conexiunea.");
+            return;
+        }
+
+        if (!confirm(`Sigur doriți să populați serverul cu cele ${inventory.length} produse din Oblio?`)) return;
+
+        try {
+            const stocksToSave = mapOblioToStockItems(inventory);
+            // Before saving, we might want to preserve existing edited data if any?
+            // User said "importa produsele din Oblio pe server", so let's do a fresh map but maybe merge?
+            // Actually, the handleSyncToServer is better for preserving edits.
+            // This button is for a fresh start.
+            await saveStocksToFile(stocksToSave);
+
+            // Also update local workspace
+            const { processed } = processImportedProducts(inventory, []);
+            setProducts(processed);
+
+            alert("Produsele din Oblio au fost salvate pe server!");
+        } catch (err: any) {
+            alert("Eroare: " + err.message);
+        }
+    };
 
 
     const toggleProductSelection = (id: string) => {
@@ -316,9 +371,28 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
         window.print();
     };
 
-    const handleSaveProduct = (updated: Product) => {
-        setProducts(prev => prev.map(p => p.id === updated.id ? updated : p));
+    const handleSaveProduct = async (updated: Product) => {
+        const newProducts = products.map(p => p.id === updated.id ? updated : p);
+        setProducts(newProducts);
         setEditingProduct(null);
+
+        // Also update server file automatically for this product
+        try {
+            const serverStocks = await fetchStocksFromFile();
+            const updatedStockItem = mapProductToStockItem(updated);
+            const index = serverStocks.findIndex(s => s["Cod produs"] === updated.code);
+
+            if (index !== -1) {
+                serverStocks[index] = { ...serverStocks[index], ...updatedStockItem };
+            } else {
+                serverStocks.push(updatedStockItem);
+            }
+
+            await saveStocksToFile(serverStocks);
+            console.log("Product updated on server successfully");
+        } catch (err) {
+            console.error("Could not auto-update server stock:", err);
+        }
     };
 
     const cloneProduct = (product: Product) => {
@@ -469,7 +543,29 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
                                     </h2>
                                 </div>
 
-                                <div className="flex gap-2">
+                                <div className="flex flex-wrap gap-2">
+                                    <button
+                                        onClick={handleImportFromOblioToServer}
+                                        className="px-4 py-2 rounded-lg font-bold text-emerald-600 border border-emerald-100 hover:bg-emerald-50 transition-colors flex items-center gap-2 text-xs"
+                                        title="Importă produsele din Oblio în baza de date locală (stocuri.json)"
+                                    >
+                                        <i className="fa-solid fa-cloud-arrow-down"></i> Importă Oblio pe Server
+                                    </button>
+                                    <button
+                                        onClick={handleSyncToServer}
+                                        className="px-4 py-2 rounded-lg font-bold text-amber-600 border border-amber-100 hover:bg-amber-50 transition-colors flex items-center gap-2 text-xs"
+                                        title="Salvează modificările curente în baza de date locală"
+                                    >
+                                        <i className="fa-solid fa-floppy-disk"></i> Salvează Workspace pe Server
+                                    </button>
+                                    <button
+                                        onClick={() => window.location.href = getExportStocksXlsUrl()}
+                                        className="px-4 py-2 rounded-lg font-bold text-blue-600 border border-blue-100 hover:bg-blue-50 transition-colors flex items-center gap-2 text-xs"
+                                        title="Exportă baza de date locală în format Excel (cu descrieri pentru Oblio)"
+                                    >
+                                        <i className="fa-solid fa-file-excel"></i> Export XLS (Oblio)
+                                    </button>
+                                    <div className="w-px h-8 bg-gray-200 mx-2 hidden md:block"></div>
                                     <button onClick={handleExportHtml} className={`px-4 py-2 rounded-lg font-bold text-indigo-600 border border-indigo-100 hover:bg-indigo-50 transition-colors flex items-center gap-2 text-xs ${totalSelectedLabels === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
                                         <Icons.Pdf /> Export PDF
                                     </button>

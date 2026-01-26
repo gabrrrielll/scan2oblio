@@ -983,7 +983,8 @@ try {
                     'Codul' => 'Cod produs',
                     'Pretul vanzare' => 'Pret vanzare',
                     'Cantitatea' => 'Stoc',
-                    'Totalul' => 'Total'
+                    'Totalul' => 'Total',
+                    'Descriere' => 'description'
                 ];
                 
                 $totalToateProdusele = 0;

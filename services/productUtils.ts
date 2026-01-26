@@ -49,9 +49,45 @@ export const mapOblioToStockItems = (products: any[]): any[] => {
         "Cota TVA": Number(p.vatPercentage) || 0,
         "TVA inclus": "DA",
         "Moneda vanzare": p.currency || "RON",
-        "Furnizor": "",
-        "sidesType": "6 LATURI",
-        "woodColor": "RESPETĂ",
-        "material": "BRAD"
+        "Furnizor": p.furnizor || "",
+        "sidesType": p.sidesType || "6 LATURI",
+        "woodColor": p.woodColor || "NUC",
+        "material": p.material || "BRAD",
+        "description": p.description || ""
     }));
+};
+
+/**
+ * Maps a single Label Product back to a StockItem for server saving
+ */
+export const mapProductToStockItem = (p: any): any => {
+    // Construct the 5-line description format for Oblio import
+    // Format: Furnizor \n Material \n WoodColor \n Size \n Weight
+    const desc = [
+        p.furnizor || "",
+        p.material || "",
+        p.woodColor || "",
+        p.sizeClass || "",
+        p.weightCapacityMax ? `${p.weightCapacityMax} kg` : ""
+    ].join('\n');
+
+    return {
+        "Denumire produs": p.modelName,
+        "Tip": "Marfa",
+        "Cod produs": p.code,
+        "Stoc": Number(p.stock) || 0,
+        "U.M.": p.measuringUnit || "buc",
+        "Cost achizitie fara TVA": 0,
+        "Moneda achizitie": "RON",
+        "Pret vanzare": Number(p.price) || 0,
+        "Cota TVA": Number(p.vatPercentage) || 19,
+        "TVA inclus": "DA",
+        "Moneda vanzare": p.currency || "RON",
+        "Furnizor": p.furnizor || "",
+        "sidesType": p.sidesType || "",
+        "woodColor": p.woodColor || "",
+        "material": p.material || "",
+        "description": desc,
+        "lastEdit": new Date().toLocaleString('ro-RO').replace(',', '')
+    };
 };
