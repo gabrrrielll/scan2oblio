@@ -19,7 +19,7 @@ export const LabelElegant: React.FC<LabelProps> = ({ product, logoUrl, showImage
     const dimText = dimParts.length > 0 ? dimParts.join('x') + ' CM' : '';
 
     return (
-        <div className="w-[190mm] h-[130mm] bg-[#fffbf0] border-[8px] border-double border-[#8B5A2B] pt-8 px-10 pb-10 text-[#3e2723] flex flex-col box-border relative overflow-hidden">
+        <div className="w-[190mm] h-[130mm] bg-[#fffbf0] border-[8px] border-double border-[#8B5A2B] pt-2 px-10 pb-10 text-[#3e2723] flex flex-col box-border relative overflow-hidden">
 
             {/* Corner Decorations */}
             <div className="absolute top-2 left-2 w-12 h-12 border-t-2 border-l-2 border-[#8B5A2B] opacity-40"></div>
@@ -45,7 +45,7 @@ export const LabelElegant: React.FC<LabelProps> = ({ product, logoUrl, showImage
 
 
                 {/* COL 2 (Right): Logo moved here with FULL HEIGHT */}
-                <div className="w-1/2 flex items-center justify-center p-2 h-full">
+                <div className="w-1/2 flex items-center justify-center h-full">
                     {logoUrl && logoUrl !== 'null' ? (
                         <div className="w-full h-full flex items-center justify-center overflow-hidden">
                             <img
@@ -60,7 +60,7 @@ export const LabelElegant: React.FC<LabelProps> = ({ product, logoUrl, showImage
                             />
                         </div>
                     ) : (
-                        <div className="border-2 border-dashed border-[#8B5A2B]/20 p-4 rounded-xl flex items-center justify-center">
+                        <div className="border-2 border-dashed border-[#8B5A2B]/20 p-1 rounded-xl flex items-center justify-center">
                             <span className="text-[#8B5A2B] font-serif text-lg italic">Fără Logo</span>
                         </div>
                     )}
@@ -69,7 +69,7 @@ export const LabelElegant: React.FC<LabelProps> = ({ product, logoUrl, showImage
             </div>
 
             {/* Main Content - Grid changes based on showImages */}
-            <div className={`flex-grow grid ${showImages ? 'grid-cols-3' : 'grid-cols-2'} gap-4 relative z-10 px-2 mt-1`}>
+            <div className={`flex-grow grid ${showImages ? 'grid-cols-3' : 'grid-cols-2'} gap-4 relative z-10 px-2`}>
 
                 {/* Left Info */}
                 <div className="flex flex-col items-center text-center pr-2 h-full">
@@ -77,7 +77,7 @@ export const LabelElegant: React.FC<LabelProps> = ({ product, logoUrl, showImage
                     <div className="flex-grow flex flex-col justify-center w-full">
                         {product.showDetaliiInterior && <h2 className="font-serif italic text-xl text-[#8B5A2B] mb-1.5 text-center">DETALII INTERIOR</h2>}
                         <p className={`text-xl font-medium mb-1 leading-none`}>{product.lidFeature}</p>
-                        <div className="space-y-0.5 mt-1.5">
+                        <div className="space-y-0.5 mt-1.1">
                             {product.accessories.map((acc, i) => (
                                 <p key={i} className={`text-[#5D4037] font-medium text-xl`}>{acc}</p>
                             ))}
