@@ -31,8 +31,8 @@ export const LabelElegant: React.FC<LabelProps> = ({ product, logoUrl, showImage
             <div className="flex items-center justify-between my-1 relative z-10 border-b border-[#8B5A2B]/20 pb-2 h-36">
 
                 {/* COL 1 (Left): Details from printscreen (Model Name + Specs) */}
-                <div className="w-1/2 flex flex-col items-center justify-center pr-1 h-full pt-2">
-                    <h1 className={`${showImages ? 'text-2xl' : 'text-4xl'} font-serif text-[#8B5A2B] tracking-wide font-bold leading-[1.2] text-center uppercase`}>{product.modelName}</h1>
+                <div className="w-1/2 flex flex-col items-center justify-center pr-1 h-full pt-1">
+                    <h1 className={`${showImages ? 'text-2xl' : 'text-4xl'} font-serif text-[#8B5A2B] tracking-wide font-bold leading-[1.1] text-center uppercase`}>{product.modelName}</h1>
                     <div className="flex flex-wrap justify-center items-center gap-1.5 mt-1 text-base uppercase tracking-widest font-bold text-center">
                         {product.sidesType && <span>{product.sidesType}</span>}
                         {product.sidesType && product.woodColor && <span className="w-1 h-1 rounded-full bg-[#8B5A2B]"></span>}
@@ -87,7 +87,7 @@ export const LabelElegant: React.FC<LabelProps> = ({ product, logoUrl, showImage
                     <div className="pt-2 shrink-0 w-full mb-2">
                         {/* MOVED DIMENSIONS HERE for No-Image Layout */}
                         {!showImages && (dimText || product.sizeClass) && (
-                            <div className="mb-4 border-t border-b border-[#8B5A2B]/30 py-2 bg-[#8B5A2B]/5">
+                            <div className="mb-4 border-t border-b border-[#8B5A2B]/30 py-1 bg-[#8B5A2B]/5">
                                 <div className="flex items-center justify-center gap-4">
                                     {dimText && (
                                         <p className="text-2xl uppercase text-[#3e2723] font-black tracking-widest leading-none">
@@ -96,7 +96,7 @@ export const LabelElegant: React.FC<LabelProps> = ({ product, logoUrl, showImage
                                     )}
                                     {product.sizeClass && (
                                         <div className="flex items-center justify-center bg-[#8B5A2B] text-white px-3 py-1 rounded-md">
-                                            <span className="text-2xl font-black">{product.sizeClass}</span>
+                                            <span className="text-xl font-black">{product.sizeClass}</span>
                                         </div>
                                     )}
                                 </div>
@@ -108,10 +108,10 @@ export const LabelElegant: React.FC<LabelProps> = ({ product, logoUrl, showImage
                             </div>
                         )}
 
-                        <p className="text-[10px] font-bold text-[#8B5A2B] uppercase mb-0.5">Fz: {product.furnizor}</p>
+                        <p className="text-[18px] font-bold text-[#8B5A2B] uppercase mb-0.5">Producator: {product.furnizor}</p>
                         <div className="flex items-baseline justify-center gap-2">
-                            <p className={`${showImages ? 'text-2xl' : 'text-4xl'} font-serif font-bold text-[#8B5A2B] leading-none`}>{product.price}</p>
-                            <span className={`${showImages ? 'text-lg' : 'text-2xl'} font-serif font-bold text-[#8B5A2B]`}>{product.currency}</span>
+                            <p className={`${showImages ? 'text-2xl' : 'text-5xl'} font-serif font-bold text-[#8B5A2B] leading-none`}>{product.price}</p>
+                            <span className={`${showImages ? 'text-lg' : 'text-4xl'} font-serif font-bold text-[#8B5A2B]`}>{product.currency}</span>
                         </div>
                     </div>
                 </div>
