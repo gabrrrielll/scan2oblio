@@ -32,8 +32,8 @@ export const LabelElegant: React.FC<LabelProps> = ({ product, logoUrl, showImage
 
                 {/* COL 1 (Left): Details from printscreen (Model Name + Specs) */}
                 <div className="w-1/2 flex flex-col items-center justify-center pr-1 h-full py-1">
-                    <h1 className={`${showImages ? 'text-3xl' : 'text-4xl'} font-serif text-[#8B5A2B] tracking-wide font-bold leading-[1] text-center uppercase`}>{product.modelName}</h1>
-                    <div className="flex flex-wrap justify-center items-center gap-1.5 mt-1 text-base uppercase tracking-widest font-bold text-center">
+                    <h1 className={`${showImages ? 'text-3xl' : 'text-4xl'} font-serif text-[#8B5A2B] tracking-wide font-bold leading-[.9] text-center uppercase`}>{product.modelName}</h1>
+                    <div className="flex flex-wrap justify-center items-center gap-1.5 text-base uppercase tracking-widest font-bold text-center">
                         {product.sidesType && <span>{product.sidesType}</span>}
                         {product.sidesType && product.woodColor && <span className="w-1 h-1 rounded-full bg-[#8B5A2B]"></span>}
                         {product.woodColor && <span>{product.woodColor}</span>}
@@ -84,7 +84,7 @@ export const LabelElegant: React.FC<LabelProps> = ({ product, logoUrl, showImage
                         </div>
                     </div>
 
-                    <div className="pt-2 shrink-0 w-full mb-1">
+                    <div className="pt-1 shrink-0 w-full mb-1">
                         {/* MOVED DIMENSIONS HERE for No-Image Layout */}
                         {!showImages && (dimText || product.sizeClass) && (
                             <div className="mb-1 border-t border-b border-[#8B5A2B]/30 py-1 bg-[#8B5A2B]/5">
@@ -192,7 +192,7 @@ export const LabelElegant: React.FC<LabelProps> = ({ product, logoUrl, showImage
                                     <span style={{ fontFamily: "'Libre Barcode EAN13 Text'" }} className="text-6xl leading-none block">{encodedCode}</span>
                                 </div>
                                 {/* Numerical code below - simplified tracking */}
-                                <p className="text-lg font-bold tracking-[0.4em] text-black font-mono">
+                                <p className="text-lg font-bold tracking-[0.1em] text-black font-mono">
                                     {product.code}
                                 </p>
                             </div>
