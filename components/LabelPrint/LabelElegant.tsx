@@ -40,7 +40,7 @@ export const LabelElegant: React.FC<LabelProps> = ({ product, logoUrl, showImage
                         {product.woodColor && product.material && <span className="w-1 h-1 rounded-full bg-[#8B5A2B]"></span>}
                         {product.material && <span>{product.material}</span>}
                     </div>
-                    {product.showCompleteEchipat && <h2 className="font-serif italic text-xl text-[#8B5A2B] mt-1">SICRIU COMPLET ECHIPAT</h2>}
+                    {product.showCompleteEchipat && <h2 className="font-serif italic text-xl text-[#8B5A2B]">SICRIU COMPLET ECHIPAT</h2>}
                 </div>
 
 
