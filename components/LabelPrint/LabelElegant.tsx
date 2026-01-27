@@ -28,11 +28,11 @@ export const LabelElegant: React.FC<LabelProps> = ({ product, logoUrl, showImage
             <div className="absolute bottom-2 right-2 w-12 h-12 border-b-2 border-r-2 border-[#8B5A2B] opacity-40"></div>
 
             {/* Header Area - SPLIT INTO TWO COLUMNS - INCREASED HEIGHT */}
-            <div className="flex items-center justify-between my-1 relative z-10 border-b border-[#8B5A2B]/20 pb-2 h-36">
+            <div className="flex items-center justify-between my-1 relative z-10 pb-2 h-36">
 
                 {/* COL 1 (Left): Details from printscreen (Model Name + Specs) */}
-                <div className="w-1/2 flex flex-col items-center justify-center pr-1 h-full pt-1">
-                    <h1 className={`${showImages ? 'text-2xl' : 'text-4xl'} font-serif text-[#8B5A2B] tracking-wide font-bold leading-[1.1] text-center uppercase`}>{product.modelName}</h1>
+                <div className="w-1/2 flex flex-col items-center justify-center pr-1 h-full py-1">
+                    <h1 className={`${showImages ? 'text-3xl' : 'text-4xl'} font-serif text-[#8B5A2B] tracking-wide font-bold leading-[1] text-center uppercase`}>{product.modelName}</h1>
                     <div className="flex flex-wrap justify-center items-center gap-1.5 mt-1 text-base uppercase tracking-widest font-bold text-center">
                         {product.sidesType && <span>{product.sidesType}</span>}
                         {product.sidesType && product.woodColor && <span className="w-1 h-1 rounded-full bg-[#8B5A2B]"></span>}
