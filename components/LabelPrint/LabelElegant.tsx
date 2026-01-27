@@ -84,10 +84,10 @@ export const LabelElegant: React.FC<LabelProps> = ({ product, logoUrl, showImage
                         </div>
                     </div>
 
-                    <div className="pt-2 shrink-0 w-full mb-2">
+                    <div className="pt-2 shrink-0 w-full mb-1">
                         {/* MOVED DIMENSIONS HERE for No-Image Layout */}
                         {!showImages && (dimText || product.sizeClass) && (
-                            <div className="mb-4 border-t border-b border-[#8B5A2B]/30 py-1 bg-[#8B5A2B]/5">
+                            <div className="mb-1 border-t border-b border-[#8B5A2B]/30 py-1 bg-[#8B5A2B]/5">
                                 <div className="flex items-center justify-center gap-4">
                                     {dimText && (
                                         <p className="text-2xl uppercase text-[#3e2723] font-black tracking-widest leading-none">
@@ -108,7 +108,7 @@ export const LabelElegant: React.FC<LabelProps> = ({ product, logoUrl, showImage
                             </div>
                         )}
 
-                        <p className="text-[18px] font-bold text-[#8B5A2B] uppercase mb-0.5">Producator: {product.furnizor}</p>
+                        <p className="text-[16px] font-bold text-[#8B5A2B] uppercase">Producator: {product.furnizor}</p>
                         <div className="flex items-baseline justify-center gap-2">
                             <p className={`${showImages ? 'text-2xl' : 'text-5xl'} font-serif font-bold text-[#8B5A2B] leading-none`}>{product.price}</p>
                             <span className={`${showImages ? 'text-lg' : 'text-4xl'} font-serif font-bold text-[#8B5A2B]`}>{product.currency}</span>
