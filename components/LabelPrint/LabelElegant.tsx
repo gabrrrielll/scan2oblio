@@ -19,7 +19,7 @@ export const LabelElegant: React.FC<LabelProps> = ({ product, logoUrl, showImage
     const dimText = dimParts.length > 0 ? dimParts.join('x') + ' CM' : '';
 
     return (
-        <div className="w-[198mm] h-[136.5mm] bg-[#fffbf0] border-[8px] border-double border-[#8B5A2B] pt-6 px-4 pb-4 text-[#3e2723] flex flex-col box-border relative overflow-hidden">
+        <div className="w-[190mm] h-[130mm] bg-[#fffbf0] border-[8px] border-double border-[#8B5A2B] pt-8 px-10 pb-10 text-[#3e2723] flex flex-col box-border relative overflow-hidden">
 
             {/* Corner Decorations */}
             <div className="absolute top-2 left-2 w-12 h-12 border-t-2 border-l-2 border-[#8B5A2B] opacity-40"></div>
