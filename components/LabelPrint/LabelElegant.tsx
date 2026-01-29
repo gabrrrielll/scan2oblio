@@ -18,6 +18,54 @@ export const LabelElegant: React.FC<LabelProps> = ({ product, logoUrl, showImage
     if (product.dimensions.height > 0) dimParts.push(product.dimensions.height);
     const dimText = dimParts.length > 0 ? dimParts.join('x') + ' CM' : '';
 
+    if (product.isSmallLabel) {
+        return (
+            <div className="w-[140mm] h-[100mm] bg-[#fffbf0] border-[6px] border-double border-[#8B5A2B] pt-4 px-6 pb-6 text-[#3e2723] flex flex-col box-border relative overflow-hidden">
+                {/* Corner Decorations */}
+                <div className="absolute top-1.5 left-1.5 w-8 h-8 border-t-2 border-l-2 border-[#8B5A2B] opacity-40"></div>
+                <div className="absolute top-1.5 right-1.5 w-8 h-8 border-t-2 border-r-2 border-[#8B5A2B] opacity-40"></div>
+                <div className="absolute bottom-1.5 left-1.5 w-8 h-8 border-b-2 border-l-2 border-[#8B5A2B] opacity-40"></div>
+                <div className="absolute bottom-1.5 right-1.5 w-8 h-8 border-b-2 border-r-2 border-[#8B5A2B] opacity-40"></div>
+
+                <div className="flex justify-between items-start mb-1 h-20">
+                    <div className="w-[60%] flex flex-col items-center justify-center h-full">
+                        <h1 className="text-2xl font-serif text-[#8B5A2B] tracking-wide font-bold leading-tight text-center uppercase">{product.modelName}</h1>
+                        <p className="text-[14px] font-bold uppercase tracking-widest text-[#8B5A2B] mt-1">{product.material}</p>
+                    </div>
+                    <div className="w-[40%] h-full flex items-center justify-center p-1">
+                        {logoUrl && logoUrl !== 'null' && (
+                            <img src={logoUrl} alt="Logo" className="max-h-full max-w-full object-contain" />
+                        )}
+                    </div>
+                </div>
+
+                <div className="flex-grow flex flex-col justify-center items-center py-2">
+                    <div className="flex items-center gap-2 bg-[#8B5A2B]/5 px-3 py-1 border-t border-b border-[#8B5A2B]/20 mb-1">
+                        <p className="text-xl uppercase text-[#3e2723] font-black tracking-widest leading-none">{dimText}</p>
+                        {product.sizeClass && <div className="bg-[#8B5A2B] text-white px-2 py-0.5 rounded text-sm font-black">{product.sizeClass}</div>}
+                    </div>
+                    <p className="text-[12px] font-bold text-[#8B5A2B] uppercase">Producator: {product.furnizor}</p>
+                </div>
+
+                <div className="flex items-end justify-between mt-auto">
+                    <div className="flex items-baseline gap-1">
+                        <p className="text-4xl font-serif font-bold text-[#8B5A2B] leading-none">{product.price}</p>
+                        <span className="text-2xl font-serif font-bold text-[#8B5A2B]">{product.currency}</span>
+                    </div>
+
+                    <div className="flex flex-col items-center justify-end">
+                        <div style={{ transform: 'scale(1.4, 0.8)', transformOrigin: 'bottom center' }}>
+                            <span style={{ fontFamily: "'Libre Barcode EAN13 Text'" }} className="text-5xl leading-none block">{encodedCode}</span>
+                        </div>
+                        <p className="text-sm font-bold tracking-[0.2em] text-black font-mono mt-1">
+                            {product.code}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="w-[190mm] h-[130mm] bg-[#fffbf0] border-[8px] border-double border-[#8B5A2B] pt-2 px-10 pb-10 text-[#3e2723] flex flex-col box-border relative overflow-hidden">
 

@@ -37,6 +37,7 @@ export interface Product {
     imageUrl?: string;
     showCompleteEchipat?: boolean;
     showDetaliiInterior?: boolean;
+    isSmallLabel?: boolean;
     rawStockData?: any; // To preserve fields not used by Labels (like Stock)
 }
 

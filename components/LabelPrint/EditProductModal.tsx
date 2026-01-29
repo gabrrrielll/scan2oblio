@@ -111,14 +111,14 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({ product, onS
                                 <input type="number" name="price" value={formData.price} onChange={handleChange} className={`${inputClasses} font-bold text-blue-700`} required />
                             </div>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+                        <div className={`grid grid-cols-1 md:grid-cols-4 gap-4 mt-4 ${formData.isSmallLabel ? 'opacity-40 grayscale pointer-events-none' : ''}`}>
                             <div>
                                 <label className={labelClasses}>Tip Laturi</label>
-                                <input type="text" name="sidesType" value={formData.sidesType} onChange={handleChange} className={inputClasses} />
+                                <input type="text" name="sidesType" value={formData.sidesType} onChange={handleChange} className={inputClasses} disabled={formData.isSmallLabel} />
                             </div>
                             <div>
                                 <label className={labelClasses}>Culoare Lemn</label>
-                                <input type="text" name="woodColor" value={formData.woodColor} onChange={handleChange} className={inputClasses} />
+                                <input type="text" name="woodColor" value={formData.woodColor} onChange={handleChange} className={inputClasses} disabled={formData.isSmallLabel} />
                             </div>
                             <div>
                                 <label className={labelClasses}>Material</label>
@@ -135,77 +135,98 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({ product, onS
                                 <div className="relative">
                                     <input
                                         type="checkbox"
-                                        name="showCompleteEchipat"
-                                        checked={formData.showCompleteEchipat}
+                                        name="isSmallLabel"
+                                        checked={formData.isSmallLabel}
                                         onChange={handleChange}
                                         className="sr-only"
                                     />
-                                    <div className={`w-10 h-6 rounded-full transition-colors ${formData.showCompleteEchipat ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
-                                    <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${formData.showCompleteEchipat ? 'translate-x-4' : ''}`}></div>
+                                    <div className={`w-10 h-6 rounded-full transition-colors ${formData.isSmallLabel ? 'bg-indigo-600' : 'bg-gray-300'}`}></div>
+                                    <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${formData.isSmallLabel ? 'translate-x-4' : ''}`}></div>
                                 </div>
-                                <span className="text-xs font-bold text-gray-700 uppercase tracking-tight">SICRIU COMPLET ECHIPAT</span>
+                                <span className="text-sm font-black text-indigo-700 uppercase tracking-tighter">ETICHETĂ MICĂ (4/pag)</span>
                             </label>
 
-                            <label className="flex items-center gap-3 cursor-pointer group">
-                                <div className="relative">
-                                    <input
-                                        type="checkbox"
-                                        name="showDetaliiInterior"
-                                        checked={formData.showDetaliiInterior}
-                                        onChange={handleChange}
-                                        className="sr-only"
-                                    />
-                                    <div className={`w-10 h-6 rounded-full transition-colors ${formData.showDetaliiInterior ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
-                                    <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${formData.showDetaliiInterior ? 'translate-x-4' : ''}`}></div>
-                                </div>
-                                <span className="text-xs font-bold text-gray-700 uppercase tracking-tight">DETALII INTERIOR</span>
-                            </label>
+                            {!formData.isSmallLabel && (
+                                <>
+                                    <label className="flex items-center gap-3 cursor-pointer group">
+                                        <div className="relative">
+                                            <input
+                                                type="checkbox"
+                                                name="showCompleteEchipat"
+                                                checked={formData.showCompleteEchipat}
+                                                onChange={handleChange}
+                                                className="sr-only"
+                                            />
+                                            <div className={`w-10 h-6 rounded-full transition-colors ${formData.showCompleteEchipat ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
+                                            <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${formData.showCompleteEchipat ? 'translate-x-4' : ''}`}></div>
+                                        </div>
+                                        <span className="text-xs font-bold text-gray-700 uppercase tracking-tight">SICRIU COMPLET ECHIPAT</span>
+                                    </label>
+
+                                    <label className="flex items-center gap-3 cursor-pointer group">
+                                        <div className="relative">
+                                            <input
+                                                type="checkbox"
+                                                name="showDetaliiInterior"
+                                                checked={formData.showDetaliiInterior}
+                                                onChange={handleChange}
+                                                className="sr-only"
+                                            />
+                                            <div className={`w-10 h-6 rounded-full transition-colors ${formData.showDetaliiInterior ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
+                                            <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${formData.showDetaliiInterior ? 'translate-x-4' : ''}`}></div>
+                                        </div>
+                                        <span className="text-xs font-bold text-gray-700 uppercase tracking-tight">DETALII INTERIOR</span>
+                                    </label>
+                                </>
+                            )}
                         </div>
                     </section>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        {/* Sectiune 2: Interior */}
-                        <section>
-                            <h3 className="text-sm font-black text-emerald-600 uppercase tracking-widest mb-4 flex items-center gap-2 border-b border-gray-100 pb-2">
-                                <i className="fa-solid fa-couch"></i> Interior & Accesorii
-                            </h3>
-                            <div className="space-y-4">
-                                <div>
-                                    <label className={labelClasses}>Tip Capitonaj Capac</label>
-                                    <input type="text" name="lidFeature" value={formData.lidFeature} onChange={handleChange} className={`${inputClasses} font-medium`} />
-                                </div>
-                                <div>
-                                    <label className={labelClasses}>Accesorii (separate prin virgulă)</label>
-                                    <textarea value={accessoriesText} onChange={(e) => setAccessoriesText(e.target.value)} rows={3} className={`${inputClasses} resize-none`} />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
+                    {!formData.isSmallLabel && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            {/* Sectiune 2: Interior */}
+                            <section>
+                                <h3 className="text-sm font-black text-emerald-600 uppercase tracking-widest mb-4 flex items-center gap-2 border-b border-gray-100 pb-2">
+                                    <i className="fa-solid fa-couch"></i> Interior & Accesorii
+                                </h3>
+                                <div className="space-y-4">
                                     <div>
-                                        <label className={labelClasses}>Preț Accesorii Extra</label>
-                                        <input type="number" name="accessoriesPrice" value={formData.accessoriesPrice} onChange={handleChange} className={inputClasses} />
+                                        <label className={labelClasses}>Tip Capitonaj Capac</label>
+                                        <input type="text" name="lidFeature" value={formData.lidFeature} onChange={handleChange} className={`${inputClasses} font-medium`} />
                                     </div>
                                     <div>
-                                        <label className={labelClasses}>Preț Crucifix</label>
-                                        <input type="number" name="crucifixPrice" value={formData.crucifixPrice} onChange={handleChange} className={inputClasses} />
+                                        <label className={labelClasses}>Accesorii (separate prin virgulă)</label>
+                                        <textarea value={accessoriesText} onChange={(e) => setAccessoriesText(e.target.value)} rows={3} className={`${inputClasses} resize-none`} />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className={labelClasses}>Preț Accesorii Extra</label>
+                                            <input type="number" name="accessoriesPrice" value={formData.accessoriesPrice} onChange={handleChange} className={inputClasses} />
+                                        </div>
+                                        <div>
+                                            <label className={labelClasses}>Preț Crucifix</label>
+                                            <input type="number" name="crucifixPrice" value={formData.crucifixPrice} onChange={handleChange} className={inputClasses} />
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </section>
+                            </section>
 
-                        {/* Sectiune 3: Cruce */}
-                        <section>
-                            <h3 className="text-sm font-black text-amber-600 uppercase tracking-widest mb-4 flex items-center gap-2 border-b border-gray-100 pb-2">
-                                <i className="fa-solid fa-cross"></i> Opțiuni Cruce
-                            </h3>
-                            <div className="space-y-3">
-                                {formData.crossOptions.map((opt, i) => (
-                                    <div key={i} className="flex gap-2 group">
-                                        <input type="text" value={opt.type} onChange={(e) => handleCrossOptionChange(i, 'type', e.target.value)} className={`${inputClasses} flex-1 py-1.5 text-sm`} placeholder="Tip Lemn" />
-                                        <input type="number" value={opt.price} onChange={(e) => handleCrossOptionChange(i, 'price', e.target.value)} className={`${inputClasses} w-24 py-1.5 text-sm font-bold`} placeholder="Pret" />
-                                    </div>
-                                ))}
-                            </div>
-                        </section>
-                    </div>
+                            {/* Sectiune 3: Cruce */}
+                            <section>
+                                <h3 className="text-sm font-black text-amber-600 uppercase tracking-widest mb-4 flex items-center gap-2 border-b border-gray-100 pb-2">
+                                    <i className="fa-solid fa-cross"></i> Opțiuni Cruce
+                                </h3>
+                                <div className="space-y-3">
+                                    {formData.crossOptions.map((opt, i) => (
+                                        <div key={i} className="flex gap-2 group">
+                                            <input type="text" value={opt.type} onChange={(e) => handleCrossOptionChange(i, 'type', e.target.value)} className={`${inputClasses} flex-1 py-1.5 text-sm`} placeholder="Tip Lemn" />
+                                            <input type="number" value={opt.price} onChange={(e) => handleCrossOptionChange(i, 'price', e.target.value)} className={`${inputClasses} w-24 py-1.5 text-sm font-bold`} placeholder="Pret" />
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+                        </div>
+                    )}
 
                     {/* Sectiune 4: Dimensiuni si Foto */}
                     <section className="bg-gray-50 p-5 rounded-2xl border border-gray-200 shadow-inner">

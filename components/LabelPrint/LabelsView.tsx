@@ -120,6 +120,9 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
                     const weightVal = parseFloat(lines[4].replace(/[^\d.]/g, ''));
                     if (!isNaN(weightVal)) weightCapacityMax = weightVal;
                 }
+                if (lines.length >= 6) {
+                    p.isSmallLabel = lines[5].includes("SMALL: DA");
+                }
             }
 
             const finalId = `id-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 5)}`;
@@ -138,6 +141,7 @@ export const LabelsView: React.FC<LabelsViewProps> = ({ inventory }) => {
                 sizeClass,
                 weightCapacityMax,
                 dimensions,
+                isSmallLabel: p.isSmallLabel || false,
                 rawStockData: p
             });
         });

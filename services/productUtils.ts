@@ -67,7 +67,8 @@ export const mapProductToStockItem = (p: any): any => {
         p.material || "",
         p.woodColor || "",
         p.sizeClass || "",
-        p.weightCapacityMax ? `${p.weightCapacityMax} kg` : ""
+        p.weightCapacityMax ? `${p.weightCapacityMax} kg` : "",
+        p.isSmallLabel ? "SMALL: DA" : "SMALL: NU"
     ].join('\n');
 
     const base = p.rawStockData || {};
