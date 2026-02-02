@@ -7,23 +7,24 @@ interface ClientFormModalProps {
     config: OblioConfig;
     onClose: () => void;
     onSuccess: (newClient: OblioClient) => void;
+    initialData?: Partial<OblioClient>;
 }
 
-const ClientFormModal: React.FC<ClientFormModalProps> = ({ config, onClose, onSuccess }) => {
+const ClientFormModal: React.FC<ClientFormModalProps> = ({ config, onClose, onSuccess, initialData }) => {
     const [formData, setFormData] = useState<Partial<OblioClient>>({
-        name: '',
-        cif: '',
-        rc: '',
-        address: '',
-        city: '',
-        state: '',
-        country: 'Romania',
-        email: '',
-        phone: '',
-        iban: '',
-        bank: '',
-        contact: '',
-        vatPayer: false
+        name: initialData?.name || '',
+        cif: initialData?.cif || '',
+        rc: initialData?.rc || '',
+        address: initialData?.address || '',
+        city: initialData?.city || '',
+        state: initialData?.state || '',
+        country: initialData?.country || 'Romania',
+        email: initialData?.email || '',
+        phone: initialData?.phone || '',
+        iban: initialData?.iban || '',
+        bank: initialData?.bank || '',
+        contact: initialData?.contact || '',
+        vatPayer: initialData?.vatPayer || false
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);

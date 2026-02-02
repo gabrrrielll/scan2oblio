@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, User, Calendar, FileText, Package, AlertCircle, Loader2, Plus } from 'lucide-react';
+import { X, Save, User, Calendar, FileText, Package, AlertCircle, Loader2, Plus, Camera } from 'lucide-react';
 import { OblioConfig, OblioClient, ProductItem, InvoiceFormData, Person } from '../types';
 import { getClientsFromOblio, createInvoiceInOblio } from '../services/oblioService';
+import { extractClientFromIdCardImage } from '../services/geminiService';
 import PersonSelector from './PersonSelector';
 import ClientFormModal from './ClientFormModal';
 import DatePicker from './DatePicker';
@@ -20,6 +21,9 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ config, initialProducts, 
     const [isLoadingClients, setIsLoadingClients] = useState(false);
     const [clientSearchTerm, setClientSearchTerm] = useState('');
     const [showAddClientModal, setShowAddClientModal] = useState(false);
+    const [isExtractingClient, setIsExtractingClient] = useState(false);
+    const [prefilledClientData, setPrefilledClientData] = useState<Partial<OblioClient> | null>(null);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     // State pentru persoane
     const [selectedIssuer, setSelectedIssuer] = useState<Person | null>(null);
@@ -79,6 +83,47 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ config, initialProducts, 
     const handleClientSelect = (client: OblioClient) => {
         setFormData(prev => ({ ...prev, client }));
         setClientSearchTerm('');
+    };
+
+    const handleImageCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsExtractingClient(true);
+        setError(null);
+
+        try {
+            const reader = new FileReader();
+            const base64Promise = new Promise<string>((resolve) => {
+                reader.onload = () => {
+                    const base64 = (reader.result as string).split(',')[1];
+                    resolve(base64);
+                };
+            });
+            reader.readAsDataURL(file);
+            const base64 = await base64Promise;
+
+            const extractedData = await extractClientFromIdCardImage(base64);
+            if (extractedData) {
+                setPrefilledClientData({
+                    name: extractedData.name,
+                    cif: extractedData.cif,
+                    address: extractedData.address,
+                    city: extractedData.city,
+                    state: extractedData.state
+                });
+                setShowAddClientModal(true);
+            } else {
+                setError("Nu s-au putut extrage datele din imagine. Vă rugăm să introduceți datele manual.");
+                setShowAddClientModal(true);
+            }
+        } catch (err) {
+            console.error("Error processing CI image:", err);
+            setError("Eroare la procesarea imaginii.");
+        } finally {
+            setIsExtractingClient(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
     };
 
     const handleProductChange = (index: number, field: keyof ProductItem, value: any) => {
@@ -241,13 +286,39 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ config, initialProducts, 
                                 className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none"
                             />
 
-                            <button
-                                onClick={() => setShowAddClientModal(true)}
-                                className="w-full py-3 bg-slate-900/50 border border-dashed border-slate-600 text-slate-400 hover:text-white hover:border-emerald-500 hover:bg-slate-800 rounded-lg transition-all flex items-center justify-center gap-2 group"
-                            >
-                                <Plus className="w-5 h-5 group-hover:text-emerald-400" />
-                                <span>Adaugă Client Nou</span>
-                            </button>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => {
+                                        setPrefilledClientData(null);
+                                        setShowAddClientModal(true);
+                                    }}
+                                    className="flex-1 py-3 bg-slate-900/50 border border-dashed border-slate-600 text-slate-400 hover:text-white hover:border-emerald-500 hover:bg-slate-800 rounded-lg transition-all flex items-center justify-center gap-2 group"
+                                >
+                                    <Plus className="w-5 h-5 group-hover:text-emerald-400" />
+                                    <span>Adaugă Client Nou</span>
+                                </button>
+
+                                <button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={isExtractingClient}
+                                    className="flex-1 py-3 bg-slate-900/50 border border-dashed border-slate-600 text-slate-400 hover:text-white hover:border-emerald-500 hover:bg-slate-800 rounded-lg transition-all flex items-center justify-center gap-2 group disabled:opacity-50"
+                                >
+                                    {isExtractingClient ? (
+                                        <Loader2 className="w-5 h-5 animate-spin text-emerald-400" />
+                                    ) : (
+                                        <Camera className="w-5 h-5 group-hover:text-emerald-400" />
+                                    )}
+                                    <span>{isExtractingClient ? 'Se procesează...' : 'Adaugă prin Imagine/CI'}</span>
+                                </button>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleImageCapture}
+                                    accept="image/*"
+                                    capture="environment"
+                                    className="hidden"
+                                />
+                            </div>
 
                             {isLoadingClients ? (
                                 <div className="flex items-center justify-center py-8">
@@ -280,12 +351,16 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ config, initialProducts, 
                 {showAddClientModal && (
                     <ClientFormModal
                         config={config}
-                        onClose={() => setShowAddClientModal(false)}
+                        initialData={prefilledClientData || undefined}
+                        onClose={() => {
+                            setShowAddClientModal(false);
+                            setPrefilledClientData(null);
+                        }}
                         onSuccess={(newClient) => {
                             setClients(prev => [...prev, newClient]);
                             setFormData(prev => ({ ...prev, client: newClient }));
                             setShowAddClientModal(false);
-                            // Optional: load clients again to get fresh list
+                            setPrefilledClientData(null);
                         }}
                     />
                 )}
