@@ -15,14 +15,18 @@ RewriteEngine On
   RewriteEngine On
   RewriteBase /scan/
   
-  # If the request is for a file that exists in dist/, serve it
-  RewriteCond %{DOCUMENT_ROOT}/scan/dist/%{REQUEST_URI} -f
+  # 1. If it's the root /scan/ or /scan/index.html, serve from dist/index.html
+  RewriteRule ^$ dist/index.html [L]
+  RewriteRule ^index\.html$ dist/index.html [L]
+  
+  # 2. If the request is for something that exists in dist/, serve it
+  RewriteCond %{DOCUMENT_ROOT}/scan/dist/$1 -f
   RewriteRule ^(.*)$ dist/$1 [L]
   
-  # Otherwise, route everything to dist/index.html
-  RewriteRule ^index\.html$ dist/index.html [L]
+  # 3. SPA fallback: if not a file/dir in root OR dist, go to dist/index.html
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{DOCUMENT_ROOT}/scan/dist/$0 !-f
   RewriteRule . dist/index.html [L]
 </IfModule>
 
