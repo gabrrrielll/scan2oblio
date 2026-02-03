@@ -32,6 +32,9 @@ export default defineConfig(({ mode }) => {
       assetsDir: 'assets',
       sourcemap: false,
       minify: 'terser',
+      modulePreload: {
+        polyfill: false
+      },
       rollupOptions: {
         output: {
           manualChunks: {
