@@ -1,8 +1,13 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-// Initialize Gemini Client
 // Note: We use process.env.API_KEY as per instructions.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+const getAiClient = () => {
+  const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY || '';
+  if (!apiKey) {
+    throw new Error("API key must be set when using the Gemini API. Check your .env file.");
+  }
+  return new GoogleGenAI({ apiKey });
+};
 
 export interface ExtractedClientData {
   name: string;
@@ -20,9 +25,9 @@ export const identifyProductFromImage = async (base64Image: string): Promise<{ n
 
   try {
     const model = 'gemini-2.5-flash';
-    
+
     // We want a structured JSON response
-    const response = await ai.models.generateContent({
+    const response = await getAiClient().models.generateContent({
       model: model,
       contents: {
         parts: [
@@ -69,8 +74,8 @@ export const extractClientFromIdCardImage = async (base64Image: string): Promise
 
   try {
     const model = 'gemini-2.5-flash';
-    
-    const response = await ai.models.generateContent({
+
+    const response = await getAiClient().models.generateContent({
       model: model,
       contents: {
         parts: [
