@@ -228,6 +228,106 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
         }, 300);
     };
 
+    const exportInventoryToHtmlTab = () => {
+        const dateStr = inventoryFinishedAt ? inventoryFinishedAt.toLocaleString('ro-RO') : new Date().toLocaleString('ro-RO');
+
+        let html = `
+            <!DOCTYPE html>
+            <html lang="ro">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Raport Inventar ${dateStr}</title>
+                <style>
+                    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; color: #333; line-height: 1.5; }
+                    h1 { color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px; font-size: 24px; }
+                    h2 { color: #334155; margin-top: 30px; font-size: 18px; border-left: 4px solid #10b981; padding-left: 10px; }
+                    .meta { margin-bottom: 25px; padding: 15px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 14px; }
+                    .meta p { margin: 5px 0; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; }
+                    th, td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; font-size: 13px; }
+                    th { background-color: #f1f5f9; color: #475569; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+                    tr:nth-child(even) { background-color: #f8fafc; }
+                    .status-new { font-weight: bold; color: #059669; }
+                    .status-more { font-weight: bold; color: #059669; }
+                    .status-less { font-weight: bold; color: #d97706; }
+                    .status-missing { font-weight: bold; color: #dc2626; }
+                    .status-unknown { font-weight: bold; color: #64748b; }
+                    .delta-pos { color: #059669; font-weight: bold; }
+                    .delta-neg { color: #dc2626; font-weight: bold; }
+                    .row-match { opacity: 0.8; }
+                    @media print {
+                        body { padding: 0; }
+                        table { box-shadow: none; border: 1px solid #000; }
+                        th, td { border: 1px solid #000; }
+                        .meta { border: 1px solid #000; background: none; }
+                    }
+                </style>
+            </head>
+            <body>
+                <h1>Raport Inventar Scan2Oblio</h1>
+                <div class="meta">
+                    <p><strong>Gestiune:</strong> ${managementLabel}</p>
+                    <p><strong>Curent Societate:</strong> ${config.cif}</p>
+                    <p><strong>Dată finalizare:</strong> ${dateStr}</p>
+                </div>
+        `;
+
+        if (inventoryDiffs.length > 0) {
+            html += `<h2>Diferențe detectate (${inventoryDiffs.length} poziții)</h2>
+            <table>
+                <thead>
+                    <tr><th>Produs</th><th>Cod</th><th>Status</th><th>Stoc Oblio</th><th>Inventariat</th><th>Diferență</th></tr>
+                </thead>
+                <tbody>`;
+            inventoryDiffs.forEach(item => {
+                html += `<tr>
+                    <td>${item.name}</td>
+                    <td><code>${item.code || item.key}</code></td>
+                    <td class="status-${item.status}">${item.status.toUpperCase()}</td>
+                    <td>${item.expected}</td>
+                    <td><strong>${item.counted}</strong></td>
+                    <td class="${item.delta >= 0 ? 'delta-pos' : 'delta-neg'}">${item.delta > 0 ? '+' : ''}${item.delta}</td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+        }
+
+        if (inventoryMatches.length > 0) {
+            html += `<h2>Produse conforme (${inventoryMatches.length} poziții)</h2>
+            <table>
+                <thead>
+                    <tr><th>Produs</th><th>Cod</th><th>Cantitate</th><th>Status</th></tr>
+                </thead>
+                <tbody>`;
+            inventoryMatches.forEach(item => {
+                html += `<tr class="row-match">
+                    <td>${item.name}</td>
+                    <td><code>${item.code || item.key}</code></td>
+                    <td><strong>${item.counted}</strong></td>
+                    <td style="color: #059669; font-weight: bold;">OK</td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+        }
+
+        html += `
+            <div style="margin-top: 50px; text-align: center; font-size: 11px; color: #94a3b8;">
+                Generat automat de Scan2Oblio
+            </div>
+            </body></html>`;
+
+        const blob = new Blob([html], { type: 'text/html' });
+        const blobUrl = URL.createObjectURL(blob);
+        const win = window.open();
+        if (win) {
+            win.document.write(html);
+            win.document.close();
+        } else {
+            alert("Vă rugăm să permiteți ferestrele pop-up pentru a vedea raportul.");
+        }
+    };
+
     const handleInventoryScan = (code: string) => {
         const trimmedCode = code.trim();
         if (!trimmedCode) return;
@@ -240,6 +340,13 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
         const product = findProductByCode(trimmedCode, inventorySnapshot);
         if (product) {
             const key = getProductKey(product);
+
+            // FIX 1: If we are ALREADY editing THIS product, don't increment automatically again.
+            // This prevents the "bounce" increment when a barcode is read multiple times in a split second.
+            if (inventoryEditingProduct && getProductKey(inventoryEditingProduct) === key) {
+                console.log("Product already identified and editing, skipping auto-increment:", key);
+                return;
+            }
 
             // Increment the count immediately using functional update for concurrency safety
             setInventoryCounts(prev => {
@@ -761,6 +868,13 @@ const StocksView: React.FC<StocksViewProps> = ({ config }) => {
                             </div>
 
                             <div className="flex bg-slate-700/50 rounded-lg p-1 border border-slate-600 shadow-inner">
+                                <button
+                                    onClick={exportInventoryToHtmlTab}
+                                    className="px-3 py-1 text-[11px] font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1.5 transition-all active:scale-95 border-r border-slate-600"
+                                    title="Exportă raportul într-un tab nou"
+                                >
+                                    <Edit2 className="w-3.5 h-3.5" /> HTML TAB
+                                </button>
                                 <button
                                     onClick={() => handlePrintInventory('diffs')}
                                     className="px-3 py-1 text-[11px] font-bold text-slate-300 hover:text-white flex items-center gap-1.5 transition-all active:scale-95"
