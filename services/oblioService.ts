@@ -339,3 +339,32 @@ export const getWorkStations = async (config: OblioConfig): Promise<any[]> => {
 export const getManagementUnits = async (config: OblioConfig): Promise<any[]> => {
   return await getNomenclature(config, 'management');
 };
+
+/**
+ * Get Companies associated with the Oblio account
+ */
+export const getCompanies = async (config: { email: string; apiSecret: string }): Promise<any[]> => {
+  if (!config.email || !config.apiSecret) {
+    return [];
+  }
+
+  const safeEmail = encodeURIComponent(config.email.trim());
+  const safeSecret = encodeURIComponent(config.apiSecret.trim());
+
+  const targetUrl = `${PHP_BACKEND_URL}?action=companies&email=${safeEmail}&apiSecret=${safeSecret}`;
+
+  try {
+    const response = await fetch(targetUrl);
+    const json = await response.json();
+
+    if (!json.success) {
+      console.warn("Failed to fetch companies:", json.error);
+      return [];
+    }
+
+    return json.data || [];
+  } catch (error) {
+    console.error("Error fetching companies:", error);
+    return [];
+  }
+};

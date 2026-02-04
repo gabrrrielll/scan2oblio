@@ -880,14 +880,57 @@ try {
             echo json_encode(array_merge(['success' => true], $result));
             break;
 
+        case 'companies':
+            $email = $_GET['email'] ?? $_POST['email'] ?? '';
+            $apiSecret = $_GET['apiSecret'] ?? $_POST['apiSecret'] ?? '';
+
+            if (empty($email) || empty($apiSecret)) {
+                throw new Exception("Email și API Secret sunt obligatorii");
+            }
+
+            // Pentru companii nu trimitem CIF in URL, deoarece endpoint-ul returneaza toate companiile din cont
+            $token = getAccessToken($email, $apiSecret);
+            $url = OBLIO_BASE_URL . '/nomenclature/companies';
+
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HTTPHEADER => [
+                    'Authorization: Bearer ' . $token,
+                    'X-Oblio-Email: ' . $email,
+                    'Content-Type: application/json'
+                ]
+            ]);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $error = curl_error($ch);
+            curl_close($ch);
+
+            if ($error) {
+                throw new Exception("Eroare conexiune: " . $error);
+            }
+
+            if ($httpCode !== 200) {
+                throw new Exception("Eroare API Oblio (companies): HTTP $httpCode");
+            }
+
+            $data = json_decode($response, true);
+            echo json_encode(['success' => true, 'data' => $data['data'] ?? []]);
+            break;
+
         case 'nomenclature':
             $email = $_GET['email'] ?? $_POST['email'] ?? '';
             $apiSecret = $_GET['apiSecret'] ?? $_POST['apiSecret'] ?? '';
             $cif = $_GET['cif'] ?? $_POST['cif'] ?? '';
             $type = $_GET['type'] ?? $_POST['type'] ?? '';
 
-            if (empty($email) || empty($apiSecret) || empty($cif) || empty($type)) {
-                throw new Exception("Email, API Secret, CIF și Type sunt obligatorii");
+            if (empty($email) || empty($apiSecret) || empty($type)) {
+                throw new Exception("Email, API Secret și Type sunt obligatorii");
+            }
+            
+            if (empty($cif) && $type !== 'companies') {
+                throw new Exception("CIF este obligatoriu pentru nomenclatorul de tip $type");
             }
 
             $data = getNomenclature($email, $apiSecret, $cif, $type);

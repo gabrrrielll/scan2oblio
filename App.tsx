@@ -28,6 +28,8 @@ import StocksView from './components/StocksView';
 import { createInvoiceInOblio, getProductsFromOblio } from './services/oblioService';
 import { LabelsView } from './components/LabelPrint/LabelsView';
 import { STORAGE_KEYS } from './constants';
+import CompanySelector from './components/CompanySelector';
+
 
 // Initial Mock Config
 const DEFAULT_CONFIG: OblioConfig = {
@@ -441,9 +443,9 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Second Row: WorkStation Selector & Sync */}
+        {/* Second Row: Selectors & Sync */}
         {(appMode === 'INVOICE' || appMode === 'STOCKS' || appMode === 'LABELS') && !isInventoryLoading && (
-          <div className="flex gap-2 px-4 pb-2">
+          <div className="flex flex-col md:flex-row gap-2 px-4 pb-2">
             <div className="flex-1">
               <WorkStationSelector
                 config={config}
@@ -455,7 +457,19 @@ const App: React.FC = () => {
                 }}
               />
             </div>
-            <div className="flex-1 md:flex-initial md:min-w-[200px]">
+
+            <div className="flex-1">
+              <CompanySelector
+                config={config}
+                onSelect={(newCif) => {
+                  const newConfig = { ...config, cif: newCif, workStation: '' }; // Reset workstation when company changes
+                  setConfig(newConfig);
+                  localStorage.setItem('oblio_config', JSON.stringify(newConfig));
+                }}
+              />
+            </div>
+
+            <div className="flex-1 md:flex-initial md:min-w-[180px]">
               <SyncButton
                 config={config}
                 onSuccess={(products) => {
