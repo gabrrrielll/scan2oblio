@@ -88,10 +88,11 @@ const App: React.FC = () => {
       const missingFields = [];
       if (!config.email) missingFields.push("Email");
       if (!config.apiSecret) missingFields.push("API Secret");
-      if (!config.cif) missingFields.push("CIF");
+      if (!config.cif) missingFields.push("Societate (CIF)");
+      if (!config.workStation) missingFields.push("Gestiune");
 
       if (missingFields.length > 0) {
-        setConnectionError(`Configurare incompletă. Lipsesc: ${missingFields.join(', ')}.`);
+        setConnectionError(`Așteptare selecție: ${missingFields.join(', ')}.`);
         setInventory([]);
         return;
       }

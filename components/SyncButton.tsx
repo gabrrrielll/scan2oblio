@@ -15,8 +15,8 @@ const SyncButton: React.FC<SyncButtonProps> = ({ config, onSuccess, onError }) =
     const [isImporting, setIsImporting] = useState(false);
 
     const handleSync = async () => {
-        if (!config.email || !config.apiSecret || !config.cif) {
-            const errorMsg = "Configurare Oblio incompletă (Email, Secret, CIF).";
+        if (!config.email || !config.apiSecret || !config.cif || !config.workStation) {
+            const errorMsg = "Configurare Oblio incompletă. Asigurați-vă că ați selectat Societatea și Gestiunea.";
             onError?.(errorMsg);
             return;
         }
@@ -55,7 +55,7 @@ const SyncButton: React.FC<SyncButtonProps> = ({ config, onSuccess, onError }) =
     return (
         <button
             onClick={handleSync}
-            disabled={isImporting}
+            disabled={isImporting || !config.cif || !config.workStation}
             className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600/10 hover:bg-blue-600/20 disabled:bg-slate-800 text-blue-400 border border-blue-500/30 rounded-lg transition-all shadow-sm font-bold text-xs h-[42px] uppercase tracking-wider"
         >
             {isImporting ? (

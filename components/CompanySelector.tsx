@@ -53,7 +53,7 @@ const CompanySelector: React.FC<CompanySelectorProps> = ({ config, onSelect }) =
                             {!config.cif && <option value="">Selectează...</option>}
                             {companies.map((c, idx) => (
                                 <option key={idx} value={c.cif} className="bg-slate-900 text-white">
-                                    {c.name}
+                                    {c.company || c.name || c.cif} {c.cif ? `(${c.cif})` : ''}
                                 </option>
                             ))}
                         </>
