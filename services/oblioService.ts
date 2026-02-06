@@ -220,7 +220,8 @@ export const createInvoiceInOblio = async (
       unit: p.unit,
       quantity: p.quantity,
       price: p.price,
-      vatPercentage: p.vatPercentage
+      vatPercentage: p.vatPercentage,
+      management: p.management
     }))
   };
 

@@ -222,7 +222,8 @@ const App: React.FC = () => {
         quantity: 1,
         price: productInStock.price,
         vatPercentage: productInStock.vatPercentage,
-        unit: productInStock.measuringUnit
+        unit: productInStock.measuringUnit,
+        management: config.workStation || 'Sediu'
       };
       setItems(prev => [...prev, newItem]);
 
@@ -299,7 +300,8 @@ const App: React.FC = () => {
           quantity: 1,
           price: match.price,
           vatPercentage: match.vatPercentage,
-          unit: match.measuringUnit
+          unit: match.measuringUnit,
+          management: config.workStation || 'Sediu'
         };
         setItems(prev => [...prev, newItem]);
 
@@ -371,7 +373,8 @@ const App: React.FC = () => {
         quantity: quantity,
         price: product.price,
         vatPercentage: product.vatPercentage,
-        unit: product.measuringUnit
+        unit: product.measuringUnit,
+        management: config.workStation || 'Sediu'
       };
       setItems(prev => [...prev, newItem]);
       showStatus(AppStatus.SUCCESS, `Produs adăugat în coș (+${quantity})`);
@@ -449,6 +452,7 @@ const App: React.FC = () => {
           <div className="flex flex-col md:flex-row gap-2 px-4 pb-2">
             <div className="flex-1">
               <WorkStationSelector
+                type="management"
                 config={config}
                 selectedStation={config.workStation || ''}
                 onSelect={(val) => {

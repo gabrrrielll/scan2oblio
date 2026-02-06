@@ -61,7 +61,7 @@ export const JSON_EXAMPLE_content = `[
     "TVA inclus": "DA",
     "Moneda vanzare": "RON",
     "Furnizor": "Valforest",
-    "sidesType": "4 LATURI",
+    "sidesType": "6 LATURI",
     "woodColor": "MAHON",
     "material": "FAG"
   }

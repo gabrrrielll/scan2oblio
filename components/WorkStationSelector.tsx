@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { OblioConfig } from '../types';
-import { getWorkStations, getManagementUnits } from '../services/oblioService';
+import { getNomenclature } from '../services/oblioService';
 import { Store, Building2 } from 'lucide-react';
 
 interface WorkStationSelectorProps {
+    type: 'management' | 'work_stations';
     config: OblioConfig;
     selectedStation: string;
     onSelect: (station: string) => void;
 }
 
-const WorkStationSelector: React.FC<WorkStationSelectorProps> = ({ config, selectedStation, onSelect }) => {
+const WorkStationSelector: React.FC<WorkStationSelectorProps> = ({ type, config, selectedStation, onSelect }) => {
     const [stations, setStations] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -19,20 +20,24 @@ const WorkStationSelector: React.FC<WorkStationSelectorProps> = ({ config, selec
 
             setLoading(true);
             try {
-                // Incarcam doar Gestiunile (Management Units)
-                // deoarece endpoint-ul work_stations nu exista ca atare in nomenclatura publica
-                const mu = await getManagementUnits(config);
-                console.log("[DEBUG] ManagementUnits fetched:", mu);
-                setStations(mu);
+                const data = await getNomenclature(config, type);
+                console.log(`[DEBUG] ${type} fetched:`, data);
+                setStations(data);
+
+                // Dacă nu avem nimic selectat încă, selectăm prima variantă
+                if (!selectedStation && data.length > 0) {
+                    const firstVal = data[0].name || data[0].management || data[0].workStation;
+                    if (firstVal) onSelect(firstVal);
+                }
             } catch (e) {
-                console.error("Failed to load management units", e);
+                console.error(`Failed to load ${type}`, e);
             } finally {
                 setLoading(false);
             }
         };
 
         load();
-    }, [config.cif, config.email]); // Re-fetch only if credentials change
+    }, [config.cif, config.email, type]); // Re-fetch only if credentials or type change
 
     if (!stations || stations.length === 0) {
         return null; // Nu afișa nimic dacă nu avem opțiuni

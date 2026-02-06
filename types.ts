@@ -55,6 +55,7 @@ export interface InvoiceFormData {
   // Document info
   seriesName: string;
   workStation: string;
+  management: string;
   language: string;
   currency: string;
 
@@ -81,6 +82,7 @@ export interface ProductItem {
   price: number;
   vatPercentage: number;
   unit: string;
+  management: string;
 }
 
 export enum AppStatus {

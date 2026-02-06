@@ -38,7 +38,8 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ config, initialProducts, 
         deliveryDate: '',
         collectDate: '',
         seriesName: config.seriesName || '',
-        workStation: config.workStation || 'Sediu',
+        workStation: 'Sediu',
+        management: config.workStation || 'Sediu',
         language: 'RO',
         currency: 'RON',
         products: initialProducts,
@@ -181,6 +182,7 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ config, initialProducts, 
                 collectDate: formData.collectDate || undefined,
                 seriesName: formData.seriesName,
                 workStation: formData.workStation,
+                management: formData.management,
                 language: formData.language,
                 currency: formData.currency,
                 products: formData.products,
@@ -409,11 +411,28 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ config, initialProducts, 
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-400 mb-1">Gestiune</label>
+                            <label className="block text-sm font-medium text-slate-400 mb-1">Punct Lucru (Header)</label>
                             <WorkStationSelector
+                                type="work_stations"
                                 config={config}
                                 selectedStation={formData.workStation}
                                 onSelect={(val) => setFormData(prev => ({ ...prev, workStation: val }))}
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-400 mb-1">Gestiune (Produse)</label>
+                            <WorkStationSelector
+                                type="management"
+                                config={config}
+                                selectedStation={formData.management}
+                                onSelect={(val) => {
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        management: val,
+                                        products: prev.products.map(p => ({ ...p, management: val }))
+                                    }));
+                                }}
                             />
                         </div>
 

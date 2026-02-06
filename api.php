@@ -540,7 +540,7 @@ function createInvoice($email, $apiSecret, $cif, $invoiceData)
         'issueDate' => $invoiceData['issueDate'] ?? date('Y-m-d'),
         'seriesName' => $invoiceData['seriesName'] ?? '',
         'workStation' => $invoiceData['workStation'] ?? 'Sediu',
-        'products' => array_map(function ($p) {
+        'products' => array_map(function ($p) use ($invoiceData) {
             return [
                 'name' => $p['name'],
                 'code' => $p['barcode'],
@@ -549,7 +549,7 @@ function createInvoice($email, $apiSecret, $cif, $invoiceData)
                 'quantity' => $p['quantity'],
                 'price' => $p['price'],
                 'vatPercentage' => $p['vatPercentage'],
-                'management' => 'DEPOZIT',
+                'management' => $p['management'] ?? $invoiceData['management'] ?? 'Sediu',
                 'saveProduct' => false
             ];
         }, $invoiceData['products'] ?? [])
